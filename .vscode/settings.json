@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "errors.h": "c",
+        "functional": "cpp",
+        "defines.h": "c",
+        "cstdlib": "c",
+        "future": "c",
+        "memory.h": "c",
+        "*.tcc": "c",
+        "cstdio": "c",
+        "string_view": "c",
+        "array": "c",
+        "string": "c"
+    }
+}

@@ -1,0 +1,47 @@
+This file will have information about the protocol used for the
+communication between the "server" and the "client"
+
+The communication will be packet based over a reliable network
+where some assumptions about the underlying transport protocol
+are made. 
+
+We assume that the protocol used for transfer of any such "packets"
+will be RELIABLE, IN-ORDER, and GAURANTEED. 
+
+For this purpose we will use the most widely used transport protocol
+and that will be TCP over IP. TCP/IP. 
+
+We will be using sockets library provided by the operating system
+to make use of this protocol. 
+
+** Now we will start discussing in regards of the actual chat protocol
+
+The purpose of networking sub-system is just processing of the "packets"
+, it is not our job to process the "packet" and extract any relevant
+information. That part will be delegated to a different subsystem. 
+
+There are a few ways we can do this, after reading on the internet, 
+and finding some information on stack overflow which I quote 
+https://stackoverflow.com/questions/769045/when-i-send-a-packet-over-tcp-it-is-split-into-two-packets
+, the answer by Jon Skeet explains that the TCP data is sent as a stream
+and that we should not make assumptions on how you will receive the
+stream on the other end of the communication channel. And that the 
+best solution is to prefix the stream with a 32 bit size integer, but 
+you should also not assume that the 32 bits will be read at once. 
+
+STATE CYCLE
+
+1. WAITING FOR CONNECT
+2. CONNECT
+3. WAITING FOR DATA
+4. HEADER SENT
+5. DATA SENT
+6. WAITING FOR MORE
+7. EITHER GO TO 3, OR 8
+8. CONNECTION END 
+
+Header information required for the protocol. 
+Name and Description        size
+size                        32 bits
+---------------------------------------------
+
