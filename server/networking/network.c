@@ -12,6 +12,7 @@
 #include "defines.h"
 #include "network.h"
 #include "../memory.h"
+#include "../logger.h"
 // #include <errno.h>
 
 int assert_connection(netconn_info_s *conn
@@ -30,7 +31,11 @@ int assert_connection(netconn_info_s *conn
 
         conn->connection_status = NETWORK_STATUS_ERROR;
         conn->error_code    = error_num;
-        return(0);
+        
+        logger_write_printf("%s failed with error: %d, errno:%d\n"
+            , function_string, compare1, error_num);
+        
+        exit(SERVER_ERROR_REFER_TO_LOGS);
 	}
     return(1);
 }
@@ -88,6 +93,12 @@ int network_connect_accept_sync(netconn_info_s *connection)
     return(SUCCESS);
 }
 
+/*
+ * if required this function will automatically perform dynamic
+ * memory allocation, it is best to call network_free after 
+ * the function to release any dynamic memory once it is no longer 
+ * in use
+ */
 netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size)
 {
     netconn_data_s  data = {0};
@@ -129,7 +140,14 @@ netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size)
         else data_read   += length;
     }
     
+    data.data_length = data_read;
     return (data);
+}
+
+void network_free(netconn_data_s data)
+{
+    if(DATA_READ_ONLY_TYPE(data.read_status) == DATA_READ_MALLOC)
+        m_free(data.data_address, "network.c: network_free"); 
 }
 
 int network_connection_write(netconn_info_s *conn, char *data, int length)

@@ -5,8 +5,7 @@ typedef struct device_backup_protocol {
 } dbp_s;
 
 enum connection_shutdown_type {
-    DBP_CONNECT_SHUTDOWN_CLIENT 
-    , DBP_CONNECT_SHUTDOWN_SERVER
+    DBP_CONNECT_SHUTDOWN_FLOW
     , DBP_CONNECT_SHUTDOWN_CORRUPTION
 };
 

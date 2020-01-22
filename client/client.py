@@ -6,9 +6,13 @@ sock = socket.socket()
 sock.connect((socket.gethostname(), 4096))
 
 while(1):
+    print("The sock port number is :" + str(sock.getsockname()[1]))
     print("Send something to the server: ")
-    string = input()
-    sock.send(len(string).to_bytes(8, byteorder = "little"))
-    sock.send(string.encode())
-    data = sock.recv(4096)
-    print(data)
+    # string = input()
+    length = 1#len(string)
+    length |= 0xD020000000000000
+    
+    sock.send(length.to_bytes(8, byteorder = "little"))
+    sock.send(("Hi"*16).encode())
+    # data = sock.recv(4096)
+    # print(data)

@@ -99,6 +99,7 @@ typedef struct network_connection_data_basictypes {
 
 netconn_info_s network_connect_init_sync(int);
 int network_connect_accept_sync(netconn_info_s*);
+void network_free(netconn_data_s conn);
 
 #define NETWORK_DATA_READ_TYPE_DECLARATION(data_type) \
 netconn_data_basetypes_s network_data_read_##data_type(netconn_info_s *conn);

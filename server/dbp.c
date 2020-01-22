@@ -4,6 +4,9 @@
 #include "networking/defines.h"
 #include "logger.h"
 int dbp_magic_check(long magic);
+void dbp_shutdown_connection(dbp_s protocol
+            , enum connection_shutdown_type reason);
+
 
 dbp_s dbp_init(unsigned short port)
 {
@@ -23,8 +26,10 @@ void dbp_accept_connection_loop(dbp_s *protocol)
         logger_write_printf("client connected: %s : %d"
             , inet_ntoa(protocol->connection.client_socket.sin_addr)
             , ntohs(protocol->connection.client_socket.sin_port)); 
-        
-        dbp_read(protocol);
+        for(;;) {
+            dbp_read(protocol);
+        }
+        dbp_shutdown_connection(*protocol, DBP_CONNECT_SHUTDOWN_FLOW);
     }
     logger_write_printf("network_connect_accept_sync failed.");
 }
@@ -48,6 +53,11 @@ void dbp_read(dbp_s *read)
         dbp_shutdown_connection(*read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
         return;
     }
+
+    netconn_data_s data2    = network_data_readxbytes
+                                (&(read->connection), header_size);
+
+    logger_write_printf("%s, %d", data2.data_address, data2.data_length);
 }
 
 /**

@@ -21,6 +21,7 @@
         "utility": "c",
         "condition_variable": "c",
         "time.h": "c",
-        "fstream": "c"
+        "fstream": "c",
+        "ctime": "c"
     }
 }
