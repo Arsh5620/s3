@@ -33,4 +33,5 @@ void m_print_dbg();
 
 void m_free(void *address, char *fn_name);
 void *m_malloc(size_t size, char *fn_name);
+void *m_calloc(size_t size, char *fn_name);
 void *m_realloc(void *address, int size, char *fn_name);

@@ -10,6 +10,17 @@
         "cstdio": "c",
         "string_view": "c",
         "array": "c",
-        "string": "c"
+        "string": "c",
+        "network.h": "c",
+        "chrono": "c",
+        "limits": "c",
+        "ratio": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "condition_variable": "c",
+        "time.h": "c",
+        "fstream": "c"
     }
 }

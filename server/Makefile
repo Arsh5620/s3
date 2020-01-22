@@ -2,13 +2,16 @@
 
 CC=gcc # C language compiler
 CFLAGS=-ggdb3 -Wall -Werror -std=c99
-HEADERFILES=networking/defines.h networking/network.h list.h memory.h hash_table.h
-SOURCEFILES=networking/network.c server.c list.c memory.c hash_table.c
+HEADERFILES=networking/defines.h networking/network.h list.h memory.h hash_table.h dbp.h logger.h
+SOURCEFILES=networking/network.c server.c list.c memory.c hash_table.c dbp.c logger.c
 OBJFILES=${SOURCEFILES:c=o}
 
 program: $(SOURCEFILES) $(HEADERFILES)
 	$(CC) -c $^ $(CFLAGS)
 	$(CC) -o $@ *.o $(CFLAGS)
 
+program-speed: $(SOURCEFILES) $(HEADERFILES)
+	$(CC) -o $@ $(SOURCEFILES) -std=c99 -O3
+
 clean: 
-	rm *.o ./program
+	git clean -xi

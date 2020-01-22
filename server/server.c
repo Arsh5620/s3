@@ -4,9 +4,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include "./networking/defines.h"
+#include "logger.h"
 
 int main(int argc, char *argv[])
 {
+    logger_init();
+    char *string = "Hello, world!%s, %s, %s, %s\n", * string2 = "how are you";
+    char *string3 = "What the fuck", *string4="I like jaspinder", *string5="But I know she doesn't";
+    printf("%p: %p: %p: %p: %p\n", string, string2, string3, string4, string5);
+    logger_write_printf(string, string2, string3, string4, string5);
+    logger_cleanup();
+    return 0;
     netconn_info_s conn = network_connect_init_sync(APPLICATION_PORT);
     printf("Connection Status: %d, errors: %x\n", conn.connection_status, conn.error_code);
     network_connect_accept_sync(&conn);

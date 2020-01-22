@@ -82,7 +82,7 @@ int network_connect_accept_sync(netconn_info_s *connection)
         return(FAILED);
     
     // connection falls immediately and automatically from 
-    // NETWORK_STATUS_CONNECTED to NETWORK_STATUS_READYWAIt after "accept"
+    // NETWORK_STATUS_CONNECTED to NETWORK_STATUS_READYWAIT after "accept"
     connection->connection_status   = NETWORK_STATUS_READYWAIT;
 
     return(SUCCESS);

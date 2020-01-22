@@ -86,6 +86,17 @@ void *m_malloc(size_t size, char *fn_name)
     return(memory);
 }
 
+void *m_calloc(size_t size, char *fn_name)
+{
+    void *memory    = calloc(size, 1);
+    if(memory == NULL)
+        exit(MALLOC_FAILED);
+
+    add_to_store(memory, size, fn_name, strlen(fn_name));
+
+    return(memory);
+}
+
 void *m_realloc(void *address, int size, char *fn_name)
 {
     void *memory    = realloc(address, size);
