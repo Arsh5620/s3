@@ -106,6 +106,12 @@ netconn_data_basetypes_s network_data_read_##data_type(netconn_info_s *conn);
 NETWORK_DATA_READ_TYPE_DECLARATION(char);
 NETWORK_DATA_READ_TYPE_DECLARATION(short);
 NETWORK_DATA_READ_TYPE_DECLARATION(int);
+
+/*
+ * should read 8 bytes in the order that the bytes are transmitted. 
+ * will perform no endian-ness conversion
+ * ** will block as read is sync operation. ** 
+ */
 NETWORK_DATA_READ_TYPE_DECLARATION(long);
 
 netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size);

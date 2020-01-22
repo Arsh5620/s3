@@ -13,6 +13,8 @@ typedef struct logger
     size_t bytes_written;
     char *filename;
     char *sprint_buffer;
+
+    char init_complete;
 } logger_s;
 
 logger_s logger_init();

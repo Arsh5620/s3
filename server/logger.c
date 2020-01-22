@@ -9,10 +9,12 @@
 #include <stdarg.h>
 #include "memory.h"
 
-logger_s logs;
+logger_s logs = {0};
 
 logger_s logger_init()
 {
+    if(logs.init_complete == SUCCESS) return logs;
+
     logger_s log    = {0};
 
     DIR *dir = opendir(LOG_DIR_NAME);
@@ -43,7 +45,7 @@ logger_s logger_init()
     }
 
     log.sprint_buffer   = m_calloc(LOG_MAX_SPRINTFBUFFER, "logger.c:logger_init");
-
+    log.init_complete   = SUCCESS;
     logs = log;
     return(log);
 }
@@ -52,10 +54,26 @@ int logger_write_printf(char *string, ...)
 {
     va_list variable_args;
     va_start(variable_args, string);
-    int print_length  = vsprintf(logs.sprint_buffer, string, variable_args);
+
+    time_t t    = time(NULL);
+    struct tm local_time    = *localtime(&t);
+
+    int print_length = sprintf(logs.sprint_buffer
+                                 , "[%02d-%02d-%04d %02d:%02d:%02d] :: "
+                                 , local_time.tm_mon + 1
+                                 , local_time.tm_mday
+                                 , local_time.tm_year + 1900
+                                 , local_time.tm_hour
+                                 , local_time.tm_min
+                                 , local_time.tm_sec);
+    logs.bytes_written += fwrite(logs.sprint_buffer, print_length, 1, logs.file);
+
     int bytes_written = logs.bytes_written;
+    print_length  = vsprintf(logs.sprint_buffer, string, variable_args);
     logs.bytes_written += fwrite(logs.sprint_buffer, print_length, 1, logs.file);
     logs.bytes_written += fwrite(LOG_FILE_NEWLINE, 2, 1, logs.file);
+
+    fflush(logs.file);
     return(logs.bytes_written - bytes_written);
 }
 
