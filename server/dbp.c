@@ -3,6 +3,10 @@
 #include "dbp.h"
 #include "networking/defines.h"
 #include "logger.h"
+#include "strings.h"
+#include <string.h>
+#include <unistd.h>
+
 int dbp_magic_check(long magic);
 void dbp_shutdown_connection(dbp_s protocol
             , enum connection_shutdown_type reason);
@@ -37,7 +41,8 @@ void dbp_accept_connection_loop(dbp_s *protocol)
 void dbp_shutdown_connection(dbp_s protocol
             , enum connection_shutdown_type reason)
 {
-    if(shutdown(protocol.connection.client, SHUT_RDWR) == 0){
+    if(shutdown(protocol.connection.client, SHUT_RDWR) == 0 
+        && close(protocol.connection.client) == 0){
         logger_write_printf("client connection closed: reason(%d)", reason);
     }
 }
@@ -54,10 +59,36 @@ void dbp_read(dbp_s *read)
         return;
     }
 
-    netconn_data_s data2    = network_data_readxbytes
+    netconn_data_s header    = network_data_readxbytes
                                 (&(read->connection), header_size);
+    tolowercase(header.data_address, header.data_length);
 
-    logger_write_printf("%s, %d", data2.data_address, data2.data_length);
+    if(memcmp(header.data_address, "action", 6) == 0){
+        // now here to check the action that the client is requesting.
+        int action = 
+    } else {
+        logger_write_printf("connection corruption,"
+                                " first key:value was not action.");
+        dbp_shutdown_connection(*read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
+        return;
+    }
+    array_list_s header_list   = string_key_value_pairs(header.data_address
+                                    , header.data_length);
+
+
+
+    for(int i=0; i<header_list.index; ++i){
+        key_value_pair_s pair = *(key_value_pair_s*)list_get(header_list, i);
+        logger_write_printf("%.*s : %.*s", pair.key_length, pair.key, pair.value_length, pair.value);
+    }
+}
+
+int dbp_headers_action(key_value_pair_s *pair)
+{
+    char *action    = pair->value;
+    int length  = pair->value_length;
+
+    
 }
 
 /**

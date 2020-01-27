@@ -12,7 +12,9 @@ while(1):
     length = 1#len(string)
     length |= 0xD020000000000000
     
+    string = "actin=notification"
+    string += ' ' * (32 - len(string))
     sock.send(length.to_bytes(8, byteorder = "little"))
-    sock.send(("Hi"*16).encode())
+    sock.send(string.encode())
     # data = sock.recv(4096)
     # print(data)

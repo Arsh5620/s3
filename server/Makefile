@@ -1,9 +1,9 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
-CFLAGS=-ggdb3 -Wall -Werror -std=c99
-HEADERFILES=networking/defines.h networking/network.h list.h memory.h hash_table.h dbp.h logger.h
-SOURCEFILES=networking/network.c server.c list.c memory.c hash_table.c dbp.c logger.c
+CFLAGS=-ggdb3 -Wall -std=c99
+HEADERFILES=networking/defines.h networking/network.h list.h memory.h hash_table.h dbp.h logger.h strings.h
+SOURCEFILES=networking/network.c server.c list.c memory.c hash_table.c dbp.c logger.c strings.c
 OBJFILES=${SOURCEFILES:c=o}
 
 program: $(SOURCEFILES) $(HEADERFILES)
@@ -15,3 +15,6 @@ program-speed: $(SOURCEFILES) $(HEADERFILES)
 
 clean: 
 	git clean -xi
+
+clean-logs:
+	rm ./logs/* -ri

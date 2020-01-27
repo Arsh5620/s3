@@ -22,6 +22,8 @@
         "condition_variable": "c",
         "time.h": "c",
         "fstream": "c",
-        "ctime": "c"
+        "ctime": "c",
+        "stdlib.h": "c",
+        "algorithm": "c"
     }
 }

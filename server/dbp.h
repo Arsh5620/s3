@@ -9,6 +9,10 @@ enum connection_shutdown_type {
     , DBP_CONNECT_SHUTDOWN_CORRUPTION
 };
 
+enum action_requested {
+    DBP_ACTION_NOTIFICATION
+};
+
 void dbp_read(dbp_s *read);
 dbp_s dbp_init(unsigned short port);
 void dbp_cleanup(dbp_s protocol_handle);
