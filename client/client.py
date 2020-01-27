@@ -9,11 +9,13 @@ while(1):
     print("The sock port number is :" + str(sock.getsockname()[1]))
     print("Send something to the server: ")
     # string = input()
-    length = 1#len(string)
-    length |= 0xD020000000000000
+    # length = 1#len(string)
+    length = 0
+    length |= 0xD040000000000008
     
-    string = "actin=notification"
-    string += ' ' * (32 - len(string))
+    string = "action=notification\nsender=linux-android\n"
+    string += ' ' * (64 - len(string))
+    string += "ARSHDEEP"
     sock.send(length.to_bytes(8, byteorder = "little"))
     sock.send(string.encode())
     # data = sock.recv(4096)
