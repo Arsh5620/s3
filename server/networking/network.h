@@ -19,18 +19,19 @@ enum connection_status_enum {
 };
 
 // We don't want the errors, we only need the data type
-#define DATA_READ_ONLY_TYPE(x) (x & 1)
+#define DATA_READ_ONLY_TYPE(x) (x & 7)
 
 // We don't want the types such as malloc or spare, we only want errors.
-#define DATA_READ_NO_TYPE(x) (x & ~1)
+#define DATA_READ_NO_TYPE(x) (x & ~7)
 
 #define DATA_READ_SUCCESS(x) (DATA_READ_NO_TYPE(x) == 0)
 
 enum data_read_status_enum {
-    DATA_READ_MALLOC    = 0
-    , DATA_READ_SPARE   = 1
-    , DATA_READ_EOF     = 2
-    , DATA_READ_ERROR   = 4
+    DATA_READ_MALLOC    = 0b0001
+    , DATA_READ_SPARE   = 0b0010
+    , DATA_READ_TEMPFILE    = 0b0100
+    , DATA_READ_EOF     = 0b1000
+    , DATA_READ_ERROR   = 0b00010000
 };
 
 
@@ -57,7 +58,6 @@ typedef struct network_connection_information
 
 typedef struct network_connection_data_read
 {
-    int bytes_read;
     enum data_read_status_enum read_status;
     int error_code;
 
@@ -117,3 +117,4 @@ NETWORK_DATA_READ_TYPE_DECLARATION(long);
 
 netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size);
 int network_connection_write(netconn_info_s *conn, char *data, int length);
+void *network_netconn_data_address(netconn_data_s *data);

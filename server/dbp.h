@@ -13,7 +13,7 @@ enum action_requested {
     DBP_ACTION_NOTIFICATION
 };
 
-void dbp_read(dbp_s *read);
+int dbp_read(dbp_s *_read);
 dbp_s dbp_init(unsigned short port);
 void dbp_cleanup(dbp_s protocol_handle);
 void dbp_accept_connection_loop(dbp_s *protocol);

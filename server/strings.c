@@ -73,11 +73,13 @@ string_info_s string_count_accepted_chars(string_internal_s *store)
         case '_':
         case '-':
         case '.':
+        case '/':
             break;;
         default: 
         {
             char c_nocaps   = c | 0b100000;
-            if(c_nocaps >= 'a' && c_nocaps <='z')
+            if((c_nocaps >= 'a' && c_nocaps <='z')
+                || (c >= '0' && c <= '9'))
                 break;
             
             break_loop = 1;

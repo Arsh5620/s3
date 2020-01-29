@@ -113,7 +113,7 @@ netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size)
     // This is how spare is intended to be used, as regular memory buffer.
     void *memory = 0;
     if(size >= 0 && size <= 8) {
-        memory  = (void*) &data.spare;
+        memory = (void*) &data.spare;
         data.read_status = DATA_READ_SPARE;
     }
     else if (size < MAX_ALLOWED_NETWORK_BUFFER) {
@@ -142,6 +142,14 @@ netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size)
     
     data.data_length = data_read;
     return (data);
+}
+
+void *network_netconn_data_address(netconn_data_s *data)
+{
+    if(DATA_READ_ONLY_TYPE(data->read_status) == DATA_READ_SPARE)
+        return (void*)&data->spare;
+    else
+        return(data->data_address);
 }
 
 void network_free(netconn_data_s data)

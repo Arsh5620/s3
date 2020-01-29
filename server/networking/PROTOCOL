@@ -41,7 +41,45 @@ STATE CYCLE
 8. CONNECTION END 
 
 Header information required for the protocol. 
-Name and Description        size
-size                        32 bits
----------------------------------------------
+
+***
+The protocol only has a 8 byte header.
+The eight bytes does both setting up the expectations for the
+entire length of the stream "packet", and set the stream length
+for the headers only. Along with that it also has a one byte magic
+that is used to confirm that the protocol is the one we are expecting. 
+
+(byte 1: magic header (0XD0))
+(byte 2: header length * 16)
+(byte 3-8: six bytes are used to set the packet length)
+***
+
+The rest of the protocol is variable, using variables to set the
+expectations. 
+The only mandatory variable in a header is "action", which has to be 
+one of the accepted actions, such as "notification", "create", "update"
+etc. 
+
+variables in headers. 
+Header has to be aligned on a 16 byte boundary, and the following 
+is how you can set variables in a given header. 
+when aliging on a byte boundary spaces must be used, tabs are not accepted
+""""
+action = update 
+""""
+
+in both the key and the value following alphanumerics are accepted
+A-Z a-z '_' '-' '.' '/' 0-9
+
+so key value pair of 
+""""
+90._/abc : abc/abc/..-99
+"""" is a completely valid key value pair. (not that it makes sense)
+as you might have noticed we can use both "=" or ":" for assignment
+
+NOTIFICATION (action-type)
+: notification is an action type that is used to send server some 
+important information that does not needs to be saved to any file but 
+instead needs to be shown to the server either by a notification popup
+or somewhere where the user will be able to see the information. 
 

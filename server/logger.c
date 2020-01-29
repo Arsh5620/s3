@@ -11,38 +11,51 @@
 
 logger_s logs = {0};
 
-logger_s logger_init()
+int setup_directory()
 {
-    if(logs.init_complete == SUCCESS) return logs;
-
-    logger_s log    = {0};
-
     DIR *dir = opendir(LOG_DIR_NAME);
     if(dir) {
         closedir(dir);
+        return(0);
     }
     else if (errno == ENOENT) {
         if(mkdir(LOG_DIR_NAME, S_IRWXU | S_IRGRP | S_IXGRP) != 0) {
             printf("Creating new directory for logs "
                     "failed, program will now exit.");
         }
+        else return(0);
     }
     else {
         printf("Could not open directory for "
                 "writing logs, logging subsystem failed.\n");
     }
-    
+    return(-1);
+}
+
+int open_file(logger_s *log)
+{
     time_t datetime = time(NULL);
     
-    log.filename    = m_calloc(LOG_MAX_FILENAMELENGTH, "logger.c:logger_init");
-    sprintf(log.filename, LOG_FILE_NAME , LOG_DIR_NAME, datetime);
-    log.file    = fopen(log.filename, "w+");
+    log->filename    = m_calloc(LOG_MAX_FILENAMELENGTH, "logger.c:logger_init");
+    sprintf(log->filename, LOG_FILE_NAME , LOG_DIR_NAME, datetime);
+    log->file    = fopen(log->filename, "w+");
 
-    if(log.file == NULL) {
+    if(log->file == NULL) {
         fprintf(stderr, "Could not initialize the logging subsystem,"
                 " program will now exit.\n");
-        exit(SERVER_LOGGER_FAILURE);
+        return(-1);
     }
+    return(0);
+}
+
+logger_s logger_init()
+{
+    if(logs.init_complete == SUCCESS) return logs;
+
+    logger_s log    = {0};
+
+    if(setup_directory() == -1) return log;
+    open_file(&log);
 
     log.sprint_buffer   = m_calloc(LOG_MAX_SPRINTFBUFFER, "logger.c:logger_init");
     log.init_complete   = SUCCESS;
@@ -66,8 +79,7 @@ int logger_write_printf(char *string, ...)
                                  , local_time.tm_hour
                                  , local_time.tm_min
                                  , local_time.tm_sec);
-    logs.bytes_written += fwrite(logs.sprint_buffer, print_length, 1, logs.file);
-
+    logs.bytes_written += fwrite(logs.sprint_buffer,1,  print_length, logs.file);
     int bytes_written = logs.bytes_written;
     print_length  = vsprintf(logs.sprint_buffer, string, variable_args);
     logs.bytes_written += fwrite(logs.sprint_buffer, print_length, 1, logs.file);
