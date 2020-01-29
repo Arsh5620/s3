@@ -1,3 +1,5 @@
+# ifndef HASH_TABLE_INCLUDE_GAURD
+# define HASH_TABLE_INCLUDE_GAURD
 // This is the hash table that will be used for this program
 
 typedef struct hash_table_entry_struct {
@@ -25,3 +27,4 @@ hash_table_s hash_table_init();
 int hash_table_add(hash_table_s *table, hash_table_entry_s entry);
 hash_table_s hash_table_expand(hash_table_s *table);
 hash_table_entry_s hash_table_get(hash_table_s table, unsigned long key);
+# endif

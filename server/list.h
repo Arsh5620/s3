@@ -1,3 +1,5 @@
+# ifndef LIST_INCLUDE_GAURD
+# define LIST_INCLUDE_GAURD
 typedef struct array_list {
     int index;
     int index_computed;
@@ -13,3 +15,4 @@ typedef struct array_list {
 array_list_s list_new(int, int);
 void *list_get(array_list_s, int);
 unsigned int list_push(array_list_s *, void *);
+#endif

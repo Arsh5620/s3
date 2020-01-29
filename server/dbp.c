@@ -3,7 +3,6 @@
 #include "dbp.h"
 #include "networking/defines.h"
 #include "logger.h"
-#include "strings.h"
 #include <string.h>
 #include <unistd.h>
 #include "binarysearch.h"
@@ -13,6 +12,8 @@ long int dbp_data_length(unsigned long magic);
 void dbp_shutdown_connection(dbp_s protocol
             , enum connection_shutdown_type reason);
 int dbp_headers_action(dbp_s *_read, key_value_pair_s pair);
+array_list_s dbp_headers_read(dbp_s *_read, int length);
+
 
 dbp_s dbp_init(unsigned short port)
 {
@@ -64,8 +65,8 @@ static b_search_string_s actions_supported[4] =
 int dbp_read(dbp_s *_read)
 {
     netconn_data_basetypes_s data = network_data_read_long(&(_read->connection));
-    int header_size = dbp_magic_check(data.data_u._long);
-
+    int header_size     = dbp_magic_check(data.data_u._long);
+    int packet_length   = dbp_data_length(data.data_u._long);
     // printf("%lx is the pointer\n", data.data_u._long);
     
     if(header_size == -1) {
@@ -77,13 +78,8 @@ int dbp_read(dbp_s *_read)
         return(-1);
     }
 
-    netconn_data_s header    = network_data_readxbytes
-                                (&(_read->connection), header_size);
-    void *address = network_netconn_data_address(&header);
-    tolowercase(address, header.data_length);
-
-    array_list_s header_list   = string_key_value_pairs(address
-                                    , header.data_length);
+    array_list_s header_list    = dbp_headers_read(_read, header_size);
+    _read->headers  = header_list;
 
     key_value_pair_s first_record   = 
                         *(key_value_pair_s*)list_get(header_list, 0);
@@ -92,6 +88,8 @@ int dbp_read(dbp_s *_read)
 
     if(action == -1)
         return(action);
+
+    
         
     for(int i=1; i<header_list.index; ++i){
         key_value_pair_s pair = *(key_value_pair_s*)list_get(header_list, i);
@@ -101,10 +99,24 @@ int dbp_read(dbp_s *_read)
     netconn_data_s data_read    = network_data_readxbytes(&_read->connection
                                     , dbp_data_length(data.data_u._long));
 
-    address = network_netconn_data_address(&data_read);
+    void *address = network_netconn_data_address(&data_read);
     printf("Client sent a notification: \n");
     printf("%.*s\n\n", data_read.data_length, (char*)address);
     return(0);
+}
+
+array_list_s dbp_headers_read(dbp_s *_read, int length)
+{
+    netconn_data_s header    = network_data_readxbytes
+                                (&(_read->connection), length);
+
+    void *address = network_netconn_data_address(&header);
+    tolowercase(address, header.data_length);
+
+    array_list_s header_list   = string_key_value_pairs(address
+                                    , header.data_length);
+                                        
+    return(header_list);
 }
 
 int dbp_headers_action(dbp_s *_read, key_value_pair_s pair)

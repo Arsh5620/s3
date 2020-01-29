@@ -1,3 +1,6 @@
+# ifndef MEMORY_INCLUDE_GAURD
+# define MEMORY_INCLUDE_GAURD
+
 #include <stddef.h>
 #include "list.h"
 #include "hash_table.h"
@@ -35,3 +38,5 @@ void m_free(void *address, char *fn_name);
 void *m_malloc(size_t size, char *fn_name);
 void *m_calloc(size_t size, char *fn_name);
 void *m_realloc(void *address, int size, char *fn_name);
+
+# endif

@@ -1,3 +1,6 @@
+# ifndef NETWORK_INCLUDE_GAURD
+# define NETWORK_INCLUDE_GAURD
+
 #define __NETWORK__
 
 #include <sys/socket.h>
@@ -118,3 +121,5 @@ NETWORK_DATA_READ_TYPE_DECLARATION(long);
 netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size);
 int network_connection_write(netconn_info_s *conn, char *data, int length);
 void *network_netconn_data_address(netconn_data_s *data);
+
+# endif

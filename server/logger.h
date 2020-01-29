@@ -1,3 +1,6 @@
+# ifndef LOGGER_INCLUDE_GAURD
+# define LOGGER_INCLUDE_GAURD
+
 #include <stdio.h>
 
 #define LOG_DIR_NAME "./logs/"
@@ -20,3 +23,5 @@ typedef struct logger
 logger_s logger_init();
 void logger_cleanup();
 int logger_write_printf(char *string, ...) ;
+
+#endif

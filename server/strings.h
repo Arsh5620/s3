@@ -1,3 +1,6 @@
+# ifndef STRINGS_INCLUDE_GAURD
+# define STRINGS_INCLUDE_GAURD
+
 #include "list.h"
 
 typedef struct buffer_information {
@@ -26,3 +29,5 @@ typedef struct string_process_internal {
 
 void tolowercase(void *memory, int length);
 array_list_s string_key_value_pairs(char *buffer, int length);
+
+#endif
