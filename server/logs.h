@@ -1,5 +1,5 @@
-# ifndef LOGGER_INCLUDE_GAURD
-# define LOGGER_INCLUDE_GAURD
+# ifndef LOGS_INCLUDE_GAURD
+# define LOGS_INCLUDE_GAURD
 
 #include <stdio.h>
 

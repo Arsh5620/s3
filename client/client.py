@@ -1,6 +1,7 @@
 # This is client program for the chat server, please refer to the documentation for the server program. 
 
 import socket
+import time
 
 sock = socket.socket()
 sock.connect((socket.gethostname(), 4096))
@@ -18,5 +19,7 @@ while(1):
     string += "ARSHDEEP"
     sock.send(length.to_bytes(8, byteorder = "little"))
     sock.send(string.encode())
+
+    time.sleep(1)
     # data = sock.recv(4096)
     # print(data)

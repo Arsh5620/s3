@@ -24,6 +24,10 @@
         "fstream": "c",
         "ctime": "c",
         "stdlib.h": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "dbp.h": "c",
+        "strings.h": "c",
+        "binarysearch.h": "c",
+        "logs.h": "c"
     }
 }

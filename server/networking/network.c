@@ -12,7 +12,7 @@
 #include "defines.h"
 #include "network.h"
 #include "../memory.h"
-#include "../logger.h"
+#include "../logs.h"
 // #include <errno.h>
 
 int assert_connection(netconn_info_s *conn

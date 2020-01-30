@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "./networking/defines.h"
-#include "logger.h"
+#include "logs.h"
 #include "binarysearch.h"
 
 int main(int argc, char *argv[])
