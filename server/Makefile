@@ -7,7 +7,8 @@ HEADERFILES=defines.h networking/network.h list.h \
 				./protocol/dbp_protocol.h file.h
 SOURCEFILES=networking/network.c server.c list.c memory.c \
 				hash_table.c dbp.c logs.c strings.c binarysearch.c \
-				./protocol/notification.c ./protocol/create.c ./file.c
+				./protocol/notification.c ./protocol/create.c ./file.c \
+				./protocol/dbp_helpers.c
 OBJFILES=${SOURCEFILES:c=o}
 
 program: $(SOURCEFILES) $(HEADERFILES)

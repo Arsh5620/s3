@@ -78,5 +78,5 @@ void logger_cleanup()
         printf("Could not close the file open for logging.\n");
     
     if(logs.bytes_written == 0)
-        unlink(logs.filename);
+        file_delete(logs.filename);
 }

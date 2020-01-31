@@ -5,7 +5,6 @@
 #include "logs.h"
 #include <string.h>
 #include <unistd.h>
-#include "binarysearch.h"
 #include "./protocol/dbp_protocol.h"
 
 dbp_s dbp_init(unsigned short port)
@@ -44,24 +43,6 @@ void dbp_shutdown_connection(dbp_s protocol
     }
 }
 
-// MAKE SURE THAT THIS LIST IS SORTED
-
-static b_search_string_s actions_supported[4] = 
-    {
-        {"create", 6}
-        , {"notification", 12} 
-        , {"request",7}
-        , {"update", 6}
-    };
-
-// one-to-one mapping to the actions_supported
-enum actions_supported_enum {
-    ACTION_CREATE = 0
-    , ACTION_NOTIFICATION = 1
-    , ACTION_REQUEST = 2
-    , ACTION_UPDATE = 3
-};
- 
 // returns -1 if the client is asking for the connection to be closed.
 int dbp_read(dbp_s *_read)
 {
@@ -89,10 +70,13 @@ int dbp_read(dbp_s *_read)
     int action = 0;
     if(header_list.index > 0)
         action = dbp_headers_action(_read, first_record);
-    else return(-1);
+    else
+        return(-1);
 
-    if(action == -1)
+    if(action == DBP_ACTION_ERR) {
+        dbp_shutdown_connection(*_read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
         return(action);
+    }
 
     int handler = dbp_action_dispatch(_read,action);
     return(0);
@@ -107,6 +91,7 @@ int dbp_action_dispatch(dbp_s *protocol, int action)
         result = dbp_protocol_notification(protocol);
         break;
     case ACTION_CREATE:
+        result = dbp_create(protocol);
         break;
     }
     return(result);
@@ -126,24 +111,7 @@ array_list_s dbp_headers_read(dbp_s *_read, int length)
     return(header_list);
 }
 
-int dbp_headers_action(dbp_s *_read, key_value_pair_s pair)
-{
-    if(memcmp(pair.key, "action", 6) == 0){
-        // now here to check the action that the client is requesting.
-        int action = b_search(actions_supported
-                        , sizeof(actions_supported)/sizeof(b_search_string_s)
-                        , pair.value
-                        , pair.value_length);
 
-        logger_write_printf("action requested: serial code %d", action);
-        if(action != -1) return(action);
-    }
-    
-    logger_write_printf("connection corruption,"
-                            " first key:value was not action.");
-    dbp_shutdown_connection(*_read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
-    return(-1);
-}
 
 /**
  * return: will return "header-size" or "-1" for failure, see "defines.h"

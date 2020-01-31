@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 //file dir make if not exists
 int file_dir_mkine(char *dir_name)
@@ -19,4 +20,9 @@ int file_dir_mkine(char *dir_name)
     }
     
     return(FILE_DIR_ERR_OPEN);
+}
+
+int file_delete(char *filename)
+{
+    return(unlink(filename));
 }

@@ -14,7 +14,7 @@ while(1):
     length = 0
     length |= 0xD040000000000008
     
-    string = "action=notification\nsender=linux-android\n"
+    string = "action=create\nfilename=howareyou\n"
     string += ' ' * (64 - len(string))
     string += "ARSHDEEP"
     sock.send(length.to_bytes(8, byteorder = "little"))

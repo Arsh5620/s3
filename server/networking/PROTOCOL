@@ -86,3 +86,9 @@ important information that does not needs to be saved to any file but
 instead needs to be shown to the server either by a notification popup
 or somewhere where the user will be able to see the information. 
 
+ATTRIBUTES:
+until now we only accept two attributes for a packet. 
+the first attribute is the filename, and the other is crc. 
+
+filenames can be upto 256 chars. 
+crc will be crc32

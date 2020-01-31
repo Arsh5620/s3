@@ -6,5 +6,6 @@
 #define FILE_DIR_ERR_OPEN 0x03
 
 int file_dir_mkine(char *dir_name);
+int file_delete(char *filename);
 
 # endif

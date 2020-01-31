@@ -9,7 +9,8 @@ int dbp_create(dbp_s *protocol)
     // dbp setup the environment before accepting data from connection.
     if (create_setup_environment() == SUCCESS)
     {
-        
+        dbp_common_attribs_s attribs = dbp_attribs_try_find(protocol);
+        printf("%.*s\n", (char*)attribs.filename.address);
     }
     
 }
