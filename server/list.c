@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "list.h"
-#include "./networking/defines.h"
+#include "defines.h"
 
 array_list_s list_new(int default_size, int entry_size)
 {

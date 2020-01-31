@@ -2,12 +2,12 @@
 
 CC=gcc # C language compiler
 CFLAGS=-ggdb3 -Wall -std=c99
-HEADERFILES=networking/defines.h networking/network.h list.h \
+HEADERFILES=defines.h networking/network.h list.h \
 				memory.h hash_table.h dbp.h logs.h strings.h binarysearch.h \
-				./protocol/dbp_protocol.h
+				./protocol/dbp_protocol.h file.h
 SOURCEFILES=networking/network.c server.c list.c memory.c \
 				hash_table.c dbp.c logs.c strings.c binarysearch.c \
-				./protocol/notification.c
+				./protocol/notification.c ./protocol/create.c ./file.c
 OBJFILES=${SOURCEFILES:c=o}
 
 program: $(SOURCEFILES) $(HEADERFILES)

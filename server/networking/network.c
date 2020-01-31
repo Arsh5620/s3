@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "defines.h"
+#include "../defines.h"
 #include "network.h"
 #include "../memory.h"
 #include "../logs.h"

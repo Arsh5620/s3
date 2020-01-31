@@ -1,38 +1,13 @@
-#include "logger.h"
+#include "logs.h"
 #include <time.h>
 #include <stdlib.h>
-#include "networking/defines.h"
-#include <dirent.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "defines.h"
 #include <stdarg.h>
 #include "memory.h"
+#include "file.h"
 
 logger_s logs = {0};
-
-int setup_directory()
-{
-    DIR *dir = opendir(LOG_DIR_NAME);
-    if(dir) {
-        closedir(dir);
-        return(0);
-    }
-    else if (errno == ENOENT) {
-        if(mkdir(LOG_DIR_NAME, S_IRWXU | S_IRGRP | S_IXGRP) != 0) {
-            printf("Creating new directory for logs "
-                    "failed, program will now exit.");
-        }
-        else return(0);
-    }
-    else {
-        printf("Could not open directory for "
-                "writing logs, logging subsystem failed.\n");
-    }
-    return(-1);
-}
-
-int open_file(logger_s *log)
+int open_log_file(logger_s *log)
 {
     time_t datetime = time(NULL);
     
@@ -54,8 +29,13 @@ logger_s logger_init()
 
     logger_s log    = {0};
 
-    if(setup_directory() == -1) return log;
-    open_file(&log);
+    if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
+    { 
+        logger_write_printf("Could not open directory for writing logs, "
+                "logging subsystem unavailable.");
+        return log;
+    }
+    open_log_file(&log);
 
     log.sprint_buffer   = m_calloc(LOG_MAX_SPRINTFBUFFER, "logger.c:logger_init");
     log.init_complete   = SUCCESS;

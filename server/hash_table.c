@@ -1,6 +1,6 @@
 #include "hash_table.h"
 #include "malloc.h"
-#include "./networking/defines.h"
+#include "defines.h"
 
 /**
  * in - the index or the key to use. 

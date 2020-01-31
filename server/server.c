@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "./networking/defines.h"
+#include "defines.h"
 #include "logs.h"
 #include "binarysearch.h"
 

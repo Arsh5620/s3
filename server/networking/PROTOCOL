@@ -42,6 +42,9 @@ STATE CYCLE
 
 Header information required for the protocol. 
 
+All of the bytes have to in reverse order, which mean byte 0 comes last, 
+and byte 8 comes first. 
+
 ***
 The protocol only has a 8 byte header.
 The eight bytes does both setting up the expectations for the

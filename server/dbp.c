@@ -1,7 +1,7 @@
 // device backup protocol
 
 #include "dbp.h"
-#include "networking/defines.h"
+#include "defines.h"
 #include "logs.h"
 #include <string.h>
 #include <unistd.h>
@@ -54,6 +54,7 @@ static b_search_string_s actions_supported[4] =
         , {"update", 6}
     };
 
+// one-to-one mapping to the actions_supported
 enum actions_supported_enum {
     ACTION_CREATE = 0
     , ACTION_NOTIFICATION = 1
@@ -72,7 +73,8 @@ int dbp_read(dbp_s *_read)
         // the header size we have received is 
         // not correct, possible protocol corruption.
         // end connection with the client. 
-        logger_write_printf("connection closed as header invalid.");
+        logger_write_printf("connection closed as header invalid 0x%.16lx."
+                , data.data_u._long);
         dbp_shutdown_connection(*_read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
         return(-1);
     }
@@ -104,8 +106,7 @@ int dbp_action_dispatch(dbp_s *protocol, int action)
     case ACTION_NOTIFICATION:
         result = dbp_protocol_notification(protocol);
         break;
-    
-    default:
+    case ACTION_CREATE:
         break;
     }
     return(result);

@@ -1,5 +1,5 @@
 #include "memory.h"
-#include "./networking/defines.h"
+#include "defines.h"
 
 #include <malloc.h>
 #include <memory.h>
