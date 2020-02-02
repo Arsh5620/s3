@@ -12,14 +12,19 @@ while(1):
     # string = input()
     # length = 1#len(string)
     length = 0
-    length |= 0xD040000000000008
+    length |= 0xD040000000000000
+    filelength = 512000
+    length += (filelength * 64)
     
     string = "action=create\nfilename=howareyou\n"
     string += ' ' * (64 - len(string))
-    string += "ARSHDEEP"
+    
     sock.send(length.to_bytes(8, byteorder = "little"))
     sock.send(string.encode())
 
-    time.sleep(10)
+    stringss = (' ' * (filelength * 64)).encode()
+    
+    sock.send(stringss)
+        
     # data = sock.recv(4096)
     # print(data)

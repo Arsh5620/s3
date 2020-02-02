@@ -1,6 +1,7 @@
 #include "dbp_protocol.h"
 #include "../file.h"
 #include "../defines.h"
+#include <time.h>
 
 int create_setup_environment();
 
@@ -23,10 +24,19 @@ int dbp_create(dbp_s *protocol)
             };
             printf("The file is %ld bytes long. Download started.... \n", fileinfo.size);
 
+            clock_t starttime = clock();
             int fd_error   = 
                 file_download(temp, &protocol->connection, &fileinfo);
+            clock_t endtime = clock();
 
-            printf("The file download status is %d\n", fd_error);
+            double timeelapsed = 
+                (((double)(endtime - starttime)) / CLOCKS_PER_SEC) * 1000;
+
+            int speed = ((fileinfo.size / 1024 / 1024) * (1000 / timeelapsed)) ;
+            printf("The file upload status is %d, and it took %fms, speed: %dMb/s\n"
+                    , fd_error
+                    , timeelapsed
+                    , speed);
         }
     }
     return(FAILED);

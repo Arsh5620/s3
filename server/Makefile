@@ -11,7 +11,7 @@ SOURCEFILES=networking/network.c server.c list.c memory.c \
 				./protocol/dbp_helpers.c
 OBJFILES=${SOURCEFILES:c=o}
 
-program: $(SOURCEFILES) $(HEADERFILES)
+program: $(SOURCEFILES) $(HEADERFILES) clean-logs
 	$(CC) -c $^ $(CFLAGS)
 	$(CC) -o $@ *.o $(CFLAGS)
 
@@ -22,4 +22,4 @@ clean:
 	git clean -xi
 
 clean-logs:
-	rm ./logs/* -ri
+	rm ./logs/* -r

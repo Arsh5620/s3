@@ -17,10 +17,10 @@
 #define FILE_MODE_READAPPEND    "a+"
 
 #define FILE_NAME_MAXLENGTH     256
-#define FILE_DOWNLOAD_BUFFER    (1<<16)
+#define FILE_UPLOAD_BUFFER    (1<<20)
 
-#define FILE_DOWNLOAD_ERR   0x02
-#define FILE_DOWNLOAD_COMPLETE  0x00
+#define FILE_UPLOAD_ERR   0x02
+#define FILE_UPLOAD_COMPLETE  0x00
 
 typedef struct file_write_helper
 {
