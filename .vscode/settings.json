@@ -28,6 +28,9 @@
         "dbp.h": "c",
         "strings.h": "c",
         "binarysearch.h": "c",
-        "logs.h": "c"
+        "logs.h": "c",
+        "cstring": "c",
+        "variant": "c",
+        "string.h": "c"
     }
 }

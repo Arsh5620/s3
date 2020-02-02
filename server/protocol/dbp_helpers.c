@@ -1,5 +1,7 @@
+#include <string.h>
 #include "dbp_protocol.h"
 #include "../binarysearch.h"
+#include "../file.h"
 
 // the function will attempt to find the most common attributes
 // that are mostly used by all the "actions", attributes that 
@@ -7,8 +9,8 @@
 
 static b_search_string_s attribs_supported[2] = 
 {
-    {"filename", 8, .code = ATTRIBS_FILENAME}
-    , {"crc", 3, .code = ATTRIBS_CRC}
+    {"crc", 3, .code = ATTRIBS_CRC}
+    , {"filename", 8, .code = ATTRIBS_FILENAME}
 };
 
 dbp_common_attribs_s dbp_attribs_try_find(dbp_s *protocol)
@@ -28,12 +30,13 @@ dbp_common_attribs_s dbp_attribs_try_find(dbp_s *protocol)
                         , pair.key, pair.key_length);
         
         if(attrib != -1) {
-            switch (attrib)
+            switch (attribs_supported[attrib].code)
             {
             case ATTRIBS_FILENAME:
-                if(pair.value_length > 256 || pair.value_length == 0){
+                if(pair.value_length > FILE_NAME_MAXLENGTH 
+                    || pair.value_length == 0){
                     attributes.filename.error   =
-                                DBP_ATTRIBS_ERR_FILENAME_TOO_LONG;
+                                DBP_ATTRIBS_ERR_NAMETOOLONG;
                 } else {
                     attributes.filename.address = pair.value;
                     attributes.filename.length  = pair.value_length;
@@ -49,6 +52,7 @@ dbp_common_attribs_s dbp_attribs_try_find(dbp_s *protocol)
             }
         }
     }
+    return(attributes);
 }
 
 // MAKE SURE THAT THIS LIST IS SORTED
@@ -71,7 +75,8 @@ int dbp_headers_action(dbp_s *_read, key_value_pair_s pair)
                         , pair.value
                         , pair.value_length);
         if(action != -1)
-            return(DBP_ACTION_ERR);
+            return(action);
     }
     return(DBP_ACTION_ERR);
 }
+

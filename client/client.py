@@ -20,6 +20,6 @@ while(1):
     sock.send(length.to_bytes(8, byteorder = "little"))
     sock.send(string.encode())
 
-    time.sleep(1)
+    time.sleep(10)
     # data = sock.recv(4096)
     # print(data)

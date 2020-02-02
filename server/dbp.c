@@ -3,7 +3,6 @@
 #include "dbp.h"
 #include "defines.h"
 #include "logs.h"
-#include <string.h>
 #include <unistd.h>
 #include "./protocol/dbp_protocol.h"
 

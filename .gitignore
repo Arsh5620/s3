@@ -3,3 +3,4 @@
 program
 program-speed
 server/logs/*
+server/temp/*
