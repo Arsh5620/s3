@@ -11,7 +11,7 @@ int dbp_protocol_notification(dbp_s *protocol)
     printf("Client sent a notification: \n");
     printf("%.*s\n\n", data_read.data_length, (char*)address);
 
-    logger_write_printf("notification: %.*s"
+    logs_write_printf("notification: %.*s"
                             , data_read.data_length, (char*) address);
 
     return(0);

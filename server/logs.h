@@ -20,8 +20,8 @@ typedef struct logger
     char init_complete;
 } logger_s;
 
-logger_s logger_init();
-void logger_cleanup();
-int logger_write_printf(char *string, ...) ;
+logger_s logs_init();
+void logs_cleanup();
+int logs_write_printf(char *string, ...) ;
 
 #endif

@@ -32,7 +32,7 @@ int assert_connection(netconn_info_s *conn
         conn->connection_status = NETWORK_STATUS_ERROR;
         conn->error_code    = error_num;
         
-        logger_write_printf("%s failed with error: %d, errno:%d\n"
+        logs_write_printf("%s failed with error: %d, errno:%d\n"
             , function_string, compare1, error_num);
         
         exit(SERVER_ERROR_REFER_TO_LOGS);

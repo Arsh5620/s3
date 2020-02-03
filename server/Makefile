@@ -11,8 +11,9 @@ SOURCEFILES=networking/network.c server.c list.c memory.c \
 				./protocol/dbp_helpers.c
 OBJFILES=${SOURCEFILES:c=o}
 
-program: $(SOURCEFILES) $(HEADERFILES) clean-logs
-	$(CC) -c $^ $(CFLAGS)
+program: clean-logs
+program: $(SOURCEFILES) $(HEADERFILES)
+	$(CC) -c $(SOURCEFILES) $(CFLAGS)
 	$(CC) -o $@ *.o $(CFLAGS)
 
 program-speed: $(SOURCEFILES) $(HEADERFILES)
@@ -22,4 +23,4 @@ clean:
 	git clean -xi
 
 clean-logs:
-	rm ./logs/* -r
+	cd ./logs/; rm * || echo "No logs to clear";

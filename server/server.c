@@ -6,12 +6,23 @@
 #include "defines.h"
 #include "logs.h"
 #include "binarysearch.h"
+#include "./databases/database.h"
 
 int main(int argc, char *argv[])
 {
-    dbp_s protocol  = dbp_init(APPLICATION_PORT);
-    dbp_accept_connection_loop(&protocol);
-    dbp_cleanup(protocol);
+    database_connection_s conninfo;
+    conninfo.db     = NULL;
+    conninfo.host   = NULL; // localhost assumed
+    conninfo.port   = 3306;
+    conninfo.user   = "arsh";
+    conninfo.passwd = "p@ssw0rd";
+    database_init(conninfo);
+
+    // dbp_s protocol  = dbp_init(APPLICATION_PORT);
+    // dbp_accept_connection_loop(&protocol);
+    // dbp_cleanup(protocol);
+
+
     // logger_init();
     // char *string = "Hello, world!%s, %s, %s, %s\n", * string2 = "how are you";
     // char *string3 = "What the fuck", *string4="I like jaspinder", *string5="But I know she doesn't";

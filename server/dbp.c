@@ -10,8 +10,8 @@ dbp_s dbp_init(unsigned short port)
 {
     dbp_s protocol = {0};
 
-    logger_init();
-    logger_write_printf("starting protocol initialization ...");
+    logs_init();
+    logs_write_printf("starting protocol initialization ...");
 
     protocol.connection = network_connect_init_sync(port);
     return(protocol);
@@ -19,9 +19,9 @@ dbp_s dbp_init(unsigned short port)
 
 void dbp_accept_connection_loop(dbp_s *protocol)
 {
-    logger_write_printf("waiting for the client to connect ...");
+    logs_write_printf("waiting for the client to connect ...");
     while (network_connect_accept_sync(&(protocol->connection)) == SUCCESS) {
-        logger_write_printf("client connected: %s : %d"
+        logs_write_printf("client connected: %s : %d"
             , inet_ntoa(protocol->connection.client_socket.sin_addr)
             , ntohs(protocol->connection.client_socket.sin_port)); 
 
@@ -31,14 +31,14 @@ void dbp_accept_connection_loop(dbp_s *protocol)
 
         dbp_shutdown_connection(*protocol, DBP_CONNECT_SHUTDOWN_FLOW);
     }
-    logger_write_printf("network_connect_accept_sync failed: %s, %d.", __FILE__, __LINE__);
+    logs_write_printf("network_connect_accept_sync failed: %s, %d.", __FILE__, __LINE__);
 }
 
 void dbp_shutdown_connection(dbp_s protocol
             , enum connection_shutdown_type reason)
 {
     if(close(protocol.connection.client) == 0){
-        logger_write_printf("client connection closed: reason(%d)", reason);
+        logs_write_printf("client connection closed: reason(%d)", reason);
     }
 }
 
@@ -53,7 +53,7 @@ int dbp_read(dbp_s *_read)
         // the header size we have received is 
         // not correct, possible protocol corruption.
         // end connection with the client. 
-        logger_write_printf("connection closed as header invalid 0x%.16lx."
+        logs_write_printf("connection closed as header invalid 0x%.16lx."
                 , data.data_u._long);
         dbp_shutdown_connection(*_read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
         return(-1);
@@ -130,6 +130,6 @@ long int dbp_data_length(unsigned long magic)
 
 void dbp_cleanup(dbp_s protocol_handle)
 {
-    logger_cleanup();
+    logs_cleanup();
     return;
 }

@@ -1,0 +1,36 @@
+This is a readme for how the databases will be setup and how the relationships
+between all the information will be defined. 
+
+The most information that we will need will be the listed below
+
+please make sure to compile the program with link to library openssl for md5 
+"-lssl"
+
+TABLE ONE: 
+folder name: string
+file name: string
+file modification date: date
+file upload date: date
+file last access: date
+file last modified: date 
+file delete date: date
+file size: size_t
+file MD5: https://stackoverflow.com/questions/1220046/how-to-get-the-md5-hash-of-a-file-in-c
+permissions: (linux UGO)
+owner name: 20 chars max. 
+
+
+MYSQL:
+
+ Application programs should use this general outline for interacting with MySQL:
+
+    Initialize the MySQL client library by calling mysql_library_init().
+
+    Initialize a connection handler by calling mysql_init() and connect to the server by calling mysql_real_connect().
+
+    Issue SQL statements and process their results. (The following discussion provides more information about how to do this.)
+
+    Close the connection to the MySQL server by calling mysql_close().
+
+    End use of the MySQL client library by calling mysql_library_end(). 
+

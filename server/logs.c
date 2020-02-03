@@ -23,7 +23,7 @@ int open_log_file(logger_s *log)
     return(0);
 }
 
-logger_s logger_init()
+logger_s logs_init()
 {
     if(logs.init_complete == SUCCESS) return logs;
 
@@ -31,7 +31,7 @@ logger_s logger_init()
 
     if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
     { 
-        logger_write_printf("Could not open directory for writing logs, "
+        logs_write_printf("Could not open directory for writing logs, "
                 "logging subsystem unavailable.");
         return log;
     }
@@ -43,7 +43,7 @@ logger_s logger_init()
     return(log);
 }
 
-int logger_write_printf(char *string, ...) 
+int logs_write_printf(char *string, ...) 
 {
     va_list variable_args;
     va_start(variable_args, string);
@@ -69,7 +69,7 @@ int logger_write_printf(char *string, ...)
     return(logs.bytes_written - bytes_written);
 }
 
-void logger_cleanup()
+void logs_cleanup()
 {
     m_free(logs.filename, "logger.c:logger_cleanup");
     m_free(logs.sprint_buffer, "logger.c:logger_cleanup");

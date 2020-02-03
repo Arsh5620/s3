@@ -7,39 +7,58 @@ int create_setup_environment();
 
 int dbp_create(dbp_s *protocol)
 {
-    char tempfile[FILE_NAME_MAXLENGTH];
     // dbp setup the environment before accepting data from connection.
     if (create_setup_environment() == SUCCESS)
     {
         dbp_common_attribs_s attribs = dbp_attribs_try_find(protocol);
-        if(attribs.filename.error == 0) {
-            int length  = sprintf(tempfile, DBP_TEMP_FILE_FORMAT
-                            , DBP_FILE_TEMP_DIR
-                            , (char*)attribs.filename.address);
-            FILE *temp  = file_open(tempfile, length, FILE_MODE_WRITEONLY);
-            file_write_s fileinfo  = 
-            {
-                .current = 0
-                , .size = dbp_data_length(protocol->header_magic_now)
-            };
-            printf("The file is %ld bytes long. Download started.... \n", fileinfo.size);
-
-            clock_t starttime = clock();
-            int fd_error   = 
-                file_download(temp, &protocol->connection, &fileinfo);
-            clock_t endtime = clock();
-
-            double timeelapsed = 
-                (((double)(endtime - starttime)) / CLOCKS_PER_SEC) * 1000;
-
-            int speed = ((fileinfo.size / 1024 / 1024) * (1000 / timeelapsed)) ;
-            printf("The file upload status is %d, and it took %fms, speed: %dMb/s\n"
-                    , fd_error
-                    , timeelapsed
-                    , speed);
-        }
+        
     }
     return(FAILED);
+}
+
+file_write_s create_download_file(dbp_s *protocol, dbp_string_s *filename)
+{
+    file_write_s fileinfo  =  {0};
+    fileinfo.size = dbp_data_length(protocol->header_magic_now);
+
+    char temp_file[FILE_NAME_MAXLENGTH];
+
+    if(filename->error == 0) {
+        int length  = sprintf(temp_file, DBP_TEMP_FILE_FORMAT
+                                , DBP_FILE_TEMP_DIR
+                                , filename->length
+                                , (char*)filename->address);
+
+        dbp_common_attribs_s attribs = dbp_attribs_try_find(protocol);
+    
+        dbp_string_s original  = attribs.filename;
+        FILE *temp  = file_open(temp_file
+                                    , length
+                                    , FILE_MODE_WRITEONLY);
+
+        
+        logs_write_printf("file name \"%.*s\" upload for %ld bytes...."
+                , original.length , original.address , fileinfo.size);
+
+        clock_t starttime = clock();
+        int download_status   = 
+            file_download(temp, &protocol->connection, &fileinfo);
+        clock_t endtime = clock();
+
+        double time_elapsed = 
+            (((double)(endtime - starttime)) / CLOCKS_PER_SEC) * 1000;
+
+        // speed is download size in bytes / 1MB 
+        // * number of times we can download this file in seconds
+        int speed = ((fileinfo.size / 1024 / 1024) 
+                        * (1000 / time_elapsed));
+
+        logs_write_printf(
+                "The file name \"%.*s\" has been uploaded with status"
+                ":(%d) in %.3f ms @ speed: %dMB/s"
+                , length, temp_file , download_status
+                , time_elapsed , speed);
+    }
 }
 
 // create:: setup_environment
@@ -48,7 +67,7 @@ int create_setup_environment()
     // first make sure the temporary file directory exists. 
     if(file_dir_mkine(DBP_FILE_TEMP_DIR) != FILE_DIR_EXISTS)
     {
-        logger_write_printf("could not open \"" DBP_FILE_TEMP_DIR 
+        logs_write_printf("could not open \"" DBP_FILE_TEMP_DIR 
                 "\" dir, check if the program has appropriate "
                 "permissions.");
         return(FAILED);

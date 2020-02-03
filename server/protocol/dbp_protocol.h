@@ -8,7 +8,8 @@
 #define DBP_ACTION_ERR  -1
 #define DBP_ATTRIBS_ERR_NAMETOOLONG   0x0003
 #define DBP_ATTRIBS_ERR_CRC32NOTFOUND       0x0004
-#define DBP_TEMP_FILE_FORMAT    "%s/%.20s.temp"
+
+#define DBP_TEMP_FILE_FORMAT "%s/%.*s"
 
 typedef struct dbp_attrib_type {
     void *address;
