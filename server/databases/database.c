@@ -3,8 +3,18 @@
 #include <stdlib.h>
 #include "database.h"
 #include "../defines.h"
+#include "../binarysearch.h"
 
 static MYSQL *sql_connection;
+
+b_search_string_s config_property[5] = {
+    {"database", 8, CONFIG_DATABASE}
+    , {"machine", 7, CONFIG_MACHINE}
+    , {"password", 8, CONFIG_PASSWORD}
+    , {"port", 4, CONFIG_PORT}
+    , {"username", 8, CONFIG_USERNAME}
+};
+
 
 // after database_init is called a static variable sql_connection
 // is initialized to the connection information and a mysql db 

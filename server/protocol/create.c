@@ -59,6 +59,7 @@ file_write_s create_download_file(dbp_s *protocol, dbp_string_s *filename)
                 , length, temp_file , download_status
                 , time_elapsed , speed);
     }
+    return(fileinfo);
 }
 
 // create:: setup_environment

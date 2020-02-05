@@ -6,12 +6,21 @@
 
 typedef struct sql_connection_information
 {
-    const char *host;
-	const char *user;
-	const char *passwd;
-	const char *db;
+    const char host[32];
+	const char user[32];
+	const char passwd[32];
+	const char db[32];
 	unsigned int port;
 } database_connection_s;
+
+
+enum config_types {
+    CONFIG_USERNAME
+    , CONFIG_PASSWORD
+    , CONFIG_DATABASE
+    , CONFIG_MACHINE
+    , CONFIG_PORT
+};
 
 #define DATABASE_SETUP_COMPLETE 0
 

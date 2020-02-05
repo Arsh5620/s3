@@ -7,16 +7,15 @@
 #include "logs.h"
 #include "binarysearch.h"
 #include "./databases/database.h"
+#include "./config.h"
 
 int main(int argc, char *argv[])
 {
-    database_connection_s conninfo;
-    conninfo.db     = NULL;
-    conninfo.host   = NULL; // localhost assumed
-    conninfo.port   = 3306;
-    conninfo.user   = "arsh";
-    conninfo.passwd = "p@ssw0rd";
-    database_init(conninfo);
+    database_connection_s conninfo  = config_parse_dbc("CONFIGFORMAT");
+
+    printf("The parsing should have been completed by now.");
+    
+    int result  = database_init(conninfo);
 
     // dbp_s protocol  = dbp_init(APPLICATION_PORT);
     // dbp_accept_connection_loop(&protocol);

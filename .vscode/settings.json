@@ -31,6 +31,8 @@
         "logs.h": "c",
         "cstring": "c",
         "variant": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "file.h": "c",
+        "unistd.h": "c"
     }
 }

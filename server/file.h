@@ -2,6 +2,8 @@
 # define FILE_INCLUDE_GAURD
 
 #include <stdio.h>
+#include <sys/stat.h>
+
 #include "./networking/network.h"
 
 #define FILE_DIR_EXISTS 0x00
@@ -22,11 +24,31 @@
 #define FILE_UPLOAD_ERR   0x02
 #define FILE_UPLOAD_COMPLETE  0x00
 
+#define FILE_READER_SUCCESS 0x00
+#define FILE_READER_UNSUCCESSFUL    0x01
+
+#define FILE_READER_BUFFERLENGTH    0x1000
+
 typedef struct file_write_helper
 {
     size_t current;
     size_t size;
 } file_write_s;
+
+typedef struct file_buffered_reader
+{
+    FILE *file;
+    size_t index;
+    struct stat stats;    
+
+    void *reader_malloc;
+    int reader_index
+        , reader_readlength
+        , reader_length;
+
+    char eof;
+} file_reader_s;
+
 
 int file_dir_mkine(char *dir_name);
 int file_delete(char *filename);
@@ -34,5 +56,10 @@ FILE *file_open(char *name, int length, char *mode);
 int file_download(FILE *file
                     , netconn_info_s *network
                     , file_write_s *info);
+
+struct stat file_read_stat(FILE *file);
+file_reader_s file_init_reader(FILE *file);
+void file_close_reader(file_reader_s *reader);
+int file_reader_fill(file_reader_s *reader);
 
 # endif
