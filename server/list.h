@@ -12,7 +12,9 @@ typedef struct array_list {
 
 #define DEFAULT_MEMORY_INCREASE 128
 
+#ifndef _list_h_ // include gaurd for mariadb list_push
 array_list_s list_new(int, int);
 void *list_get(array_list_s, int);
 unsigned int list_push(array_list_s *, void *);
+#endif
 #endif

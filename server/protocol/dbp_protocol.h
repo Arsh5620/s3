@@ -11,14 +11,8 @@
 
 #define DBP_TEMP_FILE_FORMAT "%s/%.*s"
 
-typedef struct dbp_attrib_type {
-    void *address;
-    int length;
-    int error;
-} dbp_string_s;
-
 typedef struct dbp_common_attribs {
-    dbp_string_s filename;
+    string_s filename;
     unsigned int crc32;
 } dbp_common_attribs_s;
 
@@ -38,3 +32,4 @@ enum attribs_supported_enum {
 int dbp_protocol_notification(dbp_s *protocol);
 int dbp_create(dbp_s *protocol);
 dbp_common_attribs_s dbp_attribs_try_find(dbp_s *protocol);
+file_write_s create_download_file(dbp_s *protocol, string_s *filename);

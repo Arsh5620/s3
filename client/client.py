@@ -13,7 +13,7 @@ while(1):
     # length = 1#len(string)
     length = 0
     length |= 0xD040000000000000
-    filelength = 512000
+    filelength = 32
     length += (filelength * 64)
     
     string = "action=create\nfilename=howareyou\n"
@@ -22,9 +22,10 @@ while(1):
     sock.send(length.to_bytes(8, byteorder = "little"))
     sock.send(string.encode())
 
-    stringss = (' ' * (filelength * 64)).encode()
+    stringss = ('A' * (filelength * 64)).encode()
     
     sock.send(stringss)
-        
+    
+    time.sleep(10)
     # data = sock.recv(4096)
     # print(data)

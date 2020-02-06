@@ -20,7 +20,7 @@ all: link-program clean-logs
 
 program: clean-logs
 $(OBJFILES): %.o: %.c
-	$(CC) -c $< $(CFLAGS) -o $(OBJDIR)`basename $@`
+	@$(CC) -c $< $(CFLAGS) -o $(OBJDIR)`basename $@`
 
 link-program: mkobjdir $(OBJFILES)
 	$(CC) -o $(EXECUTABLE) $(OBJDIR)*.o $(LINKFLAGS)

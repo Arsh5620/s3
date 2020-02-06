@@ -11,12 +11,17 @@ int dbp_create(dbp_s *protocol)
     if (create_setup_environment() == SUCCESS)
     {
         dbp_common_attribs_s attribs = dbp_attribs_try_find(protocol);
-        
+        if(attribs.filename.address == 0 || attribs.filename.length == 0)
+            return(FAILED);
+
+        file_write_s w_info = 
+            create_download_file(protocol, &attribs.filename);
+
     }
     return(FAILED);
 }
 
-file_write_s create_download_file(dbp_s *protocol, dbp_string_s *filename)
+file_write_s create_download_file(dbp_s *protocol, string_s *filename)
 {
     file_write_s fileinfo  =  {0};
     fileinfo.size = dbp_data_length(protocol->header_magic_now);
@@ -26,12 +31,12 @@ file_write_s create_download_file(dbp_s *protocol, dbp_string_s *filename)
     if(filename->error == 0) {
         int length  = sprintf(temp_file, DBP_TEMP_FILE_FORMAT
                                 , DBP_FILE_TEMP_DIR
-                                , filename->length
+                                , (int)filename->length
                                 , (char*)filename->address);
 
         dbp_common_attribs_s attribs = dbp_attribs_try_find(protocol);
     
-        dbp_string_s original  = attribs.filename;
+        string_s original  = attribs.filename;
         FILE *temp  = file_open(temp_file
                                     , length
                                     , FILE_MODE_WRITEONLY);

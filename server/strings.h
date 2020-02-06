@@ -10,6 +10,12 @@ typedef struct buffer_information {
     char comment_break;
 } string_info_s;
  
+ typedef struct string_struct {
+    void *address;
+    long int length;
+    int error;
+} string_s;
+
 typedef struct key_value_pair {
     char *key;
     char *value;

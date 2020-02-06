@@ -1,6 +1,6 @@
-#include <mysql.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "database.h"
 #include "../defines.h"
 #include "../binarysearch.h"
@@ -104,4 +104,112 @@ int database_check_tables()
         return(database_create_tables());
     }
     return(MYSQL_SUCCESS);
+}
+
+int database_insert_table1(database_table1_s table)
+{
+    MYSQL_STMT *stmt = mysql_stmt_init(sql_connection);
+    MYSQL_BIND bind_params[11]  = {0};
+    my_bool is_null[11] = {0};
+    my_bool is_error[11] = {0};
+    
+    int result  = mysql_stmt_prepare(stmt, DATABASE_TABLE1_INSERT
+                                        , strlen(DATABASE_TABLE1_INSERT));
+
+    //folder name
+    database_bind_param(&bind_params[0]
+        , MYSQL_TYPE_VARCHAR
+        , table.folder_name.address
+        , (unsigned long*) &table.folder_name.length
+        , &is_null[0]
+        , &is_error[0]);
+
+    //file name
+    database_bind_param(&bind_params[1]
+        , MYSQL_TYPE_VARCHAR
+        , table.folder_name.address
+        , (unsigned long*) &table.folder_name.length
+        , &is_null[1]
+        , &is_error[1]);
+
+    //all date and time values.
+    MYSQL_TIME *times[5] = {
+        &table.file_md
+        , &table.file_ud
+        , &table.file_la
+        , &table.file_lm
+        , &table.file_dd
+    };
+    unsigned long int lengths[5] = {0};
+
+    database_bind_multiple(&bind_params[3], 5
+        , MYSQL_TYPE_TIME, (char**)&times
+        , lengths + 3, is_null + 3, is_error + 3);
+
+     database_bind_param(&bind_params[8]
+        , MYSQL_TYPE_LONG
+        , (char*)&table.file_size
+        , 0
+        , &is_null[8]
+        , &is_error[8]);
+
+    unsigned long int md5len  = sizeof(table.file_md5);
+    database_bind_param(&bind_params[9]
+        , MYSQL_TYPE_VARCHAR
+        , (char*)table.file_md5
+        , &md5len
+        , &is_null[9]
+        , &is_error[9]);
+
+    database_bind_param(&bind_params[10]
+        , MYSQL_TYPE_LONG
+        , (char*)&table.permissions
+        , 0
+        , &is_null[10]
+        , &is_error[10]);
+
+    unsigned long int ownerlen  = sizeof(table.owner);
+    database_bind_param(&bind_params[11]
+        , MYSQL_TYPE_VARCHAR
+        , table.owner
+        , &ownerlen
+        , &is_null[11]
+        , &is_error[11]);
+
+    return(mysql_stmt_execute(stmt));
+}
+
+void database_bind_multiple(MYSQL_BIND *bind_start_address
+    , int count
+    , enum enum_field_types type
+    , char **buffer_pp
+    , unsigned long int *length
+    , my_bool *is_null
+    , my_bool *error)
+{
+    for(int i=0; i<count; ++i) {
+        database_bind_param(&bind_start_address[i]
+            , type
+            , buffer_pp[i]
+            , &length[i]
+            , &is_null[i]
+            , &error[i]);
+    }
+}
+
+void database_bind_param(MYSQL_BIND *bind
+    , enum enum_field_types type
+    , char *buffer_pointer
+    , unsigned long int *length
+    , my_bool *is_null
+    , my_bool *error)
+{
+  if(buffer_pointer == 0)
+    *is_null    = 1;
+
+  bind->buffer_type  = type;
+  bind->buffer   = buffer_pointer;
+  bind->is_null  = is_null;
+  bind->length   = length;
+  bind->error    = error;
 }
