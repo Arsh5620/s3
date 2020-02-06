@@ -29,7 +29,7 @@ mkobjdir:
 	@mkdir -p ./objects/
 
 clean: 
-	git clean -xi
+	git clean -xid
 
 clean-logs:
 	@cd ./logs/ && rm * -I || echo "No logs to clear";
