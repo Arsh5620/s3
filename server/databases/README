@@ -19,6 +19,8 @@ file MD5: https://stackoverflow.com/questions/1220046/how-to-get-the-md5-hash-of
 permissions: (linux UGO)
 owner name: 20 chars max. 
 
+create table dbp_file_information (folder_name varchar(256), file_name varchar(256), file_md DATE, file_ud DATE, file_la DATE, file_lm DATE, file_dd DATE, file_size long, file_md5 varchar(32), permission long, owner varchar(32));
+
 
 MYSQL:
 

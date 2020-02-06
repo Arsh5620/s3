@@ -13,10 +13,12 @@ int main(int argc, char *argv[])
 {
     database_connection_s conninfo  = config_parse_dbc("CONFIGFORMAT");
 
-    printf("The parsing should have been completed by now.");
-    
     int result  = database_init(conninfo);
 
+    int integrity   = database_verify_integrity();
+
+    if(integrity == MYSQL_SUCCESS)
+        printf("mysql integrity check PASS, client ready ..\n");
     // dbp_s protocol  = dbp_init(APPLICATION_PORT);
     // dbp_accept_connection_loop(&protocol);
     // dbp_cleanup(protocol);

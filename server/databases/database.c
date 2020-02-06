@@ -43,3 +43,65 @@ int database_init(database_connection_s connect)
 
     return(DATABASE_SETUP_COMPLETE);
 }
+
+int database_verify_integrity()
+{
+    printf("db integrity check started ..\n");
+
+    int connection_enabled  = mysql_ping(sql_connection);
+    if(connection_enabled == 0){
+        printf("connection to the server was successful ..\n");
+        printf("server version %s\n"
+                , mysql_get_server_info(sql_connection));
+    }
+    if(MYSQL_SUCCESS == mysql_query(sql_connection
+        , "CREATE DATABASE IF NOT EXISTS " DATABASE_DB_NAME))
+    {
+        size_t  db_created  = mysql_affected_rows(sql_connection);
+
+        if(MYSQL_SUCCESS != 
+                mysql_select_db(sql_connection, DATABASE_DB_NAME)) {
+            printf("failed to select the correct database ..");
+            return(MYSQL_ERROR);
+        }
+
+        if(db_created){
+            printf("database not found,"
+                    " created database \""DATABASE_DB_NAME"\" ..\n");
+            return(database_create_tables());
+        } else {
+            printf("database found ..\n");
+            return(database_check_tables());
+        }
+    } else {
+        printf("checking database failed, \"CREATE\""
+                " access required for the user\n");
+    }
+    return(MYSQL_ERROR);
+}
+
+int database_create_tables()
+{
+    if (mysql_query(sql_connection, DATABASE_TABLE_1) == MYSQL_SUCCESS) {
+        printf("table " DATABASE_TABLE_NAME " created ..\n");
+    } else {
+        fprintf(stderr, "table \"" DATABASE_TABLE_NAME 
+        "\" could not be created ..\n");
+        fprintf(stderr, "Error: %s\n", mysql_error(sql_connection));
+        return(MYSQL_ERROR);
+    }
+    return(MYSQL_SUCCESS);
+}
+
+int database_check_tables()
+{
+    if (mysql_query(sql_connection, DATABASE_TABLE_CHECKEXISTS1) 
+            == MYSQL_SUCCESS) {
+        printf("table \"" DATABASE_TABLE_NAME "\" also found ..\n");
+    } else {
+        printf("table \"" DATABASE_TABLE_NAME 
+                    "\" not found, creating ..\n");
+        return(database_create_tables());
+    }
+    return(MYSQL_SUCCESS);
+}

@@ -32,4 +32,4 @@ clean:
 	git clean -xi
 
 clean-logs:
-	@cd ./logs/; rm *|| echo "No logs to clear";
+	@cd ./logs/ && rm * -I || echo "No logs to clear";
