@@ -9,7 +9,7 @@ please make sure to compile the program with link to library openssl for md5
 TABLE ONE: 
 folder name: string
 file name: string
-file modification date: date
+file create date: date
 file upload date: date
 file last access: date
 file last modified: date 

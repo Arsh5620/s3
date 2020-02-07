@@ -16,11 +16,25 @@ int main(int argc, char *argv[])
     int integrity   = database_verify_integrity();
 
     database_table1_s row = {0};
+    row.folder_name = (string_s) {
+        (void*)"./tmpfolder/magicmushroom" ,26 ,0 
+    };
     row.file_name  = (string_s){ (void*)"filename", 8, 0};
-    row.file_size   = 0;
+    row.file_size   = 128;
+    row.permissions = 777;
+
+    memcpy(row.owner, "arshdeep", 8);
+    row.file_ud.year    = 2020;
+    row.file_ud.month   = 1;
+    row.file_ud.day     = 21;
+    row.file_times_set |= DATETIME_UPLOAD_DATE;
     
-    result = database_insert_table1(row);
+    db_table_stmt_s *table1  = database_table1_bind_get(&row);
+    
+    result = database_insert_table1(row, table1);
+    database_table1_bind_free(table1);
     printf("%d is returned\n", result);
+
     // dbp_s protocol  = dbp_init(APPLICATION_PORT);
     // dbp_accept_connection_loop(&protocol);
     // dbp_cleanup(protocol);

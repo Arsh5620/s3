@@ -12,7 +12,7 @@ typedef struct buffer_information {
  
  typedef struct string_struct {
     void *address;
-    long int length;
+    unsigned long int length;
     int error;
 } string_s;
 

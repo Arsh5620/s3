@@ -2,7 +2,7 @@
 
 CC=gcc # C language compiler
 CFLAGS=-ggdb3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
-LINKFLAGS=-lmysqlclient
+LINKFLAGS=-lmariadb
 HEADERFILES=defines.h networking/network.h list.h \
 				memory.h hash_table.h dbp.h logs.h strings.h binarysearch.h \
 				./protocol/dbp_protocol.h file.h ./databases/database.h \

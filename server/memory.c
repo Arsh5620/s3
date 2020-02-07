@@ -120,31 +120,38 @@ void m_print_dbg()
     printf("MEMDBG ALLOCATIONS:\n\n");
     for(size_t i=0; i<store.allocations.index; ++i){
         mdbg_alloc_s j = (*(mdbg_alloc_s*)list_get(store.allocations, i));
-        printf("MEMDBG allocation # %ld ::\naddress: %p\nallocating function: %s\nrequest type:"
-                    " %d\nrequested size: %d\noriginal address (if"
-                    " applicable): %p\n", i, j.address, j.function_name
+        printf("MEMDBG allocation # %ld ::\naddress: %p\n"
+                    "allocating function: %s\nrequest type: %d\n"
+                    "requested size: %d\noriginal address (if "
+                    "applicable): %p\n", i, j.address, j.function_name
                     , j.request_type, j.size_requested, j.original_address);
 
-        printf("*** memory at the location %p starts with ***\n%s\n*** ***\n\n"
-                    , j.address, (char*) j.address);
+        printf("*** memory at the location %p starts with ***\n%.*s\n*** ***\n\n"
+                    , j.address
+                    , j.size_requested > 100 ? 100: j.size_requested
+                    , (char*) j.address);
     }
 }
 
 #else
 
-void m_free(void *address, char *fn_name)
+void inline m_free(void *address, char *fn_name)
 {
     free(address);
 }
 
-void *m_malloc(size_t size, char *fn_name)
+void inline *m_malloc(size_t size, char *fn_name)
 {
     return malloc(size);
 }
 
-void *m_realloc(void *address, int size, char *fn_name)
+void inline *m_realloc(void *address, int size, char *fn_name)
 {
     return realloc(address, size);
+}
+void inline *m_calloc(size_t size, char *fn_name)
+{
+    return calloc(size, 1);
 }
 
 #endif //DEBUG_MEMORY == 1

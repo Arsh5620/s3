@@ -37,7 +37,7 @@ enum config_types {
 "CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_NAME \
 " (folder_name VARCHAR(256)\
 , file_name VARCHAR(256)\
-, file_md DATE\
+, file_cd DATE\
 , file_ud DATE\
 , file_la DATE\
 , file_lm DATE\
@@ -47,28 +47,63 @@ enum config_types {
 , permission BIGINT\
 , owner VARCHAR(32));"
 
+enum datetime_values_set {
+    DATETIME_CREATE_DATE    = 0b00001
+    , DATETIME_UPLOAD_DATE  = 0b00010
+    , DATETIME_LASTACCESS_DATE  = 0b00100
+    , DATETIME_LASTCHANGE_DATE  = 0b01000
+    , DATETIME_DELETION_DATE    = 0b10000
+};
 typedef struct database_table1
 {
     string_s folder_name;
     string_s file_name;
-    MYSQL_TIME file_md;
+    MYSQL_TIME file_cd;
     MYSQL_TIME file_ud;
     MYSQL_TIME file_la;
     MYSQL_TIME file_lm;
     MYSQL_TIME file_dd;
+    enum datetime_values_set file_times_set;
     size_t file_size;
     char file_md5[32];
     size_t permissions;
     char owner[32];
 } database_table1_s;
 
+enum schema_table1_index {
+    TABLE1_INDEX_FOLDER_NAME    = 0
+    , TABLE1_INDEX_FILE_NAME    = 1
+    , TABLE1_INDEX_FILE_CD  = 2
+    , TABLE1_INDEX_FILE_UD  = 3
+    , TABLE1_INDEX_FILE_LA  = 4
+    , TABLE1_INDEX_FILE_LM  = 5
+    , TABLE1_INDEX_FILE_DD  = 6
+    , TABLE1_INDEX_FILE_SIZE    = 7
+    , TABLE1_INDEX_FILE_MD5 = 8
+    , TABLE1_INDEX_PERMISSIONS  = 9
+    , TABLE1_INDEX_OWNER    = 10
+};
 
 #define DATABASE_TABLE_CHECKEXISTS1 \
 "SELECT COUNT(*) AS 'a' FROM dbp_file_information;"
 
 #define DATABASE_TABLE1_INSERT \
-"INSERT INTO dbp_file_information "\
-"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+"INSERT INTO "DATABASE_TABLE_NAME" "\
+"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+
+#define DATABASE_TABLE1_COLUMNCOUNT 11
+#define DATABASE_FOLDERNAME_LEN 256
+#define DATABASE_FILENAME_LEN 256
+
+typedef struct database_table_stmt_group {
+    my_bool is_null[DATABASE_TABLE1_COLUMNCOUNT];
+    my_bool is_error[DATABASE_TABLE1_COLUMNCOUNT];
+    enum enum_field_types types[DATABASE_TABLE1_COLUMNCOUNT];
+    unsigned long int length[DATABASE_TABLE1_COLUMNCOUNT];
+    unsigned long int *length_ptrs[DATABASE_TABLE1_COLUMNCOUNT];
+    char *buffers[DATABASE_TABLE1_COLUMNCOUNT];
+    MYSQL_BIND bind_params[DATABASE_TABLE1_COLUMNCOUNT];
+} db_table_stmt_s;
 
 int database_init(database_connection_s connect);
 int database_verify_integrity();
@@ -83,14 +118,14 @@ void database_bind_param(MYSQL_BIND *bind
     , my_bool *is_null
     , my_bool *error);
 
-void database_bind_multiple(MYSQL_BIND *bind_start_address
-    , int count
-    , enum enum_field_types type
-    , char **buffer_pp
-    , unsigned long int *length
-    , my_bool *is_null
-    , my_bool *error);
+int database_insert_table1(
+    database_table1_s table
+    , db_table_stmt_s * table1);
 
-int database_insert_table1(database_table1_s table);
+db_table_stmt_s *database_table1_bind_get(database_table1_s *table);
+void database_table1_bind_free(db_table_stmt_s *table);
+
+database_table1_s *database_table1_allocate();
+void database_table1_free(database_table1_s *table);
 
 #endif

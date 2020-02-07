@@ -4,6 +4,7 @@
 #include "database.h"
 #include "../defines.h"
 #include "../binarysearch.h"
+#include "../memory.h"
 
 static MYSQL *sql_connection;
 
@@ -95,8 +96,14 @@ int database_create_tables()
 
 int database_check_tables()
 {
-    if (mysql_query(sql_connection, DATABASE_TABLE_CHECKEXISTS1) 
-            == MYSQL_SUCCESS) {
+    int query   = 
+        mysql_query(sql_connection, DATABASE_TABLE_CHECKEXISTS1);
+
+    MYSQL_RES *result = mysql_store_result(sql_connection);
+    mysql_free_result(result); 
+    // required to clear the session for next query
+
+    if (query == MYSQL_SUCCESS) {
         printf("table \"" DATABASE_TABLE_NAME "\" also found ..\n");
     } else {
         printf("table \"" DATABASE_TABLE_NAME 
@@ -106,95 +113,156 @@ int database_check_tables()
     return(MYSQL_SUCCESS);
 }
 
-int database_insert_table1(database_table1_s table)
+void database_set_isnull(char flags, my_bool *is_null)
 {
-    MYSQL_STMT *stmt = mysql_stmt_init(sql_connection);
-    MYSQL_BIND bind_params[11]  = {0};
-    my_bool is_null[11] = {0};
-    my_bool is_error[11] = {0};
-    
-    int result  = mysql_stmt_prepare(stmt, DATABASE_TABLE1_INSERT
-                                        , strlen(DATABASE_TABLE1_INSERT));
-
-    //folder name
-    database_bind_param(&bind_params[0]
-        , MYSQL_TYPE_VARCHAR
-        , table.folder_name.address
-        , (unsigned long*) &table.folder_name.length
-        , &is_null[0]
-        , &is_error[0]);
-
-    //file name
-    database_bind_param(&bind_params[1]
-        , MYSQL_TYPE_VARCHAR
-        , table.folder_name.address
-        , (unsigned long*) &table.folder_name.length
-        , &is_null[1]
-        , &is_error[1]);
-
-    //all date and time values.
-    MYSQL_TIME *times[5] = {
-        &table.file_md
-        , &table.file_ud
-        , &table.file_la
-        , &table.file_lm
-        , &table.file_dd
-    };
-    unsigned long int lengths[5] = {0};
-
-    database_bind_multiple(&bind_params[3], 5
-        , MYSQL_TYPE_TIME, (char**)&times
-        , lengths + 3, is_null + 3, is_error + 3);
-
-     database_bind_param(&bind_params[8]
-        , MYSQL_TYPE_LONG
-        , (char*)&table.file_size
-        , 0
-        , &is_null[8]
-        , &is_error[8]);
-
-    unsigned long int md5len  = sizeof(table.file_md5);
-    database_bind_param(&bind_params[9]
-        , MYSQL_TYPE_VARCHAR
-        , (char*)table.file_md5
-        , &md5len
-        , &is_null[9]
-        , &is_error[9]);
-
-    database_bind_param(&bind_params[10]
-        , MYSQL_TYPE_LONG
-        , (char*)&table.permissions
-        , 0
-        , &is_null[10]
-        , &is_error[10]);
-
-    unsigned long int ownerlen  = sizeof(table.owner);
-    database_bind_param(&bind_params[11]
-        , MYSQL_TYPE_VARCHAR
-        , table.owner
-        , &ownerlen
-        , &is_null[11]
-        , &is_error[11]);
-
-    return(mysql_stmt_execute(stmt));
+    if(!(flags & DATETIME_CREATE_DATE))
+        is_null[TABLE1_INDEX_FILE_CD] = 1;
+    if(!(flags & DATETIME_UPLOAD_DATE))
+        is_null[TABLE1_INDEX_FILE_UD] = 1;
+    if(!(flags & DATETIME_LASTACCESS_DATE))
+        is_null[TABLE1_INDEX_FILE_LA] = 1;
+    if(!(flags & DATETIME_LASTCHANGE_DATE))
+        is_null[TABLE1_INDEX_FILE_LM] = 1;
+    if(!(flags & DATETIME_DELETION_DATE))
+        is_null[TABLE1_INDEX_FILE_DD] = 1;
 }
 
-void database_bind_multiple(MYSQL_BIND *bind_start_address
-    , int count
-    , enum enum_field_types type
-    , char **buffer_pp
-    , unsigned long int *length
-    , my_bool *is_null
-    , my_bool *error)
+// this function and the accompanying free functions, 
+// help with allocating memory for either pushing or retrieving
+// records from the table name #define DATABASE_TABLE_NAME
+//
+// ** you don't need to use this function to init the struct
+// ** it is just a helper routine, but you would need to call
+// ** the database_table1_free to make sure all memory gets
+// ** deallocated if you so decide to use this function
+database_table1_s *database_table1_allocate()
 {
-    for(int i=0; i<count; ++i) {
-        database_bind_param(&bind_start_address[i]
-            , type
-            , buffer_pp[i]
-            , &length[i]
-            , &is_null[i]
-            , &error[i]);
+    database_table1_s *table =
+        m_calloc(sizeof(database_table1_s), "database.c:table1_create:1");
+
+    table->folder_name.address = 
+    m_calloc(DATABASE_FOLDERNAME_LEN, "database.c:table_create:2");
+    table->folder_name.length = DATABASE_FOLDERNAME_LEN;
+
+    table->file_name.address = 
+    m_calloc(DATABASE_FILENAME_LEN, "database.c:table_create:3");
+    table->file_name.length = DATABASE_FILENAME_LEN;
+
+    return(table);
+}
+
+// frees memory allocated by database_table1_allocate
+void database_table1_free(database_table1_s *table)
+{
+    if(table && table->file_name.address)
+        free(table->file_name.address);
+
+    if(table && table->folder_name.address)
+        free(table->folder_name.address);
+
+    if (table) 
+        m_free(table, "database.c:table1_free");
+}
+
+// will just call m_free on the mallocated memory area
+// the structure should not be used after this call. 
+void database_table1_bind_free(db_table_stmt_s *table)
+{
+    m_free(table, "database.c:**table1_free");
+}
+
+// caller is responsible to call m_free when structure not in use. 
+// primary purpose of this function is to setup the database_table1_s
+// for execution before calling database_insert_table1() or likes
+// please make sure to fill the "table" before calling this function. 
+db_table_stmt_s *database_table1_bind_get(database_table1_s *table)
+{
+    db_table_stmt_s *stmt_table1 =  
+        m_calloc(sizeof(db_table_stmt_s), "database.c:**table1_bind_get");
+
+    enum enum_field_types types[DATABASE_TABLE1_COLUMNCOUNT] = {
+        MYSQL_TYPE_STRING
+        , MYSQL_TYPE_STRING
+        , MYSQL_TYPE_TIME
+        , MYSQL_TYPE_TIME
+        , MYSQL_TYPE_TIME
+        , MYSQL_TYPE_TIME
+        , MYSQL_TYPE_TIME
+        , MYSQL_TYPE_LONG
+        , MYSQL_TYPE_STRING
+        , MYSQL_TYPE_LONG
+        , MYSQL_TYPE_STRING
+    };
+    memcpy(stmt_table1->types, types, sizeof(types));
+    
+    stmt_table1->length[TABLE1_INDEX_FILE_MD5]   = sizeof(table->file_md5);
+    stmt_table1->length[TABLE1_INDEX_OWNER]   = sizeof(table->owner);
+
+    unsigned long int *length_ptrs[DATABASE_TABLE1_COLUMNCOUNT] = {
+        &table->folder_name.length // string
+        , &table->file_name.length // string
+        , 0, 0, 0, 0, 0 // datetime struct
+        , 0 // long
+        , &stmt_table1->length[TABLE1_INDEX_FILE_MD5] // string
+        , 0 // long
+        , &stmt_table1->length[TABLE1_INDEX_OWNER] // string
+    };
+    memcpy(stmt_table1->length_ptrs, length_ptrs, sizeof(length_ptrs));
+
+    char *buffers[DATABASE_TABLE1_COLUMNCOUNT]  = {
+        (char*)table->folder_name.address
+        , (char*)table->file_name.address
+        , (char*)&table->file_cd
+        , (char*)&table->file_ud
+        , (char*)&table->file_la
+        , (char*)&table->file_lm
+        , (char*)&table->file_dd
+        , (char*)&table->file_size
+        , (char*)table->file_md5
+        , (char*)&table->permissions
+        , (char*)table->owner
+    };
+    memcpy(stmt_table1->buffers, buffers, sizeof(buffers));
+
+    database_set_isnull(table->file_times_set, stmt_table1->is_null);
+
+    for(int i=0; i < DATABASE_TABLE1_COLUMNCOUNT; ++i) {
+
+        // NOTE to self: 
+        // x[i] is same as *(x + i)
+        // while x + i is (address) + ((sizeof(typeof(x))) * i)
+        database_bind_param(stmt_table1->bind_params + i
+            , stmt_table1->types[i]
+            , stmt_table1->buffers[i]
+            , stmt_table1->length_ptrs[i]
+            , stmt_table1->is_null + i
+            , stmt_table1->is_error + i);
     }
+    return(stmt_table1);
+}
+
+int database_insert_table1(
+    database_table1_s table
+    , db_table_stmt_s * table1)
+{
+    MYSQL_STMT *stmt = mysql_stmt_init(sql_connection);
+    if(stmt == NULL)
+        return(MYSQL_ERROR);
+
+    int result  = mysql_stmt_prepare(stmt, DATABASE_TABLE1_INSERT
+                                        , strlen(DATABASE_TABLE1_INSERT));
+    if(result)
+        return(MYSQL_ERROR);
+  
+
+    result  = mysql_stmt_bind_param(stmt, table1->bind_params);
+    if(result)
+        return(MYSQL_ERROR);
+
+    result  = mysql_stmt_execute(stmt);
+    if(result)
+        return(MYSQL_ERROR);
+    return(MYSQL_SUCCESS);
 }
 
 void database_bind_param(MYSQL_BIND *bind
@@ -204,9 +272,6 @@ void database_bind_param(MYSQL_BIND *bind
     , my_bool *is_null
     , my_bool *error)
 {
-  if(buffer_pointer == 0)
-    *is_null    = 1;
-
   bind->buffer_type  = type;
   bind->buffer   = buffer_pointer;
   bind->is_null  = is_null;
