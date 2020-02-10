@@ -1,8 +1,8 @@
 // This file contains the error codes that the functions will return.
 // Keep in mind that the exit status is limited to 8 bit width.
 
-#define FAILED				0x000000
-#define SUCCESS				0x000001
+#define FAILED				0x000001
+#define SUCCESS				0x000000
 
 #define FALSE               0x000000
 #define TRUE                0x000001

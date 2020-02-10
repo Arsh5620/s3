@@ -1,9 +1,8 @@
 #include "dbp_protocol.h"
 #include "../file.h"
 #include "../defines.h"
+#include "../filemgmt.h"
 #include <time.h>
-
-int create_setup_environment();
 
 int dbp_create(dbp_s *protocol)
 {
@@ -16,7 +15,8 @@ int dbp_create(dbp_s *protocol)
 
         file_write_s w_info = 
             create_download_file(protocol, &attribs.filename);
-
+        
+        filemgmt_file_exists(0, &attribs.filename);
     }
     return(FAILED);
 }
@@ -71,8 +71,13 @@ file_write_s create_download_file(dbp_s *protocol, string_s *filename)
 int create_setup_environment()
 {
     // first make sure the temporary file directory exists. 
-    if(file_dir_mkine(DBP_FILE_TEMP_DIR) != FILE_DIR_EXISTS)
+    char *dir   = "temp";
+    if(*dir != 't')
+        printf("what the fuck happen");
+    int result  = file_dir_mkine(dir);
+    if(result != FILE_DIR_EXISTS)
     {
+        perror("opendir");
         logs_write_printf("could not open \"" DBP_FILE_TEMP_DIR 
                 "\" dir, check if the program has appropriate "
                 "permissions.");

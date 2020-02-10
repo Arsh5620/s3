@@ -91,6 +91,9 @@ enum schema_table1_index {
 "INSERT INTO "DATABASE_TABLE_NAME" "\
 "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
+#define DATABASE_TABLE1_QUERY \
+"SELECT * FROM " DATABASE_TABLE_NAME
+
 #define DATABASE_TABLE1_COLUMNCOUNT 11
 #define DATABASE_FOLDERNAME_LEN 256
 #define DATABASE_FILENAME_LEN 256
@@ -118,7 +121,7 @@ void database_bind_param(MYSQL_BIND *bind
     , my_bool *is_null
     , my_bool *error);
 
-int database_insert_table1(
+int database_table1_insert(
     database_table1_s table
     , db_table_stmt_s * table1);
 
@@ -128,4 +131,12 @@ void database_table1_bind_free(db_table_stmt_s *table);
 database_table1_s *database_table1_allocate();
 void database_table1_free(database_table1_s *table);
 
+MYSQL_STMT *database_table1_query(db_table_stmt_s *binds
+    , char *query, MYSQL_BIND *in_bind);
+void __database_query_print_dbg(MYSQL_STMT *stmt
+    , db_table_stmt_s *binds);
+db_table_stmt_s *database_table1_bind_getselective(
+    database_table1_s *table
+    , int *select
+    , int count);
 #endif

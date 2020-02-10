@@ -15,30 +15,46 @@ int main(int argc, char *argv[])
     int result  = database_init(conninfo);
     int integrity   = database_verify_integrity();
 
-    database_table1_s row = {0};
-    row.folder_name = (string_s) {
-        (void*)"./tmpfolder/magicmushroom" ,26 ,0 
-    };
-    row.file_name  = (string_s){ (void*)"filename", 8, 0};
-    row.file_size   = 128;
-    row.permissions = 777;
+    // database_table1_s row = {0};
+    // row.folder_name = (string_s) {
+    //     (void*)"./tmpfolder/magicmushroom" ,26 ,0 
+    // };
+    // row.file_name  = (string_s){ (void*)"filename", 8, 0};
+    // row.file_size   = 128;
+    // row.permissions = 777;
 
-    memcpy(row.owner, "arshdeep", 8);
-    row.file_ud.year    = 2020;
-    row.file_ud.month   = 1;
-    row.file_ud.day     = 21;
-    row.file_times_set |= DATETIME_UPLOAD_DATE;
+    // memcpy(row.owner, "arshdeep", 8);
+    // row.file_ud.year    = 2020;
+    // row.file_ud.month   = 1;
+    // row.file_ud.day     = 21;
+    // row.file_times_set |= DATETIME_UPLOAD_DATE;
     
-    db_table_stmt_s *table1  = database_table1_bind_get(&row);
+    // database_table1_s *row  = database_table1_allocate();
+    // db_table_stmt_s *table1  = database_table1_bind_get(row);
     
-    result = database_insert_table1(row, table1);
-    database_table1_bind_free(table1);
-    printf("%d is returned\n", result);
+    // // result = database_table1_insert(row, table1);
 
-    // dbp_s protocol  = dbp_init(APPLICATION_PORT);
-    // dbp_accept_connection_loop(&protocol);
-    // dbp_cleanup(protocol);
+    // #define MY_QUERY  "SELECT * FROM " DATABASE_TABLE_NAME " WHERE owner = ?"
 
+    // MYSQL_BIND bind = {0};
+    // bind.buffer = "strong-motherfucker";
+    // long int length = 20;
+    // bind.length = &length;
+    // bind.buffer_type    = MYSQL_TYPE_STRING;
+    
+    // MYSQL_STMT *stmt    =   database_table1_query(table1, MY_QUERY, &bind);
+    // __database_query_print_dbg(stmt, table1);
+    // database_table1_bind_free(table1);
+    // printf("%d is returned\n", result);
+
+//     while(1){
+// create_setup_environment();
+
+//     }
+    dbp_s protocol  = dbp_init(APPLICATION_PORT);
+    dbp_accept_connection_loop(&protocol);
+    dbp_cleanup(protocol);
+    m_print_dbg();
 
     // logger_init();
     // char *string = "Hello, world!%s, %s, %s, %s\n", * string2 = "how are you";

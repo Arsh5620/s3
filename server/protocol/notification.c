@@ -9,7 +9,7 @@ int dbp_protocol_notification(dbp_s *protocol)
     void *address = network_netconn_data_address(&data_read);
 
     printf("Client sent a notification: \n");
-    printf("%.*s\n\n", data_read.data_length, (char*)address);
+    printf("%.*s\n\n", (int)data_read.data_length, (char*)address);
 
     logs_write_printf("notification: %.*s"
                             , data_read.data_length, (char*) address);

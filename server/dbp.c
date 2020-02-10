@@ -45,8 +45,8 @@ void dbp_shutdown_connection(dbp_s protocol
 // returns -1 if the client is asking for the connection to be closed.
 int dbp_read(dbp_s *_read)
 {
-    netconn_data_basetypes_s data = network_data_read_long(&(_read->connection));
-    int header_size     = dbp_magic_check(data.data_u._long);
+    data_types_s data = network_data_read_long(&(_read->connection));
+    int header_size     = dbp_magic_check(data.data_types_u._long);
     // printf("%lx is the pointer\n", data.data_u._long);
     
     if(header_size == -1) {
@@ -54,14 +54,14 @@ int dbp_read(dbp_s *_read)
         // not correct, possible protocol corruption.
         // end connection with the client. 
         logs_write_printf("connection closed as header invalid 0x%.16lx."
-                , data.data_u._long);
+                , data.data_types_u._long);
         dbp_shutdown_connection(*_read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
         return(-1);
     }
 
     array_list_s header_list    = dbp_headers_read(_read, header_size);
     _read->headers  = header_list;
-    _read->header_magic_now  = data.data_u._long;
+    _read->header_magic_now  = data.data_types_u._long;
 
     key_value_pair_s first_record   = 
                         *(key_value_pair_s*)list_get(header_list, 0);

@@ -33,3 +33,4 @@ int dbp_protocol_notification(dbp_s *protocol);
 int dbp_create(dbp_s *protocol);
 dbp_common_attribs_s dbp_attribs_try_find(dbp_s *protocol);
 file_write_s create_download_file(dbp_s *protocol, string_s *filename);
+int create_setup_environment();

@@ -170,12 +170,33 @@ void database_table1_bind_free(db_table_stmt_s *table)
 {
     m_free(table, "database.c:**table1_free");
 }
+db_table_stmt_s *database_table1_bind_get(database_table1_s *table)
+{
+    int select[DATABASE_TABLE1_COLUMNCOUNT] = {
+        TABLE1_INDEX_FOLDER_NAME  
+        , TABLE1_INDEX_FILE_NAME  
+        , TABLE1_INDEX_FILE_CD
+        , TABLE1_INDEX_FILE_UD
+        , TABLE1_INDEX_FILE_LA
+        , TABLE1_INDEX_FILE_LM
+        , TABLE1_INDEX_FILE_DD
+        , TABLE1_INDEX_FILE_SIZE  
+        , TABLE1_INDEX_FILE_MD5
+        , TABLE1_INDEX_PERMISSIONS
+        , TABLE1_INDEX_OWNER
+    };
+    database_table1_bind_getselective(table
+        , select, DATABASE_TABLE1_COLUMNCOUNT);
+}
 
 // caller is responsible to call m_free when structure not in use. 
 // primary purpose of this function is to setup the database_table1_s
 // for execution before calling database_insert_table1() or likes
 // please make sure to fill the "table" before calling this function. 
-db_table_stmt_s *database_table1_bind_get(database_table1_s *table)
+db_table_stmt_s *database_table1_bind_getselective(
+    database_table1_s *table
+    , int *select
+    , int count)
 {
     db_table_stmt_s *stmt_table1 =  
         m_calloc(sizeof(db_table_stmt_s), "database.c:**table1_bind_get");
@@ -201,10 +222,14 @@ db_table_stmt_s *database_table1_bind_get(database_table1_s *table)
     unsigned long int *length_ptrs[DATABASE_TABLE1_COLUMNCOUNT] = {
         &table->folder_name.length // string
         , &table->file_name.length // string
-        , 0, 0, 0, 0, 0 // datetime struct
-        , 0 // long
+        , &stmt_table1->length[TABLE1_INDEX_FILE_CD] // datetime struct
+        , &stmt_table1->length[TABLE1_INDEX_FILE_UD] // datetime struct
+        , &stmt_table1->length[TABLE1_INDEX_FILE_LA] // datetime struct
+        , &stmt_table1->length[TABLE1_INDEX_FILE_LM] // datetime struct
+        , &stmt_table1->length[TABLE1_INDEX_FILE_DD] // datetime struct
+        , &stmt_table1->length[TABLE1_INDEX_FILE_SIZE] // long
         , &stmt_table1->length[TABLE1_INDEX_FILE_MD5] // string
-        , 0 // long
+        , &stmt_table1->length[TABLE1_INDEX_PERMISSIONS] // long
         , &stmt_table1->length[TABLE1_INDEX_OWNER] // string
     };
     memcpy(stmt_table1->length_ptrs, length_ptrs, sizeof(length_ptrs));
@@ -226,22 +251,26 @@ db_table_stmt_s *database_table1_bind_get(database_table1_s *table)
 
     database_set_isnull(table->file_times_set, stmt_table1->is_null);
 
-    for(int i=0; i < DATABASE_TABLE1_COLUMNCOUNT; ++i) {
+    for(int i=0; i < count; ++i) {
 
+        int order   = select[i];
         // NOTE to self: 
         // x[i] is same as *(x + i)
         // while x + i is (address) + ((sizeof(typeof(x))) * i)
         database_bind_param(stmt_table1->bind_params + i
-            , stmt_table1->types[i]
-            , stmt_table1->buffers[i]
-            , stmt_table1->length_ptrs[i]
-            , stmt_table1->is_null + i
-            , stmt_table1->is_error + i);
+            , stmt_table1->types[order]
+            , stmt_table1->buffers[order]
+            , stmt_table1->length_ptrs[order]
+            , stmt_table1->is_null + order
+            , stmt_table1->is_error + order);
+        if(stmt_table1->types[1] == MYSQL_TYPE_STRING)
+            stmt_table1->bind_params[order].buffer_length   = 
+                *stmt_table1->length_ptrs[order];
     }
     return(stmt_table1);
 }
 
-int database_insert_table1(
+int database_table1_insert(
     database_table1_s table
     , db_table_stmt_s * table1)
 {
@@ -251,18 +280,89 @@ int database_insert_table1(
 
     int result  = mysql_stmt_prepare(stmt, DATABASE_TABLE1_INSERT
                                         , strlen(DATABASE_TABLE1_INSERT));
-    if(result)
+    if(result){
+        mysql_stmt_close(stmt);
         return(MYSQL_ERROR);
+    }
   
-
     result  = mysql_stmt_bind_param(stmt, table1->bind_params);
-    if(result)
+    if(result){
+        mysql_stmt_close(stmt);
         return(MYSQL_ERROR);
+    }
 
     result  = mysql_stmt_execute(stmt);
-    if(result)
+    if(result){
+        mysql_stmt_close(stmt);
         return(MYSQL_ERROR);
-    return(MYSQL_SUCCESS);
+    }
+    
+    return(mysql_affected_rows(sql_connection) > 0);
+}
+
+int database_table_query_results(MYSQL_STMT *statment)
+{
+    int result  = mysql_stmt_fetch(statment);
+    if(result){
+        mysql_stmt_close(statment);
+        return(MYSQL_ERROR);
+    }
+}
+
+/**
+ * "this function should not be used in production or non-debug builds"
+ * should only be used to print all out the records returned
+ * by running a sql select like statement
+ */
+void __database_query_print_dbg(MYSQL_STMT *stmt, db_table_stmt_s *binds)
+{   
+    MYSQL_RES *result   = mysql_stmt_result_metadata(stmt);
+    if(result == NULL)
+        printf("result from the statment is null @%s:%d\n"
+                , __FILE__, __LINE__);
+    int num_columns = mysql_num_fields(result);
+
+    while (mysql_stmt_fetch(stmt) == 0)
+    {
+        printf("%s, %s, %s, %ld, %ld.\n"
+                , binds->buffers[TABLE1_INDEX_FOLDER_NAME]
+                , binds->buffers[TABLE1_INDEX_FILE_NAME]
+                , binds->buffers[TABLE1_INDEX_OWNER]
+                , *(long int*)binds->buffers[TABLE1_INDEX_FILE_SIZE]
+                , *(long int*)binds->buffers[TABLE1_INDEX_PERMISSIONS]);
+    }
+}
+
+MYSQL_STMT *database_table1_query(db_table_stmt_s *binds
+    , char *query, MYSQL_BIND *in_bind)
+{
+    MYSQL_STMT *stmt    = mysql_stmt_init(sql_connection);
+    if(stmt == NULL)
+        return(NULL);
+    
+    // as per the example on mariadb docs, -1 means strlen internally
+    int result  = mysql_stmt_prepare(stmt, query, -1);
+    if(result){
+        printf("sql could not finish, error: %s\n", mysql_stmt_error(stmt));
+        mysql_stmt_close(stmt);
+        return(NULL);
+    }
+    result  = mysql_stmt_bind_result(stmt, binds->bind_params);
+    if(result){
+        mysql_stmt_close(stmt);
+        return(NULL);
+    }
+    result  = mysql_stmt_bind_param(stmt, in_bind);
+    if(result){
+        mysql_stmt_close(stmt);
+        return(NULL);
+    }
+    result  = mysql_stmt_execute(stmt);
+    if(result){
+        mysql_stmt_close(stmt);
+        return(NULL);
+    }
+    return(stmt);
 }
 
 void database_bind_param(MYSQL_BIND *bind

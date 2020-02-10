@@ -1,38 +1,42 @@
-This is a readme for how the databases will be setup and how the relationships
-between all the information will be defined. 
+This is a readme for how the database connection will be setup and maintained through the duration of the program.
 
-The most information that we will need will be the listed below
+for now the only table that we will be processing will be the table dbp_file_information
+
+schema: {dbp_file_information}
+folder name:            string
+file name:              string
+file create date:       date
+file upload date:       date
+file last access:       date
+file last modified:     date 
+file delete date:       date
+file size:              size_t
+file MD5:               char[32]
+permissions:            size_t (linux user-group-other format)
+owner name:             char[20]
+
+CREATE TABLE dbp_file_information 
+(folder_name varchar(256)
+   , file_name varchar(256)
+   , file_md DATE
+   , file_ud DATE
+   , file_la DATE
+   , file_lm DATE
+   , file_dd DATE
+   , file_size long
+   , file_md5 varchar(32)
+   , permission long
+   , owner varchar(32));
+
+https://stackoverflow.com/questions/1220046/how-to-get-the-md5-hash-of-a-file-in-c
+
+This is how basic mysql communication work:
+1.) mysql_library_init()
+2.) mysql_init()
+3.) mysql_real_connect()
+4.) Issue SQL statements and process their results.
+5.) mysql_close().
+6.) mysql_library_end(). 
 
 please make sure to compile the program with link to library openssl for md5 
 "-lssl"
-
-TABLE ONE: 
-folder name: string
-file name: string
-file create date: date
-file upload date: date
-file last access: date
-file last modified: date 
-file delete date: date
-file size: size_t
-file MD5: https://stackoverflow.com/questions/1220046/how-to-get-the-md5-hash-of-a-file-in-c
-permissions: (linux UGO)
-owner name: 20 chars max. 
-
-create table dbp_file_information (folder_name varchar(256), file_name varchar(256), file_md DATE, file_ud DATE, file_la DATE, file_lm DATE, file_dd DATE, file_size long, file_md5 varchar(32), permission long, owner varchar(32));
-
-
-MYSQL:
-
- Application programs should use this general outline for interacting with MySQL:
-
-    Initialize the MySQL client library by calling mysql_library_init().
-
-    Initialize a connection handler by calling mysql_init() and connect to the server by calling mysql_real_connect().
-
-    Issue SQL statements and process their results. (The following discussion provides more information about how to do this.)
-
-    Close the connection to the MySQL server by calling mysql_close().
-
-    End use of the MySQL client library by calling mysql_library_end(). 
-

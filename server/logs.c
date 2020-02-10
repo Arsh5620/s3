@@ -25,13 +25,13 @@ int open_log_file(logger_s *log)
 
 logger_s logs_init()
 {
-    if(logs.init_complete == SUCCESS) return logs;
+    if(logs.init_complete == TRUE) return logs;
 
     logger_s log    = {0};
 
     if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
     { 
-        logs_write_printf("Could not open directory for writing logs, "
+        printf("Could not open directory for writing logs, "
                 "logging subsystem unavailable.");
         return log;
     }
@@ -43,11 +43,20 @@ logger_s logs_init()
     return(log);
 }
 
+/*
+ * this function returns as result number of bytes written. 
+ * -1 if no bytes were written to a log file. 
+ */
 int logs_write_printf(char *string, ...) 
 {
     va_list variable_args;
     va_start(variable_args, string);
 
+    if(logs.init_complete == FALSE) {
+        vprintf(string, variable_args);
+        return(-1);
+    }
+    
     time_t t    = time(NULL);
     struct tm local_time    = *localtime(&t);
 

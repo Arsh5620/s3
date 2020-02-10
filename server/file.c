@@ -10,17 +10,18 @@
 int file_dir_mkine(char *dir_name)
 {
     DIR *dir = opendir(dir_name);
+    int error = errno;
+    closedir(dir);
+
     if(dir) {
-        closedir(dir);
         return(FILE_DIR_EXISTS);
     }
-    else if (errno == ENOENT) {
+    else if (error == ENOENT) {
         if(mkdir(dir_name, S_IRWXU | S_IRGRP | S_IXGRP) != 0) {
             return FILE_DIR_CREATE_FAILED;
         }
         else return(FILE_DIR_EXISTS);
-    }
-    
+    } 
     return(FILE_DIR_ERR_OPEN);
 }
 
@@ -60,9 +61,7 @@ int file_download(FILE *file
         network_data_readxbytes(network, read_required);
 
     void *data_address  = network_netconn_data_address(&data_read);
-    if(data_read.read_status & DATA_READ_ERROR || 
-        (data_read.read_status & DATA_READ_EOF 
-            && info->current + data_read.data_length < info->size)) {
+    if(data_read.is_error) {
         network_free(data_read);
         return(FILE_UPLOAD_ERR);
     }
