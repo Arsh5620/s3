@@ -62,7 +62,7 @@ int file_download(FILE *file
 
     void *data_address  = network_netconn_data_address(&data_read);
     if(data_read.is_error) {
-        network_free(data_read);
+        network_data_free(data_read);
         return(FILE_UPLOAD_ERR);
     }
 
@@ -72,7 +72,7 @@ int file_download(FILE *file
 
     if(bytes_written != data_read.data_length)
         return(FILE_UPLOAD_ERR);
-    network_free(data_read);
+    network_data_free(data_read);
     info->current += data_read.data_length;
     } while(info->current < info->size);
     return(FILE_UPLOAD_COMPLETE);    

@@ -1,5 +1,6 @@
 #ifndef BSEARCH_INCLUDE_GAURD
 #define BSEARCH_INCLUDE_GAURD
+
 typedef struct b_search_string {
     char *string;
     int strlen;

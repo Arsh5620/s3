@@ -63,6 +63,8 @@ file_write_s create_download_file(dbp_s *protocol, string_s *filename)
                 ":(%d) in %.3f ms @ speed: %dMB/s"
                 , length, temp_file , download_status
                 , time_elapsed , speed);
+
+        fclose(temp);
     }
     return(fileinfo);
 }

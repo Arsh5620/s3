@@ -18,7 +18,7 @@ void add_to_store(void * address
         store.allocations = 
                 list_new(MEMORY_ALLOCATION_TABLE_SIZE , sizeof(mdbg_alloc_s));
 
-    if(store.allocation_hashes.length == 0)
+    if(store.allocation_hashes.size == 0)
         store.allocation_hashes = hash_table_init();
 
     if(fn_name_length > MEMORY_ALLOCATION_FNNAME_LENGTH)
@@ -36,7 +36,7 @@ void add_to_store(void * address
 
     unsigned int index = list_push(&store.allocations
                                     , (void*) &allocation);
-    hash_table_entry_s hash_entry = {(unsigned long)address,  index, 0};
+    hash_table_bucket_s hash_entry = {(unsigned long)address,  index, 0};
     hash_table_add(&store.allocation_hashes, hash_entry);
 }
 
@@ -47,11 +47,11 @@ void update_in_store(void * address
                         , unsigned int fn_name_length
                         , memalloc_enum request_type)
 {
-    hash_table_entry_s entry    = 
+    hash_table_bucket_s entry    = 
         hash_table_get(store.allocation_hashes
                         , (unsigned long) original_address);
     
-    if(entry._bucket_occupied != TRUE) {
+    if(entry.is_occupied != TRUE) {
         printf("Could not update store for address %p, failed!\n", address);
         return;
     }
@@ -70,7 +70,7 @@ void update_in_store(void * address
     memcpy(alloc->function_name, function_name, fn_name_length);
 
     if(address != NULL) {
-        hash_table_entry_s hash_entry = {(unsigned long)address,  index, 0};
+        hash_table_bucket_s hash_entry = {(unsigned long)address,  index, 0};
         hash_table_add(&store.allocation_hashes, hash_entry);
     }
 }

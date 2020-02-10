@@ -1,6 +1,10 @@
 #include "binarysearch.h"
-#include "string.h"
+#include <string.h>
 
+/* 
+ * return value: the index of the char* "string" in "strings",
+ * and -1 if not found.
+ */
 int b_search(b_search_string_s *strings, int count, char *string, int length)
 {
     int min = 0;

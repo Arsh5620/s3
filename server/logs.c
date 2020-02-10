@@ -18,9 +18,9 @@ int open_log_file(logger_s *log)
     if(log->file == NULL) {
         fprintf(stderr, "Could not initialize the logging subsystem,"
                 " program will now exit.\n");
-        return(-1);
+        return(FAILED);
     }
-    return(0);
+    return(SUCCESS);
 }
 
 logger_s logs_init()
@@ -31,14 +31,18 @@ logger_s logs_init()
 
     if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
     { 
-        printf("Could not open directory for writing logs, "
+        printf("could not open directory for writing logs, "
                 "logging subsystem unavailable.");
         return log;
     }
-    open_log_file(&log);
+    if(open_log_file(&log) == FAILED) {
+        printf("could not open the file for writing logs, "
+                "logging subsystem unavailable");
+        return log;
+    }
 
     log.sprint_buffer   = m_calloc(LOG_MAX_SPRINTFBUFFER, "logger.c:logger_init");
-    log.init_complete   = SUCCESS;
+    log.init_complete   = TRUE;
     logs = log;
     return(log);
 }
