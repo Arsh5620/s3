@@ -142,12 +142,12 @@ array_list_s string_key_value_pairs(char *buffer, int length)
     store.buffer_now        = buffer;
     store.buffer_address    = buffer;
     store.buffer_length     = buffer + length;
-    store.list  = list_new(32, sizeof(key_value_pair_s));
+    store.list  = my_list_new(32, sizeof(key_value_pair_s));
 
     while(store.buffer_now < store.buffer_length) {
         key_value_pair_s pair = string_next_key_value_pair(&store);
         if(pair.is_comment == 0 && pair.is_valid) {
-            list_push(&store.list, (void*)&pair);
+            my_list_push(&store.list, (void*)&pair);
         }
         string_forward_next_pair(&store);
     }

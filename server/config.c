@@ -22,7 +22,7 @@ database_connection_s config_parse_dbc(char *filename)
     array_list_s list = config_read_file(config);
 
     for(int i=0; i<list.index; ++i){
-        key_value_pair_s pair = *(key_value_pair_s*) list_get(list, i);
+        key_value_pair_s pair = *(key_value_pair_s*) my_list_get(list, i);
         int configcode  = 
             b_search(config_property
                 , sizeof(config_property)/ sizeof(b_search_string_s)

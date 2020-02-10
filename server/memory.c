@@ -14,15 +14,15 @@ void add_to_store(void * address
                     , char *function_name
                     , unsigned int fn_name_length)
 {
-    if(store.allocations.raw_size == 0)
-        store.allocations = 
-                list_new(MEMORY_ALLOCATION_TABLE_SIZE , sizeof(mdbg_alloc_s));
+    if(store.allocations.length == 0)
+        store.allocations =  my_list_new(
+            MEMORY_TABLE_SIZE , sizeof(mdbg_alloc_s));
 
     if(store.allocation_hashes.size == 0)
         store.allocation_hashes = hash_table_init();
 
-    if(fn_name_length > MEMORY_ALLOCATION_FNNAME_LENGTH)
-        fn_name_length = MEMORY_ALLOCATION_FNNAME_LENGTH;
+    if(fn_name_length > MEMORY_NAME_LENGTH)
+        fn_name_length = MEMORY_NAME_LENGTH;
 
 
     mdbg_alloc_s allocation = {0};
@@ -34,7 +34,7 @@ void add_to_store(void * address
     allocation.size_requested   = size_requested;
     allocation.address          = address;
 
-    unsigned int index = list_push(&store.allocations
+    unsigned int index = my_list_push(&store.allocations
                                     , (void*) &allocation);
     hash_table_bucket_s hash_entry = {(unsigned long)address,  index, 0};
     hash_table_add(&store.allocation_hashes, hash_entry);
@@ -57,7 +57,7 @@ void update_in_store(void * address
     }
 
     int index   = entry.value;
-    mdbg_alloc_s *alloc = (mdbg_alloc_s*)list_get(store.allocations, index);
+    mdbg_alloc_s *alloc = (mdbg_alloc_s*)my_list_get(store.allocations, index);
     
     alloc->request_type     = request_type;
     alloc->original_address = original_address;
@@ -119,7 +119,7 @@ void m_print_dbg()
 {
     printf("MEMDBG ALLOCATIONS:\n\n");
     for(size_t i=0; i<store.allocations.index; ++i){
-        mdbg_alloc_s j = (*(mdbg_alloc_s*)list_get(store.allocations, i));
+        mdbg_alloc_s j = (*(mdbg_alloc_s*)my_list_get(store.allocations, i));
         printf("MEMDBG allocation # %ld ::\naddress: %p\n"
                     "allocating function: %s\nrequest type: %d\n"
                     "requested size: %d\noriginal address (if "

@@ -33,6 +33,7 @@
         "variant": "c",
         "string.h": "c",
         "file.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "list.h": "c"
     }
 }

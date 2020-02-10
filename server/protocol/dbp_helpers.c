@@ -22,7 +22,7 @@ dbp_common_attribs_s dbp_attribs_try_find(dbp_s *protocol)
 
     for(int i=0; i<list_length; ++i) {
         key_value_pair_s pair   = 
-                *(key_value_pair_s*)list_get(header_list, i);
+                *(key_value_pair_s*)my_list_get(header_list, i);
 
         int attrib  =  b_search(attribs_supported
                         , sizeof(attribs_supported) 

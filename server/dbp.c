@@ -64,7 +64,7 @@ int dbp_read(dbp_s *_read)
     _read->header_magic_now  = data.data_types_u._long;
 
     key_value_pair_s first_record   = 
-                        *(key_value_pair_s*)list_get(header_list, 0);
+                        *(key_value_pair_s*)my_list_get(header_list, 0);
 
     int action = 0;
     if(header_list.index > 0)

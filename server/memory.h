@@ -8,8 +8,9 @@
 #define DEBUG_MEMORY 1
 
 #if DEBUG_MEMORY == 1
-#define MEMORY_ALLOCATION_TABLE_SIZE 2048
-#define MEMORY_ALLOCATION_FNNAME_LENGTH 32
+
+#define MEMORY_TABLE_SIZE   2048
+#define MEMORY_NAME_LENGTH  32
 
 typedef enum memory_allocation_type_enum {
     MEMORY_ALLOCATION_MALLOC
@@ -18,7 +19,7 @@ typedef enum memory_allocation_type_enum {
 } memalloc_enum;
 
 typedef struct memory_allocation_table {
-    char function_name[MEMORY_ALLOCATION_FNNAME_LENGTH];
+    char function_name[MEMORY_NAME_LENGTH];
     void *address;
     void *original_address;
     int size_requested; 
