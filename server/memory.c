@@ -52,12 +52,14 @@ void update_in_store(void * address
                         , (unsigned long) original_address);
     
     if(entry.is_occupied != TRUE) {
-        printf("Could not update store for address %p, failed!\n", address);
+        printf("Could not update store for address %p, failed!\n"
+            , address);
         return;
     }
 
     int index   = entry.value;
-    mdbg_alloc_s *alloc = (mdbg_alloc_s*)my_list_get(store.allocations, index);
+    mdbg_alloc_s *alloc = 
+        (mdbg_alloc_s*)my_list_get(store.allocations, index);
     
     alloc->request_type     = request_type;
     alloc->original_address = original_address;

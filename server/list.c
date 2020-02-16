@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "list.h"
+#include "memory.h"
 
-array_list_s my_list_new(size_t size, size_t entry_length)
+// the (i) stands for inline
+array_list_s my_list_new(size_t size
+    , size_t entry_length)
 {
     array_list_s array_list = {0};
 

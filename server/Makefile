@@ -6,12 +6,12 @@ LINKFLAGS=-lmariadb
 HEADERFILES=defines.h networking/network.h list.h \
 				memory.h hash_table.h dbp.h logs.h strings.h binarysearch.h \
 				./protocol/dbp_protocol.h file.h ./databases/database.h \
-				config.h ./filemgmt.h
+				config.h ./filemgmt.h ./parser/parser.h ./parser/lexer.h
 SOURCEFILES=networking/network.c server.c list.c memory.c \
 				hash_table.c dbp.c logs.c strings.c binarysearch.c \
 				./protocol/notification.c ./protocol/create.c ./file.c \
 				./protocol/dbp_helpers.c ./databases/database.c \
-				config.c ./filemgmt.c
+				config.c ./filemgmt.c ./parser/lexer.c ./parser/parser.c
 OBJFILES=${SOURCEFILES:c=o}
 EXECUTABLE=main
 OBJDIR=./objects/

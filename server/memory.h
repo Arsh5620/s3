@@ -2,11 +2,12 @@
 # define MEMORY_INCLUDE_GAURD
 
 #include <stddef.h>
+#define __M_MEMORY__
 #include "list.h"
+#undef __M_MEMORY__
 #include "hash_table.h"
 
 #define DEBUG_MEMORY 1
-
 #if DEBUG_MEMORY == 1
 
 #define MEMORY_TABLE_SIZE   2048
@@ -41,3 +42,5 @@ void *m_calloc(size_t size, char *fn_name);
 void *m_realloc(void *address, int size, char *fn_name);
 
 # endif
+
+#define MEMORY_INCLUDE_FINISHED

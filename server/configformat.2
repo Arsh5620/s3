@@ -1,0 +1,13 @@
+We are just looking to create a very basic lexer, to process 
+configuration files and parse them into key value pairs, that
+we can use later. 
+key value pairs will be in the following format:
+key = "value that include spaces"
+key = valuethatdoesnotincludespaces
+key = 1234
+
+We don't accept hex values or decimals right now, but we might later. 
+We will also need to accept comments in the config file along
+with multiple empty lines, and a lot of unnecessary spaces. 
+We only accept one line comments. 
+We only accept double quotes for quoted strings. 

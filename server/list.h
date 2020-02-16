@@ -8,7 +8,7 @@ typedef struct array_list {
     size_t index;
     size_t length;
     short entry_length;
-    char *memory; 
+    char *memory;
 } array_list_s;
 
 array_list_s my_list_new(size_t, size_t);
