@@ -11,6 +11,7 @@ enum lexer_tokens {
     TOKEN_EOF   = 128
     , TOKEN_KEY_NAME
     , TOKEN_ASSIGNMENT
+    , TOKEN_VALUE_RAW
     , TOKEN_VALUE_STRING
     , TOKEN_VALUE_LONG
     , TOKEN_VALUE_DOUBLE
@@ -20,9 +21,9 @@ enum lexer_tokens {
     , TOKEN_SKIP_SPCTAB
     , TOKEN_NEWLINE
     , TOKEN_CARRIAGERETURN 
+    // carriage return is used on windows along with new line
     , TOKEN_ILLEGAL
     , TOKEN_VALUE_QUOTEDSTRING
-    // carriage return is used on windows along with new line
 };
 
 typedef struct {

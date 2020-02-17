@@ -12,7 +12,7 @@
 
 int main(int argc, char *argv[])
 {
-    char *string    = "Hello=howareyou";
+    char *string    = "#\nHello=howareyou";
     lexer_s lex = lexer_init(string, strlen(string));
     lexer_token_s token = lexer_next_token(&lex);
     printf("Token type is %d\n", token.token_type);
