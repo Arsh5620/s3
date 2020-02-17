@@ -56,11 +56,16 @@ lexer_token_s lexer_next_token(lexer_s *lexer)
             is_escape   = !is_escape;
             break;
         default:
-            is_string   = 1;
-            char c_nocaps   = c | 0b100000;
-            if((c_nocaps >= 'a' && c_nocaps <='z')
-                || (c >= '0' && c <= '9'))
-                break; 
+            while (lexer->index < lexer->size) {
+                c  = lexer->buffer[lexer->index];
+                if(((c >= 'A' && c <= 'Z')
+                    || (c >='a' && c <= 'z')
+                    || (c >= '0' && c <= '9')))
+                    lexer->index++;
+                else break;
+            }
+            token.token_type    = TOKEN_VALUE_RAW;
+            continue;
         }
         lexer->index++;
     }
