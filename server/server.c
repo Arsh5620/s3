@@ -1,21 +1,12 @@
-#include "dbp.h"
-#include "memory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "defines.h"
-#include "logs.h"
-#include "binarysearch.h"
-#include "./databases/database.h"
-#include "./config.h"
-#include "./parser/lexer.h"
+#include "./parser/parser.h"
 
 int main(int argc, char *argv[])
 {
-    char *string    = "#\nHello=howareyou";
-    lexer_s lex = lexer_init(string, strlen(string));
-    lexer_token_s token = lexer_next_token(&lex);
-    printf("Token type is %d\n", token.token_type);
+    char *string    = "jaspinder=ka ur and how are you\nilove=you@whatthefuck\n";
+    parser_parse_start(string, strlen(string));
 //     database_connection_s conninfo  = config_parse_dbc("CONFIGFORMAT");
 //     int result  = database_init(conninfo);
 //     int integrity   = database_verify_integrity();

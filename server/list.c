@@ -4,9 +4,7 @@
 #include "list.h"
 #include "memory.h"
 
-// the (i) stands for inline
-array_list_s my_list_new(size_t size
-    , size_t entry_length)
+array_list_s my_list_new(size_t size , size_t entry_length)
 {
     array_list_s array_list = {0};
 
@@ -55,4 +53,10 @@ void *my_list_get(array_list_s list, size_t index)
         return (list.memory + (index * list.entry_length));
     else 
         return (NULL);
+}
+
+void my_list_delete(array_list_s *list) 
+{
+    if(list->memory)
+        free(list->memory);
 }

@@ -34,6 +34,7 @@
         "string.h": "c",
         "file.h": "c",
         "unistd.h": "c",
-        "list.h": "c"
+        "list.h": "c",
+        "parser.h": "c"
     }
 }

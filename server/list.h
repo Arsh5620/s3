@@ -11,9 +11,9 @@ typedef struct array_list {
     char *memory;
 } array_list_s;
 
-array_list_s my_list_new(size_t, size_t);
-void *my_list_get(array_list_s, size_t);
-size_t my_list_push(array_list_s*, char*);
+array_list_s my_list_new(size_t size , size_t entry_length);
+void *my_list_get(array_list_s list, size_t index);
+size_t my_list_push(array_list_s* list, char* memory);
 void my_list_delete(array_list_s *list);
 
 #endif
