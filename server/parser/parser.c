@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-array_list_s parser_parse_start(char *buffer, int length)
+array_list_s parser_parse(char *buffer, int length)
 {
     lexer_s lex = lexer_init(buffer, length);
     lexer_status_s status = {0};
@@ -14,17 +14,13 @@ array_list_s parser_parse_start(char *buffer, int length)
         status.errno    = 0;
         status.status   = 0;
         key_value_pair_s pair = parser_parse_next(&lex, &status);
-        my_list_push(&list, (char*)&pair);
-
-        printf("key: {%.*s}, value:{%.*s}, status: %ld\n"
-            , pair.key_length, pair.key
-            , pair.value_length, pair.value
-            , status.status);
-
+        if(pair.key != NULL && pair.value != NULL)
+            my_list_push(&list, (char*)&pair);
         parser_print_status(lex, status);
-        printf("****\n");
     } while (status.status != PARSER_STATUS_EOF 
                 && status.errno == 0);
+
+    return(list);
 }
 
 static char *errors[] = {
@@ -61,7 +57,9 @@ void parser_print_lineinfo(lexer_s lexer, lexer_status_s status, char is_err)
         , stat, lexer.buffer + status.base_index
         , st
         , rest, lexer.buffer + status.base_index + stat);
-    printf("%*.*s^\n", stat, 0);
+
+    char *c = 0;
+    printf("%*.*s^\n", stat, 0, c);
 }
 
 void parser_print_err(lexer_s lexer, lexer_status_s status) 
@@ -88,12 +86,9 @@ void parser_print_status(lexer_s lexer, lexer_status_s status)
 {
     if (status.warnno)
         parser_print_warn(lexer, status);
-        
+
      if(status.errno)
         parser_print_err(lexer, status);
-    
-    if(status.errno == 0 && status.warnno ==0)
-        printf("Warnings: 0, Errors: 0, Parsing completed successfully.\n");
 }
 
 key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
@@ -103,9 +98,6 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
     pair.is_valid   = 1;
     int status  = {0};
     
-    lstatus->lineno++;
-    lstatus->base_index = lexer->index;
-
     do {
         //only report the first error or warning.
         if(lstatus->warnno == 0)
@@ -121,6 +113,8 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
             lstatus->errno  = PARSER_STATUS_ERRUNEXPECTED_ILLEGAL;
             break;
         case TOKEN_NEWLINE:
+            lstatus->lineno++;
+            lstatus->base_index = lexer->index;
         case TOKEN_CARRIAGERETURN:
             if(!(status == PARSER_STATUS_WAIT_KEY 
                 || status == PARSER_STATUS_WAIT_NONE)) {

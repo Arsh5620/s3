@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "./parser/parser.h"
+#include "dbp.h"
 
 int main(int argc, char *argv[])
 {
-    char *string    = "jaspinder=ka ur and how are you\nilove=you@whatthefuck\n";
-    parser_parse_start(string, strlen(string));
+    // char *string    = "jaspinder=\"ka ur and how are you\"\nilove=\"you whatthefuck\"\n# I am a motherfucking starboy\narshdeep=iwouldlovetohavesexbut iknow i am too ugly for that.";
+    // parser_parse_start(string, strlen(string));
 //     database_connection_s conninfo  = config_parse_dbc("CONFIGFORMAT");
 //     int result  = database_init(conninfo);
 //     int integrity   = database_verify_integrity();
@@ -47,9 +47,10 @@ int main(int argc, char *argv[])
 // // create_setup_environment();
 
 // //     }
-//     dbp_s protocol  = dbp_init(APPLICATION_PORT);
-//     dbp_accept_connection_loop(&protocol);
-//     dbp_cleanup(protocol);
+    dbp_s protocol  = dbp_init(APPLICATION_PORT);
+    if(protocol.setup_complete)
+        dbp_accept_connection_loop(&protocol);
+    dbp_cleanup(protocol);
 //     m_print_dbg();
 
 //     // logger_init();
