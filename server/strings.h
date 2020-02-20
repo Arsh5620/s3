@@ -10,11 +10,11 @@
 //     char comment_break;
 // } string_info_s;
  
-//  typedef struct string_struct {
-//     void *address;
-//     unsigned long int length;
-//     int error;
-// } string_s;
+ typedef struct string_struct {
+    void *address;
+    unsigned long int length;
+    int error;
+} string_s;
 
 // typedef struct string_process_internal {
 //     array_list_s list;

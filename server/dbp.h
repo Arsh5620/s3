@@ -2,11 +2,14 @@
 # define DBP_INCLUDE_GAURD
 #include "networking/network.h"
 #include "strings.h"
+#include "list.h"
+#include "parser/parser.h"
 
 typedef struct device_backup_protocol {
     netconn_info_s connection;
     array_list_s headers;
     unsigned long header_magic_now;
+    char setup_complete;
 } dbp_s;
 
 enum connection_shutdown_type {

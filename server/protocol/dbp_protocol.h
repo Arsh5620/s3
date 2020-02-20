@@ -2,6 +2,7 @@
 #include "../networking/network.h"
 #include "../dbp.h"
 #include "../logs.h"
+#include "../file.h"
 
 #define DBP_FILE_TEMP_DIR "./temp/"
 

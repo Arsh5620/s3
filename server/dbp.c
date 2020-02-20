@@ -5,6 +5,8 @@
 #include "logs.h"
 #include <unistd.h>
 #include "./protocol/dbp_protocol.h"
+#include "databases/database.h"
+#include "config.h"
 
 dbp_s dbp_init(unsigned short port)
 {
@@ -14,6 +16,13 @@ dbp_s dbp_init(unsigned short port)
     logs_write_printf("starting protocol initialization ...");
 
     protocol.connection = network_connect_init_sync(port);
+
+    database_connection_s connect_info  = 
+        config_parse_dbc("CONFIGFORMAT");
+    if(database_init(connect_info) == DATABASE_SETUP_COMPLETE
+        && database_verify_integrity() == MYSQL_SUCCESS) {
+        protocol.setup_complete = TRUE;
+    }
     return(protocol);
 }
 
@@ -104,7 +113,7 @@ array_list_s dbp_headers_read(dbp_s *_read, int length)
     void *address = network_netconn_data_address(&header);
     tolowercase(address, header.data_length);
 
-    array_list_s header_list   = string_key_value_pairs(address
+    array_list_s header_list   = parser_parse(address
                                     , header.data_length);
                                         
     return(header_list);

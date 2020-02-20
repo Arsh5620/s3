@@ -22,6 +22,8 @@ b_search_string_s config_property[5] = {
 // connection is attempted. 
 int database_init(database_connection_s connect)
 {
+    if(sql_connection != 0) return(DATABASE_SETUP_COMPLETE);
+
     if (mysql_library_init(0, NULL, NULL)) {
         fprintf(stderr, "could not initialize MySQL client library.\n");
         exit(SERVER_DATABASE_FAILURE);
@@ -41,7 +43,6 @@ int database_init(database_connection_s connect)
             ", check your connection settings and try again.\n");
         exit(SERVER_DATABASE_FAILURE);
     }
-
     return(DATABASE_SETUP_COMPLETE);
 }
 
@@ -51,8 +52,7 @@ int database_verify_integrity()
 
     int connection_enabled  = mysql_ping(sql_connection);
     if(connection_enabled == 0){
-        printf("connection to the server was successful ..\n");
-        printf("server version %s\n"
+        printf("welcome to server {%s}\n"
                 , mysql_get_server_info(sql_connection));
     }
     if(MYSQL_SUCCESS == mysql_query(sql_connection
@@ -71,7 +71,7 @@ int database_verify_integrity()
                     " created database \""DATABASE_DB_NAME"\" ..\n");
             return(database_create_tables());
         } else {
-            printf("database found ..\n");
+            printf("database \"%s\" found ..\n", DATABASE_DB_NAME);
             return(database_check_tables());
         }
     } else {
@@ -185,8 +185,8 @@ db_table_stmt_s *database_table1_bind_get(database_table1_s *table)
         , TABLE1_INDEX_PERMISSIONS
         , TABLE1_INDEX_OWNER
     };
-    database_table1_bind_getselective(table
-        , select, DATABASE_TABLE1_COLUMNCOUNT);
+    return (database_table1_bind_getselective(table
+        , select, DATABASE_TABLE1_COLUMNCOUNT));
 }
 
 // caller is responsible to call m_free when structure not in use. 
@@ -307,6 +307,7 @@ int database_table_query_results(MYSQL_STMT *statment)
         mysql_stmt_close(statment);
         return(MYSQL_ERROR);
     }
+    return(MYSQL_SUCCESS);
 }
 
 /**

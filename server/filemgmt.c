@@ -25,7 +25,8 @@ int filemgmt_file_exists(string_s *folder_name, string_s *file_name)
     MYSQL_STMT *stmt    = database_table1_query(table1
         , FILEMGMT_QUERY_FILEFOLDEREXISTS, bind->bind_params);
     
-    __database_query_print_dbg(stmt, table1);
+    if(stmt)
+        __database_query_print_dbg(stmt, table1);
 
     mysql_stmt_close(stmt);
     database_table1_bind_free(bind);

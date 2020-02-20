@@ -10,7 +10,9 @@ array_list_s config_read_file(FILE *file)
 
     int result  = file_reader_fill(&reader);
 
-    array_list_s parsed_table   = strings_read_from_file(&reader);
+    array_list_s parsed_table   = 
+        parser_parse(reader.reader_malloc, reader.reader_readlength);
+    
     return(parsed_table);
 }
 

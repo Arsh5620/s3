@@ -4,7 +4,9 @@
 // refer to CONFIGFORMAT for further information
 
 #include "file.h"
+#include "list.h"
 #include "strings.h"
+#include "parser/parser.h"
 #include "./databases/database.h"
 #include "binarysearch.h"
 
