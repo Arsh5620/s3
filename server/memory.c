@@ -8,6 +8,10 @@
 
 #if DEBUG_MEMORY == 1
 
+// the program is found to have limitations in case the operating system 
+// assigned a just-freed block to the new mallocation the address
+// for which already exists in the table. 
+
 static malloc_s track = {0}; // only available in the same object file
 
 void memory_exit(int reason)
@@ -39,6 +43,7 @@ void memory_track_add(void * address
         track.list  = 
             my_list_new(MEMORY_TABLE_SIZE, sizeof(malloc_node_s));
         track.hash  = hash_table_init_n(MEMORY_TABLE_SIZE);
+        track.is_init   = TRUE;
     }
     
     malloc_node_s track_node = {0};
@@ -52,7 +57,7 @@ void memory_track_add(void * address
     long index = my_list_push(&track.list, (char*) &track_node);
 
     hash_table_bucket_s hash_entry = 
-        {(unsigned long)address, index, 0};
+        {(unsigned long)address, index, 1};
     hash_table_add(&track.hash, hash_entry);
 }
 
@@ -139,8 +144,8 @@ void memory_print_debug()
         malloc_node_s j = (*(malloc_node_s*)my_list_get(track.list, i));
         printf("address: %p\n"
                     "previous address: %p\n"
-                    "allocating file name: %s\n"
-                    "allocation file line number: %ld\n"
+                    "(de)allocating file name: %s\n"
+                    "(de)allocating file line number: %ld\n"
                     "request type: %d\n"
                     "requested size: %ld\n"
                     , j.address, j.prev_address
