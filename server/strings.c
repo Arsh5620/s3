@@ -20,7 +20,7 @@ long strings_svprintf(char **buffer, char *string, va_list list)
         return -1;
 
     size++;             /* For '\0' */
-    pointer = m_calloc(STRINGS_BUFFER_SVNPRINTF, "strings.c:sprintf:21");
+    pointer = m_calloc(STRINGS_BUFFER_SVNPRINTF, MEMORY_FILE_LINE);
     if (pointer == NULL)
         return -1;
 
@@ -30,7 +30,7 @@ long strings_svprintf(char **buffer, char *string, va_list list)
     va_end(copy);
 
     if (size < 0) {
-        m_free(pointer, "strings.c:sprintf:30");
+        m_free(pointer, MEMORY_FILE_LINE);
         return -1;
     }
 

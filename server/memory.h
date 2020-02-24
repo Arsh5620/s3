@@ -2,46 +2,47 @@
 # define MEMORY_INCLUDE_GAURD
 
 #include <stddef.h>
-#define __M_MEMORY__
 #include "list.h"
-#undef __M_MEMORY__
 #include "hash_table.h"
 
 #define DEBUG_MEMORY 1
+
 #if DEBUG_MEMORY == 1
 
 #define MEMORY_TABLE_SIZE   2048
-#define MEMORY_NAME_LENGTH  32
-#define MEMORY_NAME_NONE ""
 
-typedef enum memory_allocation_type_enum {
-    MEMORY_ALLOCATION_MALLOC
-    , MEMORY_ALLOCATION_REALLOC
-    , MEMORY_ALLOCATION_FREE
-} memalloc_enum;
+typedef enum {
+    MEMORY_ALLOC_MALLOC
+    , MEMORY_ALLOC_CALLOC
+    , MEMORY_ALLOC_REALLOC
+    , MEMORY_ALLOC_FREE
+} malloc_enum;
+
+#define MEMORY_FILE_LINE __FILE__, __LINE__
 
 typedef struct memory_allocation_table {
-    char function_name[MEMORY_NAME_LENGTH];
+    char *file_name; // please use the compiler directive __FILE__
     void *address;
-    void *original_address;
-    int size_requested; 
-    memalloc_enum request_type;
-} mdbg_alloc_s;
+    void *prev_address;
+    long size; 
+    long line_no; // please use compiler directive __LINE__
+    malloc_enum type;
+} malloc_node_s;
 
-typedef struct malloc_all_store {
-    array_list_s allocations;
-    hash_table_s allocation_hashes;
-} malloc_store_s;
+typedef struct {
+    array_list_s list;
+    hash_table_s hash;
+    char is_init;
+} malloc_s;
 
 #endif
 
-void m_print_dbg();
+void memory_print_debug();
 
-void m_free(void *address, char *fn_name);
-void *m_malloc(size_t size, char *fn_name);
-void *m_calloc(size_t size, char *fn_name);
-void *m_realloc(void *address, int size, char *fn_name);
+void m_free(void *address, char *file_name, long line_no);
+void *m_malloc(size_t size, char *file_name, long line_no);
+void *m_calloc(size_t size, char *file_name, long line_no);
+void *m_realloc(void *address, long size, char *file_name, long line_no);
 
-# endif
-
+#endif
 #define MEMORY_INCLUDE_FINISHED

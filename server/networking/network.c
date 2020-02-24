@@ -122,7 +122,7 @@ netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size)
         data.is_spare   = TRUE;
     }
     else if (size < MAX_ALLOWED_NETWORK_BUFFER) {
-        memory  = m_malloc(size, "network.c:net**readxbytes");
+        memory  = m_malloc(size, MEMORY_FILE_LINE);
         data.is_malloc  = TRUE;
     }
     else {
@@ -175,7 +175,7 @@ char *network_netconn_data_address(netconn_data_s *data)
 void network_data_free(netconn_data_s data)
 {
     if(data.is_malloc)
-        m_free(data.data_address, "network.c: network_free"); 
+        m_free(data.data_address, MEMORY_FILE_LINE); 
 }
 
 /* 

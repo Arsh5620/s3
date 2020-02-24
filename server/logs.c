@@ -78,7 +78,7 @@ int logs_write_printf(char *string, ...)
     	, local_time.tm_sec);
 
     int write	= fwrite(buffer, 1, length, logs.file);
-	m_free(buffer, MEMORY_NAME_NONE);
+	m_free(buffer, MEMORY_FILE_LINE);
 
 	if(length != write)
 		is_error	= TRUE;
@@ -87,7 +87,7 @@ int logs_write_printf(char *string, ...)
 		length  = strings_svprintf(&buffer, string, variable_args);
 		write	= fwrite(buffer, 1, length, logs.file);
 		fwrite(LOG_FILE_NEWLINE, 1, 2, logs.file);
-		m_free(buffer, MEMORY_NAME_NONE);
+		m_free(buffer, MEMORY_FILE_LINE);
 		if(length != write)
 			is_error	= TRUE;
 	}
@@ -105,7 +105,7 @@ int logs_write_printf(char *string, ...)
 
 void logs_cleanup()
 {
-    m_free(logs.filename, "logger.c:logger_cleanup");
+    m_free(logs.filename, MEMORY_FILE_LINE);
 
     if(fclose(logs.file) != 0)
         printf("Could not close the file open for logging.\n");

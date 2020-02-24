@@ -138,14 +138,14 @@ void database_set_isnull(char flags, my_bool *is_null)
 database_table1_s *database_table1_allocate()
 {
     database_table1_s *table =
-        m_calloc(sizeof(database_table1_s), "database.c:table1_create:1");
+        m_calloc(sizeof(database_table1_s), MEMORY_FILE_LINE);
 
     table->folder_name.address = 
-    m_calloc(DATABASE_FOLDERNAME_LEN, "database.c:table_create:2");
+    m_calloc(DATABASE_FOLDERNAME_LEN, MEMORY_FILE_LINE);
     table->folder_name.length = DATABASE_FOLDERNAME_LEN;
 
     table->file_name.address = 
-    m_calloc(DATABASE_FILENAME_LEN, "database.c:table_create:3");
+    m_calloc(DATABASE_FILENAME_LEN, MEMORY_FILE_LINE);
     table->file_name.length = DATABASE_FILENAME_LEN;
 
     return(table);
@@ -161,14 +161,14 @@ void database_table1_free(database_table1_s *table)
         free(table->folder_name.address);
 
     if (table) 
-        m_free(table, "database.c:table1_free");
+        m_free(table, MEMORY_FILE_LINE);
 }
 
 // will just call m_free on the mallocated memory area
 // the structure should not be used after this call. 
 void database_table1_bind_free(db_table_stmt_s *table)
 {
-    m_free(table, "database.c:**table1_free");
+    m_free(table, MEMORY_FILE_LINE);
 }
 db_table_stmt_s *database_table1_bind_get(database_table1_s *table)
 {
@@ -199,7 +199,7 @@ db_table_stmt_s *database_table1_bind_getselective(
     , int count)
 {
     db_table_stmt_s *stmt_table1 =  
-        m_calloc(sizeof(db_table_stmt_s), "database.c:**table1_bind_get");
+        m_calloc(sizeof(db_table_stmt_s), MEMORY_FILE_LINE);
 
     enum enum_field_types types[DATABASE_TABLE1_COLUMNCOUNT] = {
         MYSQL_TYPE_STRING
