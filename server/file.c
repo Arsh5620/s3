@@ -98,7 +98,7 @@ file_reader_s file_init_reader(FILE *file)
         return(reader);
 
     reader.reader_malloc    = 
-        m_malloc(FILE_READER_BUFFERLENGTH , "file.c:file_init_reader");
+        m_malloc(FILE_READER_BUFFERLENGTH, MEMORY_FILE_LINE);
 
     if(reader.reader_malloc == NULL)
         return(reader);

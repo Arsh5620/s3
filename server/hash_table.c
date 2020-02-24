@@ -24,11 +24,15 @@ unsigned long hash_table_hash(unsigned long in, unsigned long modulus)
  */
 hash_table_s hash_table_init()
 {
+    return(hash_table_init_n(HASH_TABLE_DEFAULT_SIZE));
+}
+
+hash_table_s hash_table_init_n(long size)
+{
     hash_table_s hash_table = {0};
-    size_t default_size = HASH_TABLE_DEFAULT_SIZE;
-    hash_table.size = default_size;
-    hash_table.raw_size = default_size * sizeof(hash_table_bucket_s);
-    hash_table.fill_factor  = default_size * HASH_TABLE_FILL_FACTOR;
+    hash_table.size = size;
+    hash_table.raw_size = size * sizeof(hash_table_bucket_s);
+    hash_table.fill_factor  = size * HASH_TABLE_FILL_FACTOR;
     hash_table.memory  = 
         (hash_table_bucket_s*)calloc(hash_table.raw_size, 1);
 

@@ -28,6 +28,7 @@ typedef struct hash_table_struct {
 #define HASH_TABLE_EXPAND_SIZE  2
 
 hash_table_s hash_table_init();
+hash_table_s hash_table_init_n(long size);
 hash_table_s hash_table_expand(hash_table_s *table);
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry);
 unsigned long hash_table_hash(unsigned long in, unsigned long modulus);

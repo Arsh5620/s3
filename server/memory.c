@@ -7,151 +7,170 @@
 #include <stdio.h>
 
 #if DEBUG_MEMORY == 1
-static malloc_store_s store = {0};
 
-void add_to_store(void * address
-                    , int size_requested
-                    , char *function_name
-                    , unsigned int fn_name_length)
+static malloc_s track = {0}; // only available in the same object file
+
+void memory_exit(int reason)
 {
-    if(store.allocations.length == 0)
-        store.allocations =  my_list_new(
-            MEMORY_TABLE_SIZE , sizeof(mdbg_alloc_s));
+    if(reason   == MALLOC_FAILED)
+        printf("malloc");
+    if(reason   == CALLOC_FAILED)
+        printf("calloc");
+    if(reason   == REALLOC_FAILED)
+        printf("realloc");
 
-    if(store.allocation_hashes.size == 0)
-        store.allocation_hashes = hash_table_init();
-
-    if(fn_name_length > MEMORY_NAME_LENGTH)
-        fn_name_length = MEMORY_NAME_LENGTH;
-
-
-    mdbg_alloc_s allocation = {0};
-    allocation.request_type = MEMORY_ALLOCATION_MALLOC;
-
-    memcpy(allocation.function_name, function_name
-            , fn_name_length);
-        
-    allocation.size_requested   = size_requested;
-    allocation.address          = address;
-
-    unsigned int index = my_list_push(&store.allocations
-                                    , (void*) &allocation);
-    hash_table_bucket_s hash_entry = {(unsigned long)address,  index, 0};
-    hash_table_add(&store.allocation_hashes, hash_entry);
+    if(reason == MALLOC_FAILED 
+        || reason == CALLOC_FAILED 
+        || reason == REALLOC_FAILED)
+        printf(" failed possibly due to low memory, program will "
+            "now exit, please check logs and program exit code for"
+            " more info.\n");
+    
+    if(reason == FREE_FAILED)
+        printf("cannot free memory when tried, program will exit, and "
+            "your OS will free all the memory.\n");
+    exit(reason);
 }
 
-void update_in_store(void * address
-                        , void *original_address
-                        , int size_requested
-                        , char *function_name
-                        , unsigned int fn_name_length
-                        , memalloc_enum request_type)
+void memory_track_add(void * address
+    , long size , char *file_name , long line_no)
 {
-    hash_table_bucket_s entry    = 
-        hash_table_get(store.allocation_hashes
-                        , (unsigned long) original_address);
+    if(track.is_init == FALSE){
+        track.list  = 
+            my_list_new(MEMORY_TABLE_SIZE, sizeof(malloc_node_s));
+        track.hash  = hash_table_init_n(MEMORY_TABLE_SIZE);
+    }
     
-    if(entry.is_occupied != TRUE) {
+    malloc_node_s track_node = {0};
+    track_node.type = MEMORY_ALLOC_MALLOC;
+    
+    track_node.file_name    = file_name;
+    track_node.line_no  = line_no;
+    track_node.size = size;
+    track_node.address  = address;
+
+    long index = my_list_push(&track.list, (char*) &track_node);
+
+    hash_table_bucket_s hash_entry = 
+        {(unsigned long)address, index, 0};
+    hash_table_add(&track.hash, hash_entry);
+}
+
+void memory_track_update(void * address
+    , void *prev_addr , long size
+    , char *file_name , long line_no , malloc_enum type)
+{
+    hash_table_bucket_s entry   = 
+        hash_table_get(track.hash, (unsigned long) prev_addr);
+    
+    if(prev_addr == NULL || entry.is_occupied != TRUE) {
         printf("Could not update store for address %p, failed!\n"
             , address);
         return;
     }
 
     int index   = entry.value;
-    mdbg_alloc_s *alloc = 
-        (mdbg_alloc_s*)my_list_get(store.allocations, index);
+    malloc_node_s *list_i   = 
+        (malloc_node_s*)my_list_get(track.list, index);
     
-    alloc->request_type     = request_type;
-    alloc->original_address = original_address;
-    alloc->address          = address;
 
-    if(size_requested != -1)
-        alloc->size_requested   = size_requested;
+    list_i->type    = type;
+    list_i->prev_address    = prev_addr;
+    list_i->address = address;
+    list_i->file_name   = file_name;
+    list_i->line_no = line_no;
 
-    memset(alloc->function_name, 0, sizeof(alloc->function_name));
-    memcpy(alloc->function_name, function_name, fn_name_length);
+    if(size != -1)
+        list_i->size    = size;
 
     if(address != NULL) {
-        hash_table_bucket_s hash_entry = {(unsigned long)address,  index, 0};
-        hash_table_add(&store.allocation_hashes, hash_entry);
+        // both addresses must point to the same list node.
+        hash_table_bucket_s hash_entry = 
+            {(unsigned long)address,  index, 0};
+        hash_table_add(&track.hash, hash_entry);
     }
 }
 
-void *m_malloc(size_t size, char *fn_name)
+void *m_malloc(size_t size, char *file_name, long line_no)
 {
     void *memory    = malloc(size);
     if(memory == NULL)
-        exit(MALLOC_FAILED);
+        memory_exit(MALLOC_FAILED);
 
-    add_to_store(memory, size, fn_name, strlen(fn_name));
+    memory_track_add(memory, size, file_name, line_no);
 
     return(memory);
 }
 
-void *m_calloc(size_t size, char *fn_name)
+void *m_calloc(size_t size, char *file_name, long line_no)
 {
     void *memory    = calloc(size, 1);
     if(memory == NULL)
-        exit(MALLOC_FAILED);
+        memory_exit(CALLOC_FAILED);
 
-    add_to_store(memory, size, fn_name, strlen(fn_name));
+    memory_track_add(memory, size, file_name, line_no);
 
     return(memory);
 }
 
-void *m_realloc(void *address, int size, char *fn_name)
+void *m_realloc(void *address, long size, char *file_name, long line_no)
 {
     void *memory    = realloc(address, size);
 
-    update_in_store(memory, address, size, fn_name, strlen(fn_name)
-                            , MEMORY_ALLOCATION_REALLOC);
+    memory_track_update(memory, address
+        , size, file_name, line_no, MEMORY_ALLOC_REALLOC);
 
     return(memory);
 }
 
-void m_free(void *address, char *fn_name)
+void m_free(void *address, char *file_name, long line_no)
 {
-    free(address);
-
-    update_in_store(0, address, -1, fn_name
-                    , strlen(fn_name), MEMORY_ALLOCATION_FREE);
+    if(address){
+        free(address);
+        memory_track_update(NULL, address, -1, file_name
+            , line_no, MEMORY_ALLOC_FREE);
+    }
 }
 
-void m_print_dbg()
+void memory_print_debug()
 {
-    printf("MEMDBG ALLOCATIONS:\n\n");
-    for(size_t i=0; i<store.allocations.index; ++i){
-        mdbg_alloc_s j = (*(mdbg_alloc_s*)my_list_get(store.allocations, i));
-        printf("MEMDBG allocation # %ld ::\naddress: %p\n"
-                    "allocating function: %s\nrequest type: %d\n"
-                    "requested size: %d\noriginal address (if "
-                    "applicable): %p\n", i, j.address, j.function_name
-                    , j.request_type, j.size_requested, j.original_address);
+    printf("tracked memory allocations:\n\n");
+    for(size_t i=0; i<track.list.index; ++i){
+        malloc_node_s j = (*(malloc_node_s*)my_list_get(track.list, i));
+        printf("address: %p\n"
+                    "previous address: %p\n"
+                    "allocating file name: %s\n"
+                    "allocation file line number: %ld\n"
+                    "request type: %d\n"
+                    "requested size: %ld\n"
+                    , j.address, j.prev_address
+                    , j.file_name, j.line_no
+                    , j.type, j.size);
 
-        printf("*** memory at the location %p starts with ***\n%.*s\n*** ***\n\n"
-                    , j.address
-                    , j.size_requested > 100 ? 100: j.size_requested
+        printf("*** preview ***\n%.*s\n*** ***\n\n"
+                    , (int)(j.size > 100 ? 100: j.size)   
                     , (char*) j.address);
     }
 }
 
 #else
 
-void inline m_free(void *address, char *fn_name)
+void inline m_free(void *address, char *file_name, long line_no)
 {
     free(address);
 }
 
-void inline *m_malloc(size_t size, char *fn_name)
+void inline *m_malloc(size_t size, char *file_name, long line_no)
 {
     return malloc(size);
 }
 
-void inline *m_realloc(void *address, int size, char *fn_name)
+void inline *m_realloc(void *address, int size
+    , char *file_name, long line_no)
 {
     return realloc(address, size);
 }
-void inline *m_calloc(size_t size, char *fn_name)
+void inline *m_calloc(size_t size, char *file_name, long line_no)
 {
     return calloc(size, 1);
 }
