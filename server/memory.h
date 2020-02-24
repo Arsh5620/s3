@@ -12,6 +12,7 @@
 
 #define MEMORY_TABLE_SIZE   2048
 #define MEMORY_NAME_LENGTH  32
+#define MEMORY_NAME_NONE ""
 
 typedef enum memory_allocation_type_enum {
     MEMORY_ALLOCATION_MALLOC

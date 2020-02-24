@@ -1,7 +1,11 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
-CFLAGS=-ggdb3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+ifeq ($(RELEASE), 1)
+    CFLAGS =-O3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+else
+	CFLAGS =-ggdb3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+endif
 LINKFLAGS=-lmysqlclient
 
 HEADERFILES=defines.h networking/network.h list.h \
