@@ -3,21 +3,19 @@
 
 #include <stdio.h>
 
-#define LOG_DIR_NAME "./logs/"
-#define LOG_FILE_NAME "%slog%ld.log"
+#define LOG_DIR_NAME "logs"
+#define LOG_FILE_NAME "%s/log-%ld.log"
 #define LOG_FILE_NEWLINE "\r\n"
-
+#define LOG_FILE_OUTPUT "[%02d-%02d-%04d %02d:%02d:%02d] :: "
 #define LOG_MAX_FILENAMELENGTH  256
 #define LOG_MAX_SPRINTFBUFFER   2048
 
 typedef struct logger
 {
     FILE *file;
-    size_t bytes_written;
     char *filename;
-    char *sprint_buffer;
-
-    char init_complete;
+    char is_init;
+    char is_empty;
 } logger_s;
 
 logger_s logs_init();

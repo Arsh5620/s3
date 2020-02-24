@@ -111,7 +111,7 @@ array_list_s dbp_headers_read(dbp_s *_read, int length)
                                 (&(_read->connection), length);
 
     void *address = network_netconn_data_address(&header);
-    tolowercase(address, header.data_length);
+    strings_to_lowercase(address, header.data_length);
 
     array_list_s header_list   = parser_parse(address
                                     , header.data_length);

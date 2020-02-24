@@ -1,0 +1,6 @@
+networking/*
+parser/*
+binarysearch -- no allocations
+strings -- no allocations in file
+list -- allocations not tracked by memory list
+hash_table -- allocations not tracked by memory list
