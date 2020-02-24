@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dbp.h"
+#include "memory.h"
 
 int main(int argc, char *argv[])
 {
