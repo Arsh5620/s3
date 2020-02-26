@@ -3,3 +3,5 @@
 main
 server/logs/*
 server/temp/*
+server/CONFIGFORMAT
+server/configformat.2
