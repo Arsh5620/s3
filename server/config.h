@@ -10,7 +10,6 @@
 #include "./databases/database.h"
 #include "binarysearch.h"
 
-array_list_s config_read_file(FILE *file);
 database_connection_s config_parse_dbc(char *filename);
 
 extern b_search_string_s config_property[5];

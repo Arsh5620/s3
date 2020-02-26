@@ -5,9 +5,9 @@
 #include "list.h"
 #include "hash_table.h"
 
-#define DEBUG_MEMORY 1
+#define MEMORY_FILE_LINE __FILE__, __LINE__
 
-#if DEBUG_MEMORY == 1
+#ifdef DEBUG_MEMORY
 
 #define MEMORY_TABLE_SIZE   2048
 
@@ -17,8 +17,6 @@ typedef enum {
     , MEMORY_ALLOC_REALLOC
     , MEMORY_ALLOC_FREE
 } malloc_enum;
-
-#define MEMORY_FILE_LINE __FILE__, __LINE__
 
 typedef struct memory_allocation_table {
     char *file_name; // please use the compiler directive __FILE__

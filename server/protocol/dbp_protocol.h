@@ -6,7 +6,7 @@
 
 #define DBP_FILE_TEMP_DIR "./temp/"
 
-#define DBP_ACTION_ERR  -1
+#define DBP_ACTION_NOID  -1
 #define DBP_ATTRIBS_ERR_NAMETOOLONG   0x0003
 #define DBP_ATTRIBS_ERR_CRC32NOTFOUND       0x0004
 

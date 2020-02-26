@@ -55,8 +55,8 @@ void *my_list_get(array_list_s list, size_t index)
         return (NULL);
 }
 
-void my_list_delete(array_list_s *list) 
+void my_list_delete(array_list_s list) 
 {
-    if(list->memory)
-        free(list->memory);
+    if(list.memory)
+        free(list.memory);
 }
