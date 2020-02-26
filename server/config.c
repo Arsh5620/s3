@@ -6,14 +6,8 @@
 // key:value pairs that can be used to initialize the program
 array_list_s config_read_file(FILE *file)
 {
-    file_reader_s reader    = file_init_reader(file);
-
-    int result  = file_reader_fill(&reader);
-
-    array_list_s parsed_table   = 
-        parser_parse(reader.reader_malloc, reader.reader_readlength);
-    
-    return(parsed_table);
+    array_list_s list;
+    return(list);
 }
 
 database_connection_s config_parse_dbc(char *filename)

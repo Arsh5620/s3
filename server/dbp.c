@@ -21,7 +21,7 @@ dbp_s dbp_init(unsigned short port)
         config_parse_dbc("CONFIGFORMAT");
     if(database_init(connect_info) == DATABASE_SETUP_COMPLETE
         && database_verify_integrity() == MYSQL_SUCCESS) {
-        protocol.setup_complete = TRUE;
+        protocol.is_init = TRUE;
     }
     return(protocol);
 }

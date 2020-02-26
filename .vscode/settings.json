@@ -35,6 +35,7 @@
         "file.h": "c",
         "unistd.h": "c",
         "list.h": "c",
-        "parser.h": "c"
+        "parser.h": "c",
+        "dbp_protocol.h": "c"
     }
 }

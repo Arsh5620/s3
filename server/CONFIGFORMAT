@@ -1,34 +1,3 @@
-# you can copy this file to create the default configuration. 
-# this file is just a skeleton file, and the correct values must
-# be used. config files allow for use of comments by using # symbol.
-# remove the # sign for the values below to become available. 
-# config files does not allow for use of escapes such as "\" or "/"
-
-# username : "actual username"
-# password : "actual password"
-# database : "database_name"
-# machine : "ip address or web address"
-# port : 3306
-
-# you can also align the : to make it look more clean as the config
-# will trim any unnecessary spaces, also you can use "=" as assignment
-# NO use of TABS is allowed. 
-
-# username = "actual username"
-# password = "actual password"
-# database = "database_name"
-# machine  = "ip address or web address"
-# port     = 3306
-
-# where using quotations marks the value will either end at the new line
-# or when end-quotation is used. if ending at new line value is marked
-# as corrupted or non-usable. so the following is illegal
-# which means config does not allow for '"' to be used in passwords. 
-# string literal '/', or '\' is read as such so they are allowed. 
-
-# username = "incorrect value for username
-# username = correct/value/for/username
-
 username = "arsh"
 password = "p@ssw0rd"
 database = ""

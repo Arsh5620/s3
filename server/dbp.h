@@ -9,7 +9,7 @@ typedef struct device_backup_protocol {
     netconn_info_s connection;
     array_list_s headers;
     unsigned long header_magic_now;
-    char setup_complete;
+    char is_init;
 } dbp_s;
 
 enum connection_shutdown_type {
