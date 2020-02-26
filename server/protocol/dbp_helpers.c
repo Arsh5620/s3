@@ -68,15 +68,15 @@ static b_search_string_s actions_supported[4] =
 
 int dbp_headers_action(dbp_s *_read, key_value_pair_s pair)
 {
-    if(memcmp(pair.key, "action", 6) == 0){
+    int action = -1;
+    if(memcmp(pair.key, actions_supported[0].string
+        , actions_supported[0].strlen) == 0) {
         // now here to check the action that the client is requesting.
-        int action = b_search(actions_supported
-                        , sizeof(actions_supported)/sizeof(b_search_string_s)
-                        , pair.value
-                        , pair.value_length);
-        if(action != -1)
-            return(action);
+        action = b_search(actions_supported
+            , sizeof(actions_supported)/sizeof(b_search_string_s)
+            , pair.value
+            , pair.value_length);
     }
-    return(DBP_ACTION_ERR);
+    return(action);
 }
 

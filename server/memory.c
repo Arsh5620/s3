@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if DEBUG_MEMORY == 1
+#ifdef DEBUG_MEMORY
 
 // the program is found to have limitations in case the operating system 
 // assigned a just-freed block to the new mallocation the address
@@ -170,7 +170,7 @@ void inline *m_malloc(size_t size, char *file_name, long line_no)
     return malloc(size);
 }
 
-void inline *m_realloc(void *address, int size
+void inline *m_realloc(void *address, long size
     , char *file_name, long line_no)
 {
     return realloc(address, size);

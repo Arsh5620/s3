@@ -2,20 +2,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-// config_read_file must read a file interpret it and return 
-// key:value pairs that can be used to initialize the program
-array_list_s config_read_file(FILE *file)
-{
-    array_list_s list;
-    return(list);
-}
-
 database_connection_s config_parse_dbc(char *filename)
 {
     FILE *config    = fopen(filename, FILE_MODE_READONLY);
 
     database_connection_s connection = {0};
-    array_list_s list = config_read_file(config);
+    array_list_s list = parser_parse_file(config);
 
     for(int i=0; i<list.index; ++i){
         key_value_pair_s pair = *(key_value_pair_s*) my_list_get(list, i);
@@ -45,9 +37,13 @@ database_connection_s config_parse_dbc(char *filename)
         case CONFIG_PORT:
             connection.port = (int) strtol(pair.value, NULL, 10);
             break;
+        default:
+            // do nothing if we have a key:value pair that we don't need
+            break;
         }
     }
 
     fclose(config);
+    parser_release_list(list);
     return(connection);
 }   

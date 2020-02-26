@@ -19,6 +19,7 @@ dbp_s dbp_init(unsigned short port)
 
     database_connection_s connect_info  = 
         config_parse_dbc("CONFIGFORMAT");
+        
     if(database_init(connect_info) == DATABASE_SETUP_COMPLETE
         && database_verify_integrity() == MYSQL_SUCCESS) {
         protocol.is_init = TRUE;
@@ -29,13 +30,15 @@ dbp_s dbp_init(unsigned short port)
 void dbp_accept_connection_loop(dbp_s *protocol)
 {
     logs_write_printf("waiting for the client to connect ...");
-    while (network_connect_accept_sync(&(protocol->connection)) == SUCCESS) {
-        logs_write_printf("client connected: %s : %d"
+    while (SUCCESS == 
+        network_connect_accept_sync(&(protocol->connection))) {
+
+        logs_write_printf("client connected: {%s(%d)}"
             , inet_ntoa(protocol->connection.client_socket.sin_addr)
             , ntohs(protocol->connection.client_socket.sin_port)); 
 
         for(;;) {
-            if(dbp_read(protocol) == -1) break;
+            if(dbp_read(protocol)) break;
         }
 
         dbp_shutdown_connection(*protocol, DBP_CONNECT_SHUTDOWN_FLOW);
@@ -51,43 +54,42 @@ void dbp_shutdown_connection(dbp_s protocol
     }
 }
 
-// returns -1 if the client is asking for the connection to be closed.
-int dbp_read(dbp_s *_read)
+// returns 0 for success, any other number for error or conn close request
+int dbp_read(dbp_s *protocol)
 {
-    data_types_s data = network_data_read_long(&(_read->connection));
-    int header_size     = dbp_magic_check(data.data_types_u._long);
+    data_types_s data   = network_data_read_long(&(protocol->connection));
+    int header_size = dbp_magic_check(data.data_types_u._long);
     // printf("%lx is the pointer\n", data.data_u._long);
     
     if(header_size == -1) {
         // the header size we have received is 
         // not correct, possible protocol corruption.
         // end connection with the client. 
-        logs_write_printf("connection closed as header invalid 0x%.16lx."
-                , data.data_types_u._long);
-        dbp_shutdown_connection(*_read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
-        return(-1);
+        logs_write_printf("connection closed as possible"
+            " corruption detected(header: 0x%.16lx)."
+            , data.data_types_u._long);
+        
+        return(DBP_CONNEND_CORRUPT);
     }
 
-    array_list_s header_list    = dbp_headers_read(_read, header_size);
-    _read->headers  = header_list;
-    _read->header_magic_now  = data.data_types_u._long;
-
-    key_value_pair_s first_record   = 
-                        *(key_value_pair_s*)my_list_get(header_list, 0);
+    array_list_s header_list    = dbp_headers_read(protocol, header_size);
+    protocol->headers   = header_list;
+    protocol->header_magic_now  = data.data_types_u._long;
 
     int action = 0;
-    if(header_list.index > 0)
-        action = dbp_headers_action(_read, first_record);
-    else
-        return(-1);
-
-    if(action == DBP_ACTION_ERR) {
-        dbp_shutdown_connection(*_read, DBP_CONNECT_SHUTDOWN_CORRUPTION);
-        return(action);
+    key_value_pair_s pair   = {0};
+    if(header_list.index > 0){
+        pair    = *(key_value_pair_s*)my_list_get(header_list, 0);
+        action  = dbp_headers_action(protocol, pair);
     }
+    else
+        return(DBP_CONN_EMPTYPACKET);
 
-    int handler = dbp_action_dispatch(_read,action);
-    return(0);
+    if(action == DBP_ACTION_NOID)
+        return(DBP_CONN_INVALID_ACTION);
+
+    int handler = dbp_action_dispatch(protocol, action);
+    return(handler);
 }
 
 int dbp_action_dispatch(dbp_s *protocol, int action)
@@ -105,17 +107,13 @@ int dbp_action_dispatch(dbp_s *protocol, int action)
     return(result);
 }
 
-array_list_s dbp_headers_read(dbp_s *_read, int length)
+array_list_s dbp_headers_read(dbp_s *protocol, int length)
 {
-    netconn_data_s header    = network_data_readxbytes
-                                (&(_read->connection), length);
-
+    netconn_data_s header   = 
+        network_data_readxbytes(&protocol->connection, length);
     void *address = network_netconn_data_address(&header);
-    strings_to_lowercase(address, header.data_length);
-
-    array_list_s header_list   = parser_parse(address
-                                    , header.data_length);
-                                        
+    array_list_s header_list    = 
+        parser_parse(address, header.data_length);
     return(header_list);
 }
 
@@ -134,7 +132,7 @@ int dbp_magic_check(long magic)
 
 long int dbp_data_length(unsigned long magic)
 {
-    return(magic & 0x000FFFFFFFFFFFFF);
+    return(magic & 0x0000FFFFFFFFFFFF);
 }
 
 void dbp_cleanup(dbp_s protocol_handle)

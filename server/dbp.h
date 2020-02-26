@@ -5,6 +5,11 @@
 #include "list.h"
 #include "parser/parser.h"
 
+#define DBP_CONN_EMPTYPACKET    0
+#define DBP_CONNEND_FLOW    1
+#define DBP_CONNEND_CORRUPT 2
+#define DBP_CONN_INVALID_ACTION 3
+
 typedef struct device_backup_protocol {
     netconn_info_s connection;
     array_list_s headers;

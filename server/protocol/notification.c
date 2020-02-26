@@ -3,8 +3,8 @@
 int dbp_protocol_notification(dbp_s *protocol)
 {
     netconn_data_s data_read    = 
-                    network_data_readxbytes(&protocol->connection
-                        , dbp_data_length(protocol->header_magic_now));
+        network_data_readxbytes(&protocol->connection
+        , dbp_data_length(protocol->header_magic_now));
 
     void *address = network_netconn_data_address(&data_read);
 

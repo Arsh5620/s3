@@ -25,6 +25,15 @@ array_list_s parser_parse(char *buffer, int length)
     return(list);
 }
 
+void parser_release_list(array_list_s list)
+{
+    for(long i = 0; i < list.index; ++i) {
+        key_value_pair_s pair = *(key_value_pair_s*)my_list_get(list, i);
+        if(pair.key)
+            free(pair.key);
+    }
+}
+
 void parser_push_copy(array_list_s *list, key_value_pair_s pair)
 {
     if(pair.key_length == 0) // the node is a comment line
@@ -43,19 +52,21 @@ void parser_push_copy(array_list_s *list, key_value_pair_s pair)
     memmove(node.key + pair.key_length
         , pair.value, pair.value_length);
         
-    my_list_push(list, (char*)&pair);
+    my_list_push(list, (char*)&node);
     // printf("push key:%.*s, value:%.*s\n", 
     //     node.key_length, node.key, node.value_length, node.value);
 }
 
-// please note that unlike parser_parse which will not do any malloc
-// the actual data but will contain an array_list_s that only has 
-// references and sizes of the key:value pairs in memory buffer, 
-// parser_parse_file will do memory allocation to store key:value pair
-// this memory should be released using free when no longer required. 
-parser_file_s parser_parse_file(FILE *file)
+/*
+* please note that unlike parser_parse which will not do any malloc
+* and copy the actual data but will contain an array_list_s that only has 
+* references and sizes of the key:value pairs in memory buffer, 
+* parser_parse_file will do memory allocation to store key:value pair
+* this memory should be released using parser_release_list
+* when no longer required. 
+*/
+array_list_s parser_parse_file(FILE *file)
 {
-    parser_file_s parse = {0};
     file_reader_s reader    = file_init_reader(file);
 
     // fill the file initially. 
@@ -64,7 +75,6 @@ parser_file_s parser_parse_file(FILE *file)
     lexer_s lex = lexer_init(reader.buffer, reader.readlength);
     lexer_status_s status = {0};
     array_list_s list   = my_list_new(12, sizeof(key_value_pair_s));
-    parse.list  = list;
     key_value_pair_s pair = {0};
 
     do
@@ -74,7 +84,7 @@ parser_file_s parser_parse_file(FILE *file)
         status.status   = 0;
         pair = parser_parse_next(&lex, &status);
         
-        if(status.status == PARSER_STATUS_NOERROR) {
+        if(pair.key != NULL && pair.value != NULL) {
             parser_push_copy(&list, pair);
         }
         parser_print_status(lex, status);
@@ -86,8 +96,7 @@ parser_file_s parser_parse_file(FILE *file)
                 printf("statment size exceeds the buffer size.\n");
                 status.errno  = PARSER_STATUS_ERRUNEXPECTED_TOOLONG;
                 parser_print_lineinfo(lex, status, 1);
-                parse.error = 1;
-                return(parse);
+                return(list);
             }
 
             long bytes_move = reader.readlength - status.base_index;
@@ -108,7 +117,7 @@ parser_file_s parser_parse_file(FILE *file)
     if(status.status == PARSER_STATUS_EOF && pair.is_valid)
         parser_push_copy(&list, pair);
         
-    return(parse);
+    return(list);
 }
 
 static char *errors[] = {
@@ -116,7 +125,7 @@ static char *errors[] = {
     , "unexpected comment when expected string or operator.\n"
     , "unexpected operator when expected string.\n"
     , "unexpected string when expected operator.\n"
-    , "illegal string or operator at this location.\n"
+    , "illegal character or operator at this location.\n"
 };
 
 static char *warnings[] = {
@@ -155,7 +164,7 @@ void parser_print_err(lexer_s lexer, lexer_status_s status)
     parser_print_lineinfo(lexer, status, 1);
     long int errnum = status.errno - PARSER_ERRORS - 1;
     if(errnum >= 0 && errnum < sizeof(errors)/sizeof(char*))
-        printf(errors[errnum]);
+        printf("\x1B[0;31m%s\x1B[0m", errors[errnum]);
     else
         printf("unknown error occured, no information available.\n");
 }
@@ -165,7 +174,7 @@ void parser_print_warn(lexer_s lexer, lexer_status_s status)
     parser_print_lineinfo(lexer, status, 0);
     long int warnno = status.warnno - PARSER_WARNINGS - 1;
     if(warnno >=0 && warnno < sizeof(warnings)/sizeof(char*))
-        printf(warnings[warnno]);
+        printf("\x1B[0;32m%s\x1B[0m", warnings[warnno]);
     else 
         printf("unknown warning occured, possible bug, please report.\n");
 }
@@ -185,6 +194,7 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
     key_value_pair_s pair = {0};
     pair.is_valid   = 1;
     int status  = {0};
+    lstatus->base_index = lexer->index;
     
     do {
         //only report the first error or warning.
@@ -202,7 +212,6 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
             break;
         case TOKEN_NEWLINE:
             lstatus->lineno++;
-            lstatus->base_index = lexer->index;
         case TOKEN_CARRIAGERETURN:
             if(!(status == PARSER_STATUS_WAIT_KEY 
                 || status == PARSER_STATUS_WAIT_NONE)) {

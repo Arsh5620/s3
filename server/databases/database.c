@@ -41,6 +41,7 @@ int database_init(database_connection_s connect)
         , connect.port , NULL , 0)) {
         fprintf(stderr, "could not connect to mariaDB server"
             ", check your connection settings and try again.\n");
+        fprintf(stderr, "%s\n", mysql_error(sql_connection));
         exit(SERVER_DATABASE_FAILURE);
     }
     return(DATABASE_SETUP_COMPLETE);
