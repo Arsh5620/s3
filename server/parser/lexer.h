@@ -46,6 +46,7 @@ typedef struct {
 
 lexer_s lexer_init(char *buffer, int buffer_size);
 lexer_token_s lexer_next_token(lexer_s *lexer);
-void lexer_skip_line(lexer_s *lexer);
+int lexer_skip_line(lexer_s *lexer);
+void lexer_reset(lexer_s *lexer,lexer_status_s *lstatus, long size);
 
 #endif // LEXER_INCLUDE_GAURD

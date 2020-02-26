@@ -9,14 +9,26 @@ lexer_s lexer_init(char *buffer, int buffer_size)
     return(lexer);
 }
 
-void lexer_skip_line(lexer_s *lexer)
+// returns 1 if EOF has been reached, and 0 otherwise.
+int lexer_skip_line(lexer_s *lexer)
 {
+    char is_eof = 1;
     while(lexer->index < lexer->size) {
         char c  = lexer->buffer[lexer->index];
-        if(c == '\n' || c == '\r')
+        if(c == '\n' || c == '\r') {
+            is_eof  = 0;
             break;
+        }
         lexer->index++;
     }
+    return(is_eof);
+}
+
+void lexer_reset(lexer_s *lexer,lexer_status_s *lstatus, long size)
+{
+    lexer->index    = 0;
+    lexer->size = size;
+    lstatus->base_index = 0;
 }
 
 lexer_token_s lexer_next_token(lexer_s *lexer)

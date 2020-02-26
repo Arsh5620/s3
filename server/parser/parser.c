@@ -1,7 +1,9 @@
-#include "parser.h"
-#include "../strings.h"
 #include <string.h>
 #include <stdio.h>
+#include "parser.h"
+#include "../strings.h"
+#include "../file.h"
+#include "../memory.h"
 
 array_list_s parser_parse(char *buffer, int length)
 {
@@ -21,6 +23,92 @@ array_list_s parser_parse(char *buffer, int length)
                 && status.errno == 0);
 
     return(list);
+}
+
+void parser_push_copy(array_list_s *list, key_value_pair_s pair)
+{
+    if(pair.key_length == 0) // the node is a comment line
+        return;
+
+    key_value_pair_s node = {0};
+    node.key    = 
+        m_malloc(pair.key_length + pair.value_length
+            , MEMORY_FILE_LINE);
+    
+    node.key_length = pair.key_length;
+    node.value  = node.key + node.key_length;
+    node.value_length   = pair.value_length;
+
+    memmove(node.key, pair.key, pair.key_length);
+    memmove(node.key + pair.key_length
+        , pair.value, pair.value_length);
+        
+    my_list_push(list, (char*)&pair);
+    // printf("push key:%.*s, value:%.*s\n", 
+    //     node.key_length, node.key, node.value_length, node.value);
+}
+
+// please note that unlike parser_parse which will not do any malloc
+// the actual data but will contain an array_list_s that only has 
+// references and sizes of the key:value pairs in memory buffer, 
+// parser_parse_file will do memory allocation to store key:value pair
+// this memory should be released using free when no longer required. 
+parser_file_s parser_parse_file(FILE *file)
+{
+    parser_file_s parse = {0};
+    file_reader_s reader    = file_init_reader(file);
+
+    // fill the file initially. 
+    file_reader_fill(&reader, 0, reader.maxlength);
+
+    lexer_s lex = lexer_init(reader.buffer, reader.readlength);
+    lexer_status_s status = {0};
+    array_list_s list   = my_list_new(12, sizeof(key_value_pair_s));
+    parse.list  = list;
+    key_value_pair_s pair = {0};
+
+    do
+    {
+        status.warnno   = 0;
+        status.errno    = 0;
+        status.status   = 0;
+        pair = parser_parse_next(&lex, &status);
+        
+        if(status.status == PARSER_STATUS_NOERROR) {
+            parser_push_copy(&list, pair);
+        }
+        parser_print_status(lex, status);
+
+        if(status.status == PARSER_STATUS_EOF) {
+            // Now we should attempt to do more read and reset lexer
+            if(status.base_index == 0 
+                && reader.readlength == reader.maxlength) {
+                printf("statment size exceeds the buffer size.\n");
+                status.errno  = PARSER_STATUS_ERRUNEXPECTED_TOOLONG;
+                parser_print_lineinfo(lex, status, 1);
+                parse.error = 1;
+                return(parse);
+            }
+
+            long bytes_move = reader.readlength - status.base_index;
+            long bytes_fill = reader.maxlength - bytes_move;
+
+            if(bytes_move > 0)
+                memmove(reader.buffer
+                    , reader.buffer + status.base_index, bytes_move);
+
+            file_reader_fill(&reader, bytes_move, bytes_fill);
+
+            reader.readlength += bytes_move;
+            lexer_reset(&lex, &status, reader.readlength);
+        }
+    } while ((reader.is_eof  == 0 || reader.readlength > 0)
+                && status.errno == 0);
+    
+    if(status.status == PARSER_STATUS_EOF && pair.is_valid)
+        parser_push_copy(&list, pair);
+        
+    return(parse);
 }
 
 static char *errors[] = {
@@ -135,8 +223,16 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
                 pair.is_valid   = 0;
                 lstatus->errno = PARSER_STATUS_ERRUNEXPECTED_COMMENT;
             }
-            else 
-                lexer_skip_line(lexer);
+            else {
+                if(lexer_skip_line(lexer)){
+                    lstatus->status  = PARSER_STATUS_EOF;
+                    pair.is_valid   = 0;
+                }
+                   
+                if(status == PARSER_STATUS_WAIT_KEY )  {
+                    pair.is_valid   = 0;
+                }
+            }
             break;
         
         case TOKEN_ASSIGNMENT:
@@ -177,7 +273,9 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
             break;
 
         case TOKEN_EOF:
-            pair.is_valid   = 0;
+            if(status != PARSER_STATUS_WAIT_NONE
+                && status != PARSER_STATUS_WAIT_END)
+                pair.is_valid   = 0;
             lstatus->status  = PARSER_STATUS_EOF;
             break;
         default:

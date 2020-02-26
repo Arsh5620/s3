@@ -27,7 +27,7 @@
 #define FILE_READER_SUCCESS 0x00
 #define FILE_READER_UNSUCCESSFUL    0x01
 
-#define FILE_READER_BUFFERLENGTH    0x1000
+#define FILE_READER_BUFFERLENGTH    0x400
 
 typedef struct file_write_helper
 {
@@ -35,20 +35,16 @@ typedef struct file_write_helper
     size_t size;
 } file_write_s;
 
-typedef struct file_buffered_reader
-{
+typedef struct {
     FILE *file;
-    size_t index;
     struct stat stats;    
 
-    void *reader_malloc;
-    int reader_index
-        , reader_readlength
-        , reader_length;
-
-    char eof;
+    char *buffer;
+    long index
+        , readlength
+        , maxlength;
+    char is_eof;
 } file_reader_s;
-
 
 int file_dir_mkine(char *dir_name);
 int file_delete(char *filename);
@@ -60,6 +56,6 @@ int file_download(FILE *file
 struct stat file_read_stat(FILE *file);
 file_reader_s file_init_reader(FILE *file);
 void file_close_reader(file_reader_s *reader);
-int file_reader_fill(file_reader_s *reader);
+int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size);
 
 # endif

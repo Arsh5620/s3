@@ -86,21 +86,21 @@ struct stat file_read_stat(FILE *file)
 }
 
 // file_init_reader sets up memory for an open file to be 
-// read as stream so that the entire file does not need to 
+// read as a stream so that the entire file does not need to 
 // be loaded into the memory. 
 file_reader_s file_init_reader(FILE *file)
 {
     file_reader_s reader = {0};
-    reader.file = file;
-    reader.reader_length    = FILE_READER_BUFFERLENGTH;
-    
     if(file == NULL)
         return(reader);
 
-    reader.reader_malloc    = 
+    reader.file = file;
+    reader.maxlength    = FILE_READER_BUFFERLENGTH;
+
+    reader.buffer   = 
         m_malloc(FILE_READER_BUFFERLENGTH, MEMORY_FILE_LINE);
 
-    if(reader.reader_malloc == NULL)
+    if(reader.buffer == NULL)
         return(reader);
 
     reader.stats   = file_read_stat(file);
@@ -109,43 +109,28 @@ file_reader_s file_init_reader(FILE *file)
 
 void file_close_reader(file_reader_s *reader)
 {
-    if(reader->reader_malloc)
-        free(reader->reader_malloc);
+    if(reader->buffer)
+        free(reader->buffer);
 
     if(reader->file)
         fclose(reader->file);
 }
 
-// file_reader_fill will fill the buffer with file data, currently it 
-// does not support rotating buffers, and only support a maximum file
-// size of FILE_READER_BUFFERLENGTH
-int file_reader_fill(file_reader_s *reader)
+// file_reader_fill will fill the buffer with file data 
+// data will be written at (buffer + fill_at) for fill_size bytes
+int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size)
 {
-    // first we will move the memory to fit in the requested buffer. 
+    if(reader->is_eof){
+        reader->readlength  = -1;
+        return(FILE_READER_UNSUCCESSFUL);
+    }
 
-    // int new_index = reader->reader_readlength - reader->reader_index;
-    // if (new_index)
-    //     memmove(reader->reader_malloc
-    //             , reader->reader_malloc + reader->reader_index
-    //             , new_index);
+    int read    =  
+        fread(reader->buffer + fill_at, 1, fill_size, reader->file);
 
-    // int length_toread       = reader->reader_length - new_index;
-    // reader->reader_index    = 0;
-
-    // int amount_read     =  fread(reader->reader_malloc + new_index, 1
-    //                                 , length_toread, reader->file);
-
-    // reader->reader_readlength   = amount_read;
-
-    // if amount of read data does not matches amount of read requested
-    // and the feof is not set, then return read unsuccessful.
-
-    int amount_read =  fread(reader->reader_malloc, 1
-                                    , reader->reader_length, reader->file);
-
-    reader->eof = feof(reader->file);
-    reader->reader_readlength   = amount_read;
-    if(amount_read != reader->reader_length &&  reader->eof== 0)
+    reader->is_eof = feof(reader->file);
+    reader->readlength  = read;
+    if(read != fill_size &&  reader->is_eof == 0)
         return(FILE_READER_UNSUCCESSFUL);
 
     return(FILE_READER_SUCCESS);
