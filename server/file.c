@@ -58,9 +58,9 @@ int file_download(FILE *file
 
     if(read_required == 0) break;
     netconn_data_s data_read = 
-        network_data_readxbytes(network, read_required);
+        network_data_readstream(network, read_required);
 
-    void *data_address  = network_netconn_data_address(&data_read);
+    void *data_address  = network_data_address(&data_read);
     if(data_read.is_error) {
         network_data_free(data_read);
         return(FILE_UPLOAD_ERR);

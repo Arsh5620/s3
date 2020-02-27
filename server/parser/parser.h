@@ -41,5 +41,7 @@ void parser_push_copy(array_list_s *list, key_value_pair_s pair);
 void parser_print_status(lexer_s lexer, lexer_status_s status);
 void parser_print_warn(lexer_s lexer, lexer_status_s status);
 void parser_print_err(lexer_s lexer, lexer_status_s status);
+void parser_print_lineinfo(lexer_s lexer,
+    lexer_status_s status, char is_err);
 
 #endif // PARSER_INCLUDE_GAURD

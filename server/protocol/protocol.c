@@ -1,0 +1,161 @@
+#include <string.h>
+#include "protocol.h"
+#include "../binarysearch.h"
+#include "../file.h"
+
+// the function will attempt to find the most common attributes
+// that are mostly used by all the "actions", attributes that 
+// are specific (one-to-one) to an "action" is not handled here. 
+
+static b_search_string_s attribs[] = 
+{
+    {"action", 6, .code = ATTRIB_ACTION}
+    , {"crc", 3, .code = ATTRIB_CRC}
+    , {"filename", 8, .code = ATTRIB_FILENAME}
+};
+
+static b_search_string_s actions[] = 
+{
+    {"create", 6, .code = ACTION_CREATE}
+    , {"notification", 12, .code = ACTION_NOTIFICATION} 
+    , {"request", 7, .code = ACTION_REQUEST}
+    , {"update", 6, .code = ACTION_UPDATE}
+};
+
+int dbp_assert_list(array_list_s list, 
+    b_search_string_s *codes, int code_length, 
+    int *match, int match_length)
+{
+    int finds[match_length];
+    memset(finds, 0, sizeof(finds));
+
+    for(long i=0; i<list.index; ++i) {
+        key_value_pair_s pair   = 
+            *(key_value_pair_s*) my_list_get(list, i);
+        int index  =  b_search(codes, code_length
+                        , pair.key, pair.key_length);
+        b_search_string_s node  = codes[index];
+        for(long j=0; j<match_length; ++j)
+        {
+            if(node.code == match[j])
+                break;
+        }
+    }
+    char is_found   = 1;
+    for (size_t i = 0; i < match_length; i++)
+    {
+        if(finds[i] == 0) {
+            is_found    = 0;
+            break;
+        }
+    }
+    return(is_found);   
+}
+
+dbp_common_attribs_s dbp_attribs_try_find(packet_info_s *info)
+{
+    dbp_common_attribs_s attributes = {0};
+
+    array_list_s header_list    = info->header_list;
+    int list_length = header_list.index;
+
+    for(int i=0; i<list_length; ++i) {
+        key_value_pair_s pair   = 
+                *(key_value_pair_s*)my_list_get(header_list, i);
+
+        int attrib  =  b_search(attribs
+                        , sizeof(attribs) 
+                        / sizeof(b_search_string_s)
+                        , pair.key, pair.key_length);
+        
+        if(attrib != -1) {
+            switch (attribs[attrib].code)
+            {
+            case ATTRIB_FILENAME:
+                if(pair.value_length > FILE_NAME_MAXLENGTH 
+                    || pair.value_length == 0){
+                    attributes.filename.error   =
+                                DBP_ATTRIBS_ERR_NAMETOOLONG;
+                } else {
+                    attributes.filename.address = pair.value;
+                    attributes.filename.length  = pair.value_length;
+                }
+                break;
+            case ATTRIB_CRC: 
+                if(pair.value_length != 8) {
+                    attributes.filename.error   =
+                                DBP_ATTRIBS_ERR_CRC32NOTFOUND;
+                }
+                attributes.crc32    = *(unsigned int*) pair.value;
+                break;
+            }
+        }
+    }
+    return(attributes);
+}
+
+packet_info_s dbp_read_headers(dbp_s *protocol, long header_magic)
+{
+	packet_info_s info  = {0};
+    int header_size = dbp_magic_check(header_magic);
+    // printf("%lx is the pointer\n", data.data_u._long);
+    
+    if(header_size < 0) {
+        // the header size we have received is 
+        // not correct, possible protocol corruption.
+        // end connection with the client. 
+        logs_write_printf("connection closed as possible"
+            " corruption detected(header: 0x%.16lx)."
+            , header_magic);
+
+        info.error  = DBP_CONNEND_CORRUPT;
+        return(info);
+    }
+
+    long header_length  = dbp_data_length(header_magic);
+    netconn_data_s header   = 
+        network_data_readstream(&protocol->connection, header_length);
+    char *address = network_data_address(&header);
+    array_list_s header_list    = 
+        parser_parse(address, header.data_length);
+        
+    info.action = -1;
+    
+    key_value_pair_s pair   = {0};
+    if(header_list.index > 0){
+        pair    = *(key_value_pair_s*)my_list_get(header_list, 0);
+	    info.header = header_magic;
+	    info.header_list    = header_list;
+    } else {
+        info.error  = DBP_CONN_EMPTYPACKET;
+        return(info);
+    }
+
+    if(memcmp(pair.key, attribs[0].string, attribs[0].strlen) == 0) {
+        // now here to check the action that the client is requesting.
+        info.action = b_search(actions
+            , sizeof(actions)/sizeof(b_search_string_s)
+            , pair.value
+            , pair.value_length);
+    }
+    if(info.action  == -1) {
+        info.error  = DBP_CONN_INVALID_ACTION;
+    }
+    return(info);
+}
+
+/**
+ * return: will return "header-size" or "-1" for failure, see "defines.h"
+ */
+int dbp_magic_check(long magic)
+{
+    if(((magic >> 56)& 0xD0) == 0xD0) {
+        return (magic>>48) & 0xFF0;
+    }
+    return (-1);
+}
+
+long int dbp_data_length(unsigned long magic)
+{
+    return(magic & 0x0000FFFFFFFFFFFF);
+}

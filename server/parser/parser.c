@@ -133,7 +133,8 @@ static char *warnings[] = {
     " consider adding quotations.\n"
 };
 
-void parser_print_lineinfo(lexer_s lexer, lexer_status_s status, char is_err)
+void parser_print_lineinfo(lexer_s lexer, 
+    lexer_status_s status, char is_err)
 {
     printf("status code: %ld, line no: %ld, index no: %ld\n"
         , is_err?status.errno:status.warnno
