@@ -111,7 +111,7 @@ int network_connect_accept_sync(netconn_info_s *connection)
  * the is_spare variable is set to TRUE and you can read data from 
  * (char*)netconn_data_s.spare[8];
  */
-netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size)
+netconn_data_s network_data_readstream(netconn_info_s *conn, int size)
 {
     netconn_data_s  data = {0};
 
@@ -159,7 +159,7 @@ netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size)
  * helper method to find if netconn_data_s.spare or .data_address
  * should be used by checking the is_spare and is_malloc variables.
  */
-char *network_netconn_data_address(netconn_data_s *data)
+char *network_data_address(netconn_data_s *data)
 {
     if(data->is_spare == TRUE)
         return (char*)&data->spare;
@@ -202,7 +202,7 @@ int network_connection_write(netconn_info_s *conn, char *data, int length)
 data_types_s network_data_read_##data_type(netconn_info_s *conn) \
 { \
     data_types_s type_s = {0}; \
-    netconn_data_s data = (network_data_readxbytes(conn\
+    netconn_data_s data = (network_data_readstream(conn\
         , sizeof(data_type))); \
     if (data.is_spare == TRUE) { \
         type_s.data_types_u._##data_type = *(data_type*)&data.spare; \

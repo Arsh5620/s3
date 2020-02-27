@@ -36,6 +36,7 @@
         "unistd.h": "c",
         "list.h": "c",
         "parser.h": "c",
-        "dbp_protocol.h": "c"
+        "dbp_protocol.h": "c",
+        "system_error": "c"
     }
 }

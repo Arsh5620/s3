@@ -1,12 +1,12 @@
-#include "dbp_protocol.h"
+#include "protocol.h"
 
-int dbp_protocol_notification(dbp_s *protocol)
+int dbp_protocol_notification(packet_info_s *info)
 {
     netconn_data_s data_read    = 
-        network_data_readxbytes(&protocol->connection
-        , dbp_data_length(protocol->header_magic_now));
+        network_data_readstream(&info->dbp->connection
+        , dbp_data_length(info->header));
 
-    void *address = network_netconn_data_address(&data_read);
+    void *address = network_data_address(&data_read);
 
     printf("Client sent a notification: \n");
     printf("%.*s\n\n", (int)data_read.data_length, (char*)address);

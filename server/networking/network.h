@@ -65,9 +65,9 @@ netconn_info_s network_connect_init_sync(int);
 int network_connect_accept_sync(netconn_info_s*);
 void network_data_free(netconn_data_s conn);
 
-netconn_data_s network_data_readxbytes(netconn_info_s *conn, int size);
+netconn_data_s network_data_readstream(netconn_info_s *conn, int size);
 int network_connection_write(netconn_info_s *conn, char *data, int length);
-char *network_netconn_data_address(netconn_data_s *data);
+char *network_data_address(netconn_data_s *data);
 
 #define NETWORK_DATA_READ_TYPE_DECLARATION(data_type) \
 data_types_s network_data_read_##data_type(netconn_info_s *conn);

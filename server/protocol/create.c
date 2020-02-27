@@ -1,30 +1,30 @@
-#include "dbp_protocol.h"
+#include "protocol.h"
 #include "../file.h"
 #include "../defines.h"
 #include "../filemgmt.h"
 #include <time.h>
 
-int dbp_create(dbp_s *protocol)
+int dbp_create(packet_info_s *info)
 {
     // dbp setup the environment before accepting data from connection.
     if (create_setup_environment() == SUCCESS)
     {
-        dbp_common_attribs_s attribs = dbp_attribs_try_find(protocol);
+        dbp_common_attribs_s attribs = dbp_attribs_try_find(info);
         if(attribs.filename.address == 0 || attribs.filename.length == 0)
             return(FAILED);
 
         file_write_s w_info = 
-            create_download_file(protocol, &attribs.filename);
+            create_download_file(info, &attribs.filename);
         
         filemgmt_file_exists(0, &attribs.filename);
     }
     return(FAILED);
 }
 
-file_write_s create_download_file(dbp_s *protocol, string_s *filename)
+file_write_s create_download_file(packet_info_s *info, string_s *filename)
 {
     file_write_s fileinfo  =  {0};
-    fileinfo.size = dbp_data_length(protocol->header_magic_now);
+    fileinfo.size = dbp_data_length(info->header);
 
     char temp_file[FILE_NAME_MAXLENGTH];
 
@@ -34,7 +34,7 @@ file_write_s create_download_file(dbp_s *protocol, string_s *filename)
                                 , (int)filename->length
                                 , (char*)filename->address);
 
-        dbp_common_attribs_s attribs = dbp_attribs_try_find(protocol);
+        dbp_common_attribs_s attribs = dbp_attribs_try_find(info);
     
         string_s original  = attribs.filename;
         FILE *temp  = file_open(temp_file
@@ -47,7 +47,7 @@ file_write_s create_download_file(dbp_s *protocol, string_s *filename)
 
         clock_t starttime = clock();
         int download_status   = 
-            file_download(temp, &protocol->connection, &fileinfo);
+            file_download(temp, &info->dbp->connection, &fileinfo);
         clock_t endtime = clock();
 
         double time_elapsed = 

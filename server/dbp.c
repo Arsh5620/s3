@@ -4,7 +4,7 @@
 #include "defines.h"
 #include "logs.h"
 #include <unistd.h>
-#include "./protocol/dbp_protocol.h"
+#include "./protocol/protocol.h"
 #include "databases/database.h"
 #include "config.h"
 
@@ -38,7 +38,9 @@ void dbp_accept_connection_loop(dbp_s *protocol)
             , ntohs(protocol->connection.client_socket.sin_port)); 
 
         for(;;) {
-            if(dbp_read(protocol)) break;
+            int read_v	= dbp_next(protocol);
+			printf("read_v %d\n", read_v);
+            if(read_v) break;
         }
 
         dbp_shutdown_connection(*protocol, DBP_CONNECT_SHUTDOWN_FLOW);
@@ -47,92 +49,39 @@ void dbp_accept_connection_loop(dbp_s *protocol)
 }
 
 void dbp_shutdown_connection(dbp_s protocol
-            , enum connection_shutdown_type reason)
+	, enum connection_shutdown_type reason)
 {
-    if(close(protocol.connection.client) == 0){
+    if(close(protocol.connection.client) == 0)
         logs_write_printf("client connection closed: reason(%d)", reason);
-    }
 }
 
-// returns 0 for success, any other number for error or conn close request
-int dbp_read(dbp_s *protocol)
+// returns 0 for no-error, any other number for error or conn close request
+int dbp_next(dbp_s *protocol)
 {
-    data_types_s data   = network_data_read_long(&(protocol->connection));
-    int header_size = dbp_magic_check(data.data_types_u._long);
-    // printf("%lx is the pointer\n", data.data_u._long);
-    
-    if(header_size == -1) {
-        // the header size we have received is 
-        // not correct, possible protocol corruption.
-        // end connection with the client. 
-        logs_write_printf("connection closed as possible"
-            " corruption detected(header: 0x%.16lx)."
-            , data.data_types_u._long);
-        
-        return(DBP_CONNEND_CORRUPT);
-    }
-
-    array_list_s header_list    = dbp_headers_read(protocol, header_size);
-    protocol->headers   = header_list;
-    protocol->header_magic_now  = data.data_types_u._long;
-
-    int action = 0;
-    key_value_pair_s pair   = {0};
-    if(header_list.index > 0){
-        pair    = *(key_value_pair_s*)my_list_get(header_list, 0);
-        action  = dbp_headers_action(protocol, pair);
-    }
-    else
-        return(DBP_CONN_EMPTYPACKET);
-
-    if(action == DBP_ACTION_NOID)
-        return(DBP_CONN_INVALID_ACTION);
-
-    int handler = dbp_action_dispatch(protocol, action);
+	data_types_s data   = network_data_read_long(&(protocol->connection));
+	int magic	= data.data_types_u._long;
+    packet_info_s info	= dbp_read_headers(protocol, magic);
+    info.dbp    = protocol;
+	if(info.error) {
+		return(info.error);
+	}
+    int handler = dbp_action_dispatch(info);
     return(handler);
 }
 
-int dbp_action_dispatch(dbp_s *protocol, int action)
+int dbp_action_dispatch(packet_info_s info)
 {
     int result = 0;
-    switch (action)
+    switch (info.action)
     {
     case ACTION_NOTIFICATION:
-        result = dbp_protocol_notification(protocol);
+        result = dbp_protocol_notification(&info);
         break;
     case ACTION_CREATE:
-        result = dbp_create(protocol);
+        result = dbp_create(&info);
         break;
     }
     return(result);
-}
-
-array_list_s dbp_headers_read(dbp_s *protocol, int length)
-{
-    netconn_data_s header   = 
-        network_data_readxbytes(&protocol->connection, length);
-    void *address = network_netconn_data_address(&header);
-    array_list_s header_list    = 
-        parser_parse(address, header.data_length);
-    return(header_list);
-}
-
-
-
-/**
- * return: will return "header-size" or "-1" for failure, see "defines.h"
- */
-int dbp_magic_check(long magic)
-{
-    if(((magic >> 56)& 0xD0) == 0xD0) {
-        return (magic>>48) & 0xFF0;
-    }
-    return (-1);
-}
-
-long int dbp_data_length(unsigned long magic)
-{
-    return(magic & 0x0000FFFFFFFFFFFF);
 }
 
 void dbp_cleanup(dbp_s protocol_handle)

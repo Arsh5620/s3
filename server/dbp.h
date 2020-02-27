@@ -10,32 +10,34 @@
 #define DBP_CONNEND_CORRUPT 2
 #define DBP_CONN_INVALID_ACTION 3
 
-typedef struct device_backup_protocol {
+typedef struct {
     netconn_info_s connection;
-    array_list_s headers;
-    unsigned long header_magic_now;
     char is_init;
-} dbp_s;
+} dbp_s; // device backup protocol
+
+typedef struct {
+    long header;
+    array_list_s header_list;
+    int action;
+    int error;
+    dbp_s *dbp;
+} packet_info_s;
 
 enum connection_shutdown_type {
     DBP_CONNECT_SHUTDOWN_FLOW
     , DBP_CONNECT_SHUTDOWN_CORRUPTION
 };
 
-int dbp_read(dbp_s *_read);
+int dbp_next(dbp_s *protocol);
 dbp_s dbp_init(unsigned short port);
 void dbp_cleanup(dbp_s protocol_handle);
 void dbp_accept_connection_loop(dbp_s *protocol);
 
-// internal functions -- might not need to be used outside. 
-// only use outside of the scope if the function has no side effects. 
+// internal functions -- should not be used outside. 
 
-int dbp_magic_check(long magic);
-void dbp_shutdown_connection(dbp_s protocol
-            , enum connection_shutdown_type reason);
-int dbp_headers_action(dbp_s *_read, key_value_pair_s pair);
-int dbp_action_dispatch(dbp_s *_read, int action);
-long int dbp_data_length(unsigned long magic);
-array_list_s dbp_headers_read(dbp_s *_read, int length);
+void dbp_shutdown_connection(dbp_s protocol 
+    , enum connection_shutdown_type reason);
+int dbp_action_dispatch(packet_info_s info);
+packet_info_s dbp_read_headers(dbp_s *protocol, long header_magic);
 
 #endif
