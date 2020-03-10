@@ -1,0 +1,5 @@
+username = "arsh"
+password = "p@ssw0rd"
+database = ""
+machine  = "localhost"
+port     = 3306

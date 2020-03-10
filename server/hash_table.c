@@ -7,7 +7,7 @@
  * this function calculates a hash given the in and the modulus
  * the modulus must be a power of 2
  */
-unsigned long hash_table_hash(unsigned long in, unsigned long modulus)
+unsigned long hash_long(unsigned long in, unsigned long modulus)
 {
     unsigned int _a1    = in & 0xFFFFFFFF
                 , _a2   = (~in >> 32) & 0xFFFFFFFF;
@@ -16,18 +16,50 @@ unsigned long hash_table_hash(unsigned long in, unsigned long modulus)
 	return li & (modulus - 1);
 }
 
+unsigned long hash_string(void *memory, long len, unsigned long modulus)
+{
+    char *m1    = (char*)memory;
+    unsigned long in    = 0;
+    for(long i=0; i<len; ++i) {
+        in += *m1;
+        unsigned int _a1    = in & 0xFFFFFFFF
+            , _a2   = (~in >> 32) & 0xFFFFFFFF;
+        in = (((_a1 * 2726656) ^ (_a2 * 9931)) + _a2);
+    }
+    in += ~in / modulus;
+    return in & (modulus - 1);
+}
+
+unsigned long hash_hash(char is_key_string
+    , void *memory, size_t len, unsigned long modulus)
+{
+    unsigned long hash  = 0;
+    if(is_key_string != 0)
+        hash    = hash_string(memory, len, modulus);
+    else {
+        unsigned long i = (unsigned long)memory;
+        hash    = hash_long(i, modulus);
+    }
+    return(hash);
+}
+
 /*
  * hash_table_init inits a new hash_table_s structure 
  * it allocated memory for HASH_TABLE_DEFAULT_SIZE buckets, 
  * and returns the structure which can later be used to fill the 
  * table and make use of it. 
  */
-hash_table_s hash_table_init()
+hash_table_s hash_table_initl()
 {
-    return(hash_table_init_n(HASH_TABLE_DEFAULT_SIZE));
+    return(hash_table_init_n(HASH_TABLE_DEFAULT_SIZE, 0));
 }
 
-hash_table_s hash_table_init_n(long size)
+hash_table_s hash_table_inits()
+{
+    return(hash_table_init_n(HASH_TABLE_DEFAULT_SIZE, 1));
+}
+
+hash_table_s hash_table_init_n(long size, char is_key_string)
 {
     hash_table_s hash_table = {0};
     hash_table.size = size;
@@ -35,6 +67,7 @@ hash_table_s hash_table_init_n(long size)
     hash_table.fill_factor  = size * HASH_TABLE_FILL_FACTOR;
     hash_table.memory  = 
         (hash_table_bucket_s*)calloc(hash_table.raw_size, 1);
+    hash_table.is_key_string    = is_key_string;
 
     return(hash_table);
 }
@@ -46,7 +79,9 @@ hash_table_s hash_table_init_n(long size)
  */
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry)
 {
-    size_t hash = hash_table_hash(entry.key, table->size);
+    size_t hash = 
+        hash_hash(table->is_key_string, entry.key, entry.key_len, table->size);
+    
     hash_table_bucket_s *destination = &table->memory[hash];
     
     while (destination->is_occupied == TRUE)
@@ -103,9 +138,11 @@ hash_table_s hash_table_expand(hash_table_s *table)
  * given the key. 
  * returns: hash_table_bucket_s
  */
-hash_table_bucket_s hash_table_get(hash_table_s table, unsigned long key)
-{
-    unsigned int hash   = hash_table_hash(key, table.size);
+hash_table_bucket_s hash_table_get(hash_table_s table
+    , void* key, unsigned long key_length)
+{    
+    size_t hash = hash_hash(table.is_key_string, key, key_length, table.size);
+
     hash_table_bucket_s *entry = &table.memory[hash], result = {0};
 
     while(entry->key != key && entry->is_occupied) {

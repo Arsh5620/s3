@@ -1,7 +1,5 @@
 #include <string.h>
 #include "protocol.h"
-#include "../binarysearch.h"
-#include "../file.h"
 
 // the function will attempt to find the most common attributes
 // that are mostly used by all the "actions", attributes that 
@@ -22,6 +20,42 @@ static b_search_string_s actions[] =
     , {"update", 6, .code = ACTION_UPDATE}
 };
 
+static int call_asserts[][4] = {
+    {ATTRIB_ACTION, ATTRIB_CRC, ATTRIB_FILENAME} // ACTION_CREATE
+    , {ATTRIB_ACTION} // ACTION_NOTIFICATION
+    , {ATTRIB_ACTION} // ACTION_REQUEST
+    , {ATTRIB_ACTION} // ACTION_UPDATE
+};
+
+
+int dbp_action_dispatch(packet_info_s info)
+{
+    int assert  = dbp_assert_list(info.header_list, attribs
+        , sizeof(attribs) / sizeof(b_search_string_s)
+        , call_asserts[info.action]
+        , sizeof(call_asserts[0]) / sizeof(int));
+    
+    if (assert == 0)
+    {
+        return(DBP_CONN_INSUFFICENT_ATTRIB);
+    }
+    
+    int result = 0;
+    switch (info.action)
+    {
+    case ACTION_NOTIFICATION:
+        result = dbp_protocol_notification(&info);
+        break;
+    case ACTION_CREATE:
+        result = dbp_create(&info);
+        break;
+    }
+    return(result);
+}
+
+// this function should be called before dispatching the request
+// to make sure that the header contains all the required key:value 
+// pairs needed by the called function.
 int dbp_assert_list(array_list_s list, 
     b_search_string_s *codes, int code_length, 
     int *match, int match_length)
@@ -37,19 +71,23 @@ int dbp_assert_list(array_list_s list,
         b_search_string_s node  = codes[index];
         for(long j=0; j<match_length; ++j)
         {
-            if(node.code == match[j])
+            if(node.code == match[j]) {
+                finds[j]    = 1;
                 break;
+            }
         }
     }
+
     char is_found   = 1;
     for (size_t i = 0; i < match_length; i++)
     {
-        if(finds[i] == 0) {
+        if(finds[i] == 0 && match[i] != 0) {
             is_found    = 0;
             break;
         }
     }
-    return(is_found);   
+
+    return(is_found);
 }
 
 dbp_common_attribs_s dbp_attribs_try_find(packet_info_s *info)
@@ -112,9 +150,8 @@ packet_info_s dbp_read_headers(dbp_s *protocol, long header_magic)
         return(info);
     }
 
-    long header_length  = dbp_data_length(header_magic);
     netconn_data_s header   = 
-        network_data_readstream(&protocol->connection, header_length);
+        network_data_readstream(&protocol->connection, header_size);
     char *address = network_data_address(&header);
     array_list_s header_list    = 
         parser_parse(address, header.data_length);

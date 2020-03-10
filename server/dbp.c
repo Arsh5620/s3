@@ -59,7 +59,7 @@ void dbp_shutdown_connection(dbp_s protocol
 int dbp_next(dbp_s *protocol)
 {
 	data_types_s data   = network_data_read_long(&(protocol->connection));
-	int magic	= data.data_types_u._long;
+	long magic	= data.data_types_u._long;
     packet_info_s info	= dbp_read_headers(protocol, magic);
     info.dbp    = protocol;
 	if(info.error) {
@@ -67,21 +67,6 @@ int dbp_next(dbp_s *protocol)
 	}
     int handler = dbp_action_dispatch(info);
     return(handler);
-}
-
-int dbp_action_dispatch(packet_info_s info)
-{
-    int result = 0;
-    switch (info.action)
-    {
-    case ACTION_NOTIFICATION:
-        result = dbp_protocol_notification(&info);
-        break;
-    case ACTION_CREATE:
-        result = dbp_create(&info);
-        break;
-    }
-    return(result);
 }
 
 void dbp_cleanup(dbp_s protocol_handle)

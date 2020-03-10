@@ -20,7 +20,7 @@ long strings_svprintf(char **buffer, char *string, va_list list)
         return -1;
 
     size++;             /* For '\0' */
-    pointer = m_calloc(STRINGS_BUFFER_SVNPRINTF, MEMORY_FILE_LINE);
+    pointer = m_calloc(size, MEMORY_FILE_LINE);
     if (pointer == NULL)
         return -1;
 

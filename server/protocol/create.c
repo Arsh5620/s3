@@ -17,15 +17,17 @@ int dbp_create(packet_info_s *info)
             create_download_file(info, &attribs.filename);
         
         filemgmt_file_exists(0, &attribs.filename);
+    } else {
+        // we will still need to flush the data or close the connection.
     }
-    return(FAILED);
+    return(SUCCESS);
 }
 
 file_write_s create_download_file(packet_info_s *info, string_s *filename)
 {
     file_write_s fileinfo  =  {0};
     fileinfo.size = dbp_data_length(info->header);
-
+    
     char temp_file[FILE_NAME_MAXLENGTH];
 
     if(filename->error == 0) {
@@ -44,6 +46,7 @@ file_write_s create_download_file(packet_info_s *info, string_s *filename)
         
         logs_write_printf("file name \"%.*s\" upload for %ld bytes...."
                 , original.length , original.address , fileinfo.size);
+        printf("download size: %ld\n", fileinfo.size);
 
         clock_t starttime = clock();
         int download_status   = 
@@ -73,10 +76,7 @@ file_write_s create_download_file(packet_info_s *info, string_s *filename)
 int create_setup_environment()
 {
     // first make sure the temporary file directory exists. 
-    char *dir   = "temp";
-    if(*dir != 't')
-        printf("what the fuck happen");
-    int result  = file_dir_mkine(dir);
+    int result  = file_dir_mkine(DBP_FILE_TEMP_DIR);
     if(result != FILE_DIR_EXISTS)
     {
         perror("opendir");

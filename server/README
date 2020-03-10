@@ -22,4 +22,10 @@ the rest of the processing should be done.
 for networking refer to networking/PROTOCOL
 for database refer to databases/README
 
+***
+What will be best way for us to implement the key:value retrieval from the parsed file. 
+right now we are only being returned a list and we want to convert the list to a hash table. 
+but we will need a hash table with strings.
+
+
 Author Name: Arshdeep Singh

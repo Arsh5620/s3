@@ -42,7 +42,7 @@ void memory_track_add(void * address
     if(track.is_init == FALSE){
         track.list  = 
             my_list_new(MEMORY_TABLE_SIZE, sizeof(malloc_node_s));
-        track.hash  = hash_table_init_n(MEMORY_TABLE_SIZE);
+        track.hash  = hash_table_init_n(MEMORY_TABLE_SIZE, 1);
         track.is_init   = TRUE;
     }
     
@@ -53,11 +53,12 @@ void memory_track_add(void * address
     track_node.line_no  = line_no;
     track_node.size = size;
     track_node.address  = address;
+    track_node.counter  = 1;
 
     long index = my_list_push(&track.list, (char*) &track_node);
 
     hash_table_bucket_s hash_entry = 
-        {(unsigned long)address, index, 1};
+        {(void*)address, 0, (void*)index, 0, 1};
     hash_table_add(&track.hash, hash_entry);
 }
 
@@ -66,7 +67,7 @@ void memory_track_update(void * address
     , char *file_name , long line_no , malloc_enum type)
 {
     hash_table_bucket_s entry   = 
-        hash_table_get(track.hash, (unsigned long) prev_addr);
+        hash_table_get(track.hash, (void*) prev_addr, 0);
     
     if(prev_addr == NULL || entry.is_occupied != TRUE) {
         printf("Could not update store for address %p, failed!\n"
@@ -74,7 +75,7 @@ void memory_track_update(void * address
         return;
     }
 
-    int index   = entry.value;
+    size_t index   = (unsigned long)entry.value;
     malloc_node_s *list_i   = 
         (malloc_node_s*)my_list_get(track.list, index);
     
@@ -84,6 +85,7 @@ void memory_track_update(void * address
     list_i->address = address;
     list_i->file_name   = file_name;
     list_i->line_no = line_no;
+    list_i->counter++;
 
     if(size != -1)
         list_i->size    = size;
@@ -91,7 +93,7 @@ void memory_track_update(void * address
     if(address != NULL) {
         // both addresses must point to the same list node.
         hash_table_bucket_s hash_entry = 
-            {(unsigned long)address,  index, 0};
+            {(void*)address, 0, (void*)index, 0, 0};
         hash_table_add(&track.hash, hash_entry);
     }
 }
@@ -148,9 +150,10 @@ void memory_print_debug()
                     "(de)allocating file line number: %ld\n"
                     "request type: %d\n"
                     "requested size: %ld\n"
+                    "counter: %ld\n"
                     , j.address, j.prev_address
                     , j.file_name, j.line_no
-                    , j.type, j.size);
+                    , j.type, j.size, j.counter);
 
         printf("*** preview ***\n%.*s\n*** ***\n\n"
                     , (int)(j.size > 100 ? 100: j.size)   
