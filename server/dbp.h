@@ -9,6 +9,7 @@
 #define DBP_CONNEND_FLOW    1
 #define DBP_CONNEND_CORRUPT 2
 #define DBP_CONN_INVALID_ACTION 3
+#define DBP_CONN_INSUFFICENT_ATTRIB 4
 
 typedef struct {
     netconn_info_s connection;

@@ -5,6 +5,8 @@
 #include "list.h"
 #include "hash_table.h"
 
+#define DEBUG_MEMORY
+
 #define MEMORY_FILE_LINE __FILE__, __LINE__
 
 #ifdef DEBUG_MEMORY
@@ -24,6 +26,7 @@ typedef struct memory_allocation_table {
     void *prev_address;
     long size; 
     long line_no; // please use compiler directive __LINE__
+    long counter;
     malloc_enum type;
 } malloc_node_s;
 

@@ -16,7 +16,8 @@ while(1):
     filelength = 32
     length += (filelength * 64)
     
-    string = "action=create\nfilename=filename\n"
+    string = "action=create\nfilename=filename\ncrc=00565423\n"
+    # string = "action=notification\n"
     string += ' ' * (64 - len(string))
     
     sock.send(length.to_bytes(8, byteorder = "little"))
@@ -26,6 +27,6 @@ while(1):
     
     sock.send(stringss)
     
-    # time.sleep(1)
+    time.sleep(1)
     # data = sock.recv(4096)
     # print(data)
