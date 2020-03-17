@@ -5,6 +5,7 @@
 #include "../file.h"
 #include "../binarysearch.h"
 #include "../defines.h"
+#include "../hash_table.h"
 
 #define DBP_FILE_TEMP_DIR "./temp/"
 
@@ -40,6 +41,7 @@ int dbp_assert_list(array_list_s list,
     b_search_string_s *codes, int code_length, 
     int *match, int match_length);
 
+hash_table_s dbp_attribs_find(packet_info_s *info);
 dbp_common_attribs_s dbp_attribs_try_find(packet_info_s *info);
 file_write_s create_download_file(packet_info_s *info, string_s *filename);
 int create_setup_environment();

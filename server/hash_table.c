@@ -1,6 +1,7 @@
 #include "hash_table.h"
 #include "malloc.h"
 #include "defines.h"
+#include <string.h>
 
 /**
  * return value: unsigned int
@@ -51,15 +52,15 @@ unsigned long hash_hash(char is_key_string
  */
 hash_table_s hash_table_initl()
 {
-    return(hash_table_init_n(HASH_TABLE_DEFAULT_SIZE, 0));
+    return(hash_table_initn(HASH_TABLE_DEFAULT_SIZE, 0));
 }
 
 hash_table_s hash_table_inits()
 {
-    return(hash_table_init_n(HASH_TABLE_DEFAULT_SIZE, 1));
+    return(hash_table_initn(HASH_TABLE_DEFAULT_SIZE, 1));
 }
 
-hash_table_s hash_table_init_n(long size, char is_key_string)
+hash_table_s hash_table_initn(long size, char is_key_string)
 {
     hash_table_s hash_table = {0};
     hash_table.size = size;
@@ -142,10 +143,12 @@ hash_table_bucket_s hash_table_get(hash_table_s table
     , void* key, unsigned long key_length)
 {    
     size_t hash = hash_hash(table.is_key_string, key, key_length, table.size);
-
     hash_table_bucket_s *entry = &table.memory[hash], result = {0};
 
-    while(entry->key != key && entry->is_occupied) {
+    while(((table.is_key_string == 0 && entry->key != key)
+        || (table.is_key_string == 1 && entry->key != 0 
+            && memcmp(entry->key, key, key_length)))
+        && entry->is_occupied) {
         entry++;
         if(entry >= table.memory + table.size)
             entry = table.memory;

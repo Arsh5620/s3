@@ -36,7 +36,7 @@ typedef struct hash_table_struct {
 
 hash_table_s hash_table_initl();
 hash_table_s hash_table_inits();
-hash_table_s hash_table_init_n(long size, char is_key_string);
+hash_table_s hash_table_initn(long size, char is_key_string);
 hash_table_s hash_table_expand(hash_table_s *table);
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry);
 unsigned long hash_table_hash(unsigned long in, unsigned long modulus);

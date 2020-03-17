@@ -42,7 +42,7 @@ void memory_track_add(void * address
     if(track.is_init == FALSE){
         track.list  = 
             my_list_new(MEMORY_TABLE_SIZE, sizeof(malloc_node_s));
-        track.hash  = hash_table_init_n(MEMORY_TABLE_SIZE, 1);
+        track.hash  = hash_table_initn(MEMORY_TABLE_SIZE, 0);
         track.is_init   = TRUE;
     }
     
