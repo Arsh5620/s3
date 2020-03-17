@@ -9,6 +9,7 @@ int dbp_create(packet_info_s *info)
     // dbp setup the environment before accepting data from connection.
     if (create_setup_environment() == SUCCESS)
     {
+        dbp_attribs_find(info);
         dbp_common_attribs_s attribs = dbp_attribs_try_find(info);
         if(attribs.filename.address == 0 || attribs.filename.length == 0)
             return(FAILED);

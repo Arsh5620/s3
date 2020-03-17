@@ -90,6 +90,54 @@ int dbp_assert_list(array_list_s list,
     return(is_found);
 }
 
+
+/*
+ * this function will go through the list of the key:value pairs
+ * and add those key value pairs to a hash table, while making
+ * sure that there are not duplicates, if duplicates are found
+ * the key:value pair found later is ignored.
+ */
+hash_table_s dbp_attribs_find(packet_info_s *info)
+{
+    array_list_s list   = info->header_list;
+    int length  = list.index;
+
+    hash_table_s table  = hash_table_inits();
+
+    for(int i=0; i<length; ++i) {
+        key_value_pair_s pair   =
+            *(key_value_pair_s*)my_list_get(list, i);
+        
+        int attrib  =  b_search(attribs
+                        , sizeof(attribs) 
+                        / sizeof(b_search_string_s)
+                        , pair.key, pair.key_length);
+
+		// will be -1 if an attribute is not supported (YET!)
+		// which is also ignored. 
+        if(attrib != -1) {  
+            b_search_string_s attr  = attribs[attrib];
+            hash_table_bucket_s b   = 
+                hash_table_get(table, attr.string, attr.strlen);
+            if(b.is_occupied){
+				//ignore and continue to the next pair
+				continue;
+            }
+            hash_table_bucket_s b1  = {0};
+            b1.key  = attr.string;
+            b1.key_len  = attr.strlen;
+            b1.value    = pair.value;
+			b1.value_len	= pair.value_length;
+
+            hash_table_add(&table, b1);
+            hash_table_bucket_s bb = hash_table_get(table, attr.string, attr.strlen);
+
+			printf("hi");
+        }
+    }
+	return(table);
+}
+
 dbp_common_attribs_s dbp_attribs_try_find(packet_info_s *info)
 {
     dbp_common_attribs_s attributes = {0};
