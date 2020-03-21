@@ -2,7 +2,7 @@
 // checking, placing and retrieving the files given provided
 // the relocation data. 
 #include "filemgmt.h"
-#include "./databases/database.h"
+#include "../databases/database.h"
 
 
 #define FILEMGMT_QUERY_FILEFOLDEREXISTS  \
