@@ -1,6 +1,4 @@
 #include "hash_table.h"
-#include "malloc.h"
-#include "defines.h"
 #include <string.h>
 
 /**
@@ -17,9 +15,9 @@ unsigned long hash_long(unsigned long in, unsigned long modulus)
 	return li & (modulus - 1);
 }
 
-unsigned long hash_string(void *memory, long len, unsigned long modulus)
+unsigned long hash_string(char *memory, long len, unsigned long modulus)
 {
-    char *m1    = (char*)memory;
+    char *m1    = memory;
     unsigned long in    = 0;
     for(long i=0; i<len; ++i) {
         in += *m1;
@@ -31,14 +29,14 @@ unsigned long hash_string(void *memory, long len, unsigned long modulus)
     return in & (modulus - 1);
 }
 
-unsigned long hash_hash(char is_key_string
-    , void *memory, size_t len, unsigned long modulus)
+size_t hash_hash(char is_string , char *memory
+    , size_t len, size_t modulus)
 {
-    unsigned long hash  = 0;
-    if(is_key_string != 0)
+    size_t hash  = 0;
+    if(is_string)
         hash    = hash_string(memory, len, modulus);
     else {
-        unsigned long i = (unsigned long)memory;
+        size_t i = (size_t)memory;
         hash    = hash_long(i, modulus);
     }
     return(hash);
@@ -60,16 +58,15 @@ hash_table_s hash_table_inits()
     return(hash_table_initn(HASH_TABLE_DEFAULT_SIZE, 1));
 }
 
-hash_table_s hash_table_initn(long size, char is_key_string)
+hash_table_s hash_table_initn(long size, char is_string)
 {
     hash_table_s hash_table = {0};
-    hash_table.size = size;
-    hash_table.raw_size = size * sizeof(hash_table_bucket_s);
-    hash_table.fill_factor  = size * HASH_TABLE_FILL_FACTOR;
-    hash_table.memory  = 
-        (hash_table_bucket_s*)calloc(hash_table.raw_size, 1);
-    hash_table.is_key_string    = is_key_string;
-
+    hash_table.size	= size;
+    hash_table.raw_size	= size * sizeof(hash_table_bucket_s);
+    hash_table.fill_factor	= size * HASH_TABLE_FILL_FACTOR;
+    hash_table.memory	= 
+        (hash_table_bucket_s*) calloc(hash_table.raw_size, 1);
+    hash_table.is_string    = is_string;
     return(hash_table);
 }
 
@@ -81,18 +78,18 @@ hash_table_s hash_table_initn(long size, char is_key_string)
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry)
 {
     size_t hash = 
-        hash_hash(table->is_key_string, entry.key, entry.key_len, table->size);
+        hash_hash(table->is_string, entry.key, entry.key_len, table->size);
     
     hash_table_bucket_s *destination = &table->memory[hash];
     
-    while (destination->is_occupied == TRUE)
+    while (destination->is_occupied == HASH_OCCUPIED)
     {
         ++destination;
         if(destination >= (table->memory + table->size))
             destination = table->memory;
     }
 
-    entry.is_occupied   = TRUE;
+    entry.is_occupied   = HASH_OCCUPIED;
     *destination = entry;
     table->index++;
 
@@ -114,10 +111,10 @@ hash_table_s hash_table_expand(hash_table_s *table)
 {
     unsigned int original_size  = table->size;
 
-    table->index    = 0;
-    table->size *= HASH_TABLE_EXPAND_SIZE;
-    table->raw_size = table->size * (sizeof(hash_table_bucket_s));
-    table->fill_factor  = table->size * HASH_TABLE_FILL_FACTOR;
+    table->index	= 0;
+    table->size	*= HASH_TABLE_EXPAND_SIZE;
+    table->raw_size = table->size * sizeof(hash_table_bucket_s);
+    table->fill_factor	= table->size * HASH_TABLE_FILL_FACTOR;
 
     hash_table_bucket_s *source  = table->memory, *source_copy = source;
     table->memory  = (hash_table_bucket_s*)calloc(table->raw_size, 1);
@@ -136,17 +133,16 @@ hash_table_s hash_table_expand(hash_table_s *table)
 
 /*
  * hash_table_get is used to get the key:value pair from hash table
- * given the key. 
  * returns: hash_table_bucket_s
  */
 hash_table_bucket_s hash_table_get(hash_table_s table
-    , void* key, unsigned long key_length)
+    , char* key, size_t key_length)
 {    
-    size_t hash = hash_hash(table.is_key_string, key, key_length, table.size);
+    size_t hash = hash_hash(table.is_string, key, key_length, table.size);
     hash_table_bucket_s *entry = &table.memory[hash], result = {0};
 
-    while(((table.is_key_string == 0 && entry->key != key)
-        || (table.is_key_string == 1 && entry->key != 0 
+    while(((table.is_string == 0 && entry->key != key)
+        || (table.is_string == 1 && entry->key != 0 
             && memcmp(entry->key, key, key_length)))
         && entry->is_occupied) {
         entry++;
