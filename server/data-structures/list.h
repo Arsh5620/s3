@@ -1,5 +1,6 @@
 # ifndef LIST_INCLUDE_GAURD
 # define LIST_INCLUDE_GAURD
+#include <stdio.h>
 #include <stdlib.h>
 
 #define DEFAULT_MEMORY_INCREASE 128

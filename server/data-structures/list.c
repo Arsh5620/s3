@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <memory.h>
 #include "list.h"
-#include "memory.h"
 
 array_list_s my_list_new(size_t size , size_t entry_length)
 {
@@ -14,7 +11,7 @@ array_list_s my_list_new(size_t size , size_t entry_length)
     array_list.memory   = calloc(memory_needed, 1);
 
     if(array_list.memory == (void*)0){
-        printf("Allocating memory failed with malloc,"
+        printf("Allocating memory failed with calloc,"
             " file: %s, lineno: %d\n", __FILE__, __LINE__);
     }
     return(array_list);
