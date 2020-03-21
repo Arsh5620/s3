@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#define LOG_DIR_NAME "logs"
+#define LOG_DIR_NAME "log-output"
 #define LOG_FILE_NAME "%s/log-%ld.log"
 #define LOG_FILE_NEWLINE "\r\n"
 #define LOG_FILE_OUTPUT "[%02d-%02d-%04d %02d:%02d:%02d] :: "

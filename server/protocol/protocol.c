@@ -40,6 +40,12 @@ int dbp_action_dispatch(packet_info_s info)
         return(DBP_CONN_INSUFFICENT_ATTRIB);
     }
     
+	//right after we have confirmed that all the required attribs
+	//are present for the function call to succeed, we can parse them
+	//to the structure for dbp_common_attribs_s
+    dbp_common_attribs_s attribs = dbp_attribs_parse_all(info);
+	info.attribs	= attribs;
+
     int result = 0;
     switch (info.action)
     {
@@ -97,9 +103,9 @@ int dbp_assert_list(array_list_s list,
  * sure that there are not duplicates, if duplicates are found
  * the key:value pair found later is ignored.
  */
-hash_table_s dbp_attribs_find(packet_info_s *info)
+hash_table_s dbp_attribs_find(packet_info_s info)
 {
-    array_list_s list   = info->header_list;
+    array_list_s list   = info.header_list;
     int length  = list.index;
 
     hash_table_s table  = hash_table_inits();
@@ -130,51 +136,48 @@ hash_table_s dbp_attribs_find(packet_info_s *info)
 			b1.value_len	= pair.value_length;
 
             hash_table_add(&table, b1);
-            hash_table_bucket_s bb = hash_table_get(table, attr.string, attr.strlen);
-
-			printf("hi");
         }
     }
 	return(table);
 }
 
-dbp_common_attribs_s dbp_attribs_try_find(packet_info_s *info)
+/*
+ * this function will try to parse as many attributes it can from
+ * the hash table of attributes that we can use, ignoring all non-recognized
+ * attributes, and if any error occurs, it will stop processing and 
+ * set the error flag accordingly. 
+ */
+dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
 {
     dbp_common_attribs_s attributes = {0};
+    hash_table_s table  = dbp_attribs_find(info);
 
-    array_list_s header_list    = info->header_list;
-    int list_length = header_list.index;
+    for(size_t i=0; i<sizeof(attribs) / sizeof(b_search_string_s); ++i) {
+        b_search_string_s attrib	= attribs[i];
+		hash_table_bucket_s bucket	= 
+			hash_table_get(table, attrib.string, attrib.strlen);
 
-    for(int i=0; i<list_length; ++i) {
-        key_value_pair_s pair   = 
-                *(key_value_pair_s*)my_list_get(header_list, i);
-
-        int attrib  =  b_search(attribs
-                        , sizeof(attribs) 
-                        / sizeof(b_search_string_s)
-                        , pair.key, pair.key_length);
-        
-        if(attrib != -1) {
-            switch (attribs[attrib].code)
-            {
-            case ATTRIB_FILENAME:
-                if(pair.value_length > FILE_NAME_MAXLENGTH 
-                    || pair.value_length == 0){
-                    attributes.filename.error   =
-                                DBP_ATTRIBS_ERR_NAMETOOLONG;
-                } else {
-                    attributes.filename.address = pair.value;
-                    attributes.filename.length  = pair.value_length;
-                }
-                break;
-            case ATTRIB_CRC: 
-                if(pair.value_length != 8) {
-                    attributes.filename.error   =
-                                DBP_ATTRIBS_ERR_CRC32NOTFOUND;
-                }
-                attributes.crc32    = *(unsigned int*) pair.value;
-                break;
+        switch (attrib.code)
+        {
+		case -1:
+			//ignore such as "action"
+			break;
+        case ATTRIB_FILENAME:
+            if(bucket.value_len > FILE_NAME_MAXLENGTH 
+                || bucket.value_len <= 0)
+                attributes.error   = DBP_ATTRIBS_ERR_NAMETOOLONG;
+            else {
+                attributes.filename.address = bucket.value;
+                attributes.filename.length  = bucket.value_len;
             }
+            break;
+        case ATTRIB_CRC: 
+            if(bucket.value_len != 8)
+                attributes.filename.error   =
+                            DBP_ATTRIBS_ERR_CRC32NOTFOUND;
+			else 
+            	attributes.crc32	= *(unsigned int*) bucket.value;
+            break;
         }
     }
     return(attributes);

@@ -15,11 +15,6 @@
 
 #define DBP_TEMP_FILE_FORMAT "%s/%.*s"
 
-typedef struct dbp_common_attribs {
-    string_s filename;
-    unsigned int crc32;
-} dbp_common_attribs_s;
-
 // one-to-one mapping to the actions_supported
 enum actions_supported_enum {
     ACTION_CREATE = 0
@@ -41,9 +36,9 @@ int dbp_assert_list(array_list_s list,
     b_search_string_s *codes, int code_length, 
     int *match, int match_length);
 
-hash_table_s dbp_attribs_find(packet_info_s *info);
-dbp_common_attribs_s dbp_attribs_try_find(packet_info_s *info);
-file_write_s create_download_file(packet_info_s *info, string_s *filename);
+hash_table_s dbp_attribs_find(packet_info_s info);
+dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info);
+file_write_s create_download_file(packet_info_s *info);
 int create_setup_environment();
 
 int dbp_magic_check(long magic);

@@ -52,28 +52,29 @@ int file_download(FILE *file
 {
     int read_required = 0;
     do{
-    read_required = info->size - info->current;
-    if(read_required > FILE_UPLOAD_BUFFER)
-        read_required = FILE_UPLOAD_BUFFER;
-
-    if(read_required == 0) break;
-    netconn_data_s data_read = 
-        network_data_readstream(network, read_required);
-
-    void *data_address  = network_data_address(&data_read);
-    if(data_read.is_error) {
+        read_required = info->size - info->current;
+        if(read_required > FILE_UPLOAD_BUFFER)
+            read_required = FILE_UPLOAD_BUFFER;
+    
+        if(read_required == 0) break;
+        netconn_data_s data_read = 
+            network_data_readstream(network, read_required);
+    
+        void *data_address  = network_data_address(&data_read);
+        if(data_read.is_error) {
+            network_data_free(data_read);
+            return(FILE_UPLOAD_ERR);
+        }
+    
+        int bytes_written   = 
+            fwrite(data_address, 1, data_read.data_length, file);
+        fflush(file);
+    
+        if(bytes_written != data_read.data_length){
+            return(FILE_UPLOAD_ERR);
+        }
         network_data_free(data_read);
-        return(FILE_UPLOAD_ERR);
-    }
-
-    int bytes_written   = 
-        fwrite(data_address, 1, data_read.data_length, file);
-    fflush(file);
-
-    if(bytes_written != data_read.data_length)
-        return(FILE_UPLOAD_ERR);
-    network_data_free(data_read);
-    info->current += data_read.data_length;
+        info->current += data_read.data_length;
     } while(info->current < info->size);
     return(FILE_UPLOAD_COMPLETE);    
 }

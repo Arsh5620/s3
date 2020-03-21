@@ -16,12 +16,19 @@ typedef struct {
     char is_init;
 } dbp_s; // device backup protocol
 
+typedef struct dbp_common_attribs {
+    string_s filename;
+    unsigned int crc32;
+    int error;
+} dbp_common_attribs_s;
+
 typedef struct {
     long header;
     array_list_s header_list;
     int action;
     int error;
     dbp_s *dbp;
+    dbp_common_attribs_s attribs;
 } packet_info_s;
 
 enum connection_shutdown_type {

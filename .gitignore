@@ -1,5 +1,5 @@
 *.o
 *.gch
 main
-server/logs/*
+server/log-output/*
 server/temp/*
