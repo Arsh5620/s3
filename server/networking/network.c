@@ -15,7 +15,7 @@
 #include "network.h"
 #include "../defines.h"
 #include "../memory.h"
-#include "../logs.h"
+#include "../logs/logs.h"
 
 /*
  * return value: 0 for success, any other value for error
