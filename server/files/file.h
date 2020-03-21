@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "./networking/network.h"
+#include "../networking/network.h"
 
 #define FILE_DIR_EXISTS 0x00
 #define FILE_DIR_CREATE_FAILED  0x02
