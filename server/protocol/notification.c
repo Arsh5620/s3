@@ -4,7 +4,7 @@ int dbp_protocol_notification(packet_info_s *info)
 {
     netconn_data_s data_read    = 
         network_data_readstream(&info->dbp->connection
-        , dbp_data_length(info->header));
+        , info->header.data_length);
 
     void *address = network_data_address(&data_read);
 

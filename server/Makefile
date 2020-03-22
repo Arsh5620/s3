@@ -36,7 +36,7 @@ SOURCEFILES= \
 	./files/filemgmt.c \
 	./files/file.c \
 	./memdbg/memory.c \
-	./server.c \
+	./main.c \
 	./databases/database.c \
 	./config/config.c \
 	./protocol/create.c \
@@ -51,7 +51,7 @@ SOURCEFILES= \
 
 OBJFILES=${SOURCEFILES:c=o}
 EXECUTABLE=main
-OBJDIR=./build/objects/
+OBJDIR=./build-objects/
 
 all: link-program clean-logs
 
@@ -61,7 +61,6 @@ $(OBJFILES): %.o: %.c
 
 link-program: mkobjdir $(OBJFILES)
 	$(CC) -o $(EXECUTABLE) $(OBJDIR)*.o $(LINKFLAGS)
-	mv ./$(EXECUTABLE) ./build/$(EXECUTABLE)
 
 mkobjdir: 
 	@mkdir -p $(OBJDIR)

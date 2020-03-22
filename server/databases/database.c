@@ -8,7 +8,7 @@
 
 static MYSQL *sql_connection;
 
-b_search_string_s config_property[5] = {
+key_code_pair_s config_property[5] = {
     {"database", 8, CONFIG_DATABASE}
     , {"machine", 7, CONFIG_MACHINE}
     , {"password", 8, CONFIG_PASSWORD}

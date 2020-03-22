@@ -11,10 +11,11 @@ database_connection_s config_parse_dbc(char *filename)
 
     for(int i=0; i<list.index; ++i){
         key_value_pair_s pair = *(key_value_pair_s*) my_list_get(list, i);
-        int configcode  = 
-            b_search(config_property
-                , sizeof(config_property)/ sizeof(b_search_string_s)
-                , pair.key, pair.key_length);
+        int configcode  = binary_search((void*) config_property
+            , sizeof(key_code_pair_s)
+            , sizeof(config_property) / sizeof(key_code_pair_s)
+            , pair.key, pair.key_length
+            , binary_search_kc_cmp);
 
         switch (config_property[configcode].code)
         {

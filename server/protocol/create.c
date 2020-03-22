@@ -26,7 +26,7 @@ int dbp_create(packet_info_s *info)
 file_write_s create_download_file(packet_info_s *info)
 {
     file_write_s fileinfo  =  {0};
-    fileinfo.size = dbp_data_length(info->header);
+    fileinfo.size = info->header.data_length;
     char *temp_file;
     string_s filename  = info->attribs.filename;
 
