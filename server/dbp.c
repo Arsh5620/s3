@@ -19,7 +19,7 @@ dbp_s dbp_init(unsigned short port)
     protocol.connection = network_connect_init_sync(port);
 
     database_connection_s connect_info  = 
-        config_parse_dbc("CONFIGFORMAT");
+        config_parse_dbc("config.a");
         
     if(database_init(connect_info) == DATABASE_SETUP_COMPLETE
         && database_verify_integrity() == MYSQL_SUCCESS) {

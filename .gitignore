@@ -3,3 +3,4 @@
 main
 server/log-output/*
 server/temp/*
+build

@@ -13,7 +13,7 @@ while(1):
     # length = 1#len(string)
     length = 0
     length |= 0xD040000000000000
-    filelength = 1024
+    filelength = 24
     length += (filelength * 64)
     
     string = "action=notification\nfilename=filename\ncrc=00565423\n"
