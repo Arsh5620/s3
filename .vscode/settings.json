@@ -39,6 +39,7 @@
         "dbp_protocol.h": "c",
         "system_error": "c",
         "typeinfo": "c",
-        "malloc.h": "c"
+        "malloc.h": "c",
+        "database.h": "c"
     }
 }

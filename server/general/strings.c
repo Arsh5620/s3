@@ -1,7 +1,7 @@
 #include "strings.h"
 #include <stdarg.h>
 #include <stdio.h>
-#include "memory.h"
+#include "../memdbg/memory.h"
 
 // the function will overwrite the buffer pointer, and will 
 // allocate memory on its own, no pre-allocation required, 

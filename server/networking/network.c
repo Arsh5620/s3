@@ -13,8 +13,8 @@
 #include <errno.h>
 
 #include "network.h"
-#include "../defines.h"
-#include "../memory.h"
+#include "../general/defines.h"
+#include "../memdbg/memory.h"
 #include "../logs/logs.h"
 
 /*

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include "memory.h"
+#include "../memdbg/memory.h"
 
 //file dir make if not exists
 int file_dir_mkine(char *dir_name)

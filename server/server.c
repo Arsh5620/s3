@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dbp.h"
-#include "memory.h"
-#include "parser/parser.h"
-#include "protocol/protocol.h"
-#include "binarysearch.h"
+#include "./memdbg/memory.h"
+#include "./parser/parser.h"
+#include "./protocol/protocol.h"
+#include "./general/binarysearch.h"
 
 // static b_search_string_s actions[] = 
 // {

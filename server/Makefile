@@ -8,15 +8,46 @@ else
 endif
 LINKFLAGS=-lmysqlclient
 
-HEADERFILES=defines.h networking/network.h list.h \
-				memory.h hash_table.h dbp.h logs.h strings.h binarysearch.h \
-				./protocol/protocol.h file.h ./databases/database.h \
-				config.h ./filemgmt.h ./parser/parser.h ./parser/lexer.h
-SOURCEFILES=networking/network.c server.c list.c memory.c \
-				hash_table.c dbp.c logs.c strings.c binarysearch.c \
-				./protocol/notification.c ./protocol/create.c ./file.c \
-				./protocol/protocol.c ./databases/database.c \
-				config.c ./filemgmt.c ./parser/lexer.c ./parser/parser.c
+HEADERFILES= \
+	./general/defines.h \
+	./general/strings.h \
+	./general/binarysearch.h \
+	./data-structures/hash_table.h \
+	./data-structures/list.h \
+	./files/file.h \
+	./files/filemgmt.h \
+	./memdbg/memory.h \
+	./databases/database.h \
+	./dbp.h \
+	./config/config.h \
+	./protocol/protocol.h \
+	./networking/network.h \
+	./parser/parser.h \
+	./parser/lexer.h \
+	./logs/logs.h \
+	./threading/threads.h
+
+SOURCEFILES= \
+	./general/binarysearch.c \
+	./general/strings.c \
+	./data-structures/hash_table.c \
+	./data-structures/list.c \
+	./dbp.c \
+	./files/filemgmt.c \
+	./files/file.c \
+	./memdbg/memory.c \
+	./server.c \
+	./databases/database.c \
+	./config/config.c \
+	./protocol/create.c \
+	./protocol/notification.c \
+	./protocol/protocol.c \
+	./networking/network.c \
+	./parser/parser.c \
+	./parser/lexer.c \
+	./logs/logs.c \
+	./threading/threads.c \
+
 
 OBJFILES=${SOURCEFILES:c=o}
 EXECUTABLE=main
@@ -38,4 +69,4 @@ clean:
 	git clean -xid
 
 clean-logs:
-	@cd ./logs/ && rm * -I || echo "No logs to clear";
+	# @cd ./logs/ && rm * -I || echo "No logs to clear";

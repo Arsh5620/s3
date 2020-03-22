@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "logs.h"
-#include "defines.h"
-#include "memory.h"
-#include "file.h"
-#include "strings.h"
+#include "./logs.h"
+#include "../general/defines.h"
+#include "../general/strings.h"
+#include "../memdbg/memory.h"
+#include "../files/file.h"
 
 static logger_s logs = {0};
 

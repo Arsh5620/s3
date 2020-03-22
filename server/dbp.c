@@ -1,12 +1,13 @@
 // device backup protocol
 
-#include "dbp.h"
-#include "defines.h"
-#include "logs.h"
 #include <unistd.h>
+
+#include "./dbp.h"
+#include "./general/defines.h"
+#include "./logs/logs.h"
 #include "./protocol/protocol.h"
-#include "databases/database.h"
-#include "config.h"
+#include "./databases/database.h"
+#include "./config/config.h"
 
 dbp_s dbp_init(unsigned short port)
 {
