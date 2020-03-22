@@ -51,7 +51,7 @@ SOURCEFILES= \
 
 OBJFILES=${SOURCEFILES:c=o}
 EXECUTABLE=main
-OBJDIR=./objects/
+OBJDIR=./build/objects/
 
 all: link-program clean-logs
 
@@ -61,12 +61,13 @@ $(OBJFILES): %.o: %.c
 
 link-program: mkobjdir $(OBJFILES)
 	$(CC) -o $(EXECUTABLE) $(OBJDIR)*.o $(LINKFLAGS)
+	mv ./$(EXECUTABLE) ./build/$(EXECUTABLE)
 
 mkobjdir: 
-	@mkdir -p ./objects/
+	@mkdir -p $(OBJDIR)
 
 clean: 
 	git clean -xid
 
 clean-logs:
-	# @cd ./logs/ && rm * -I || echo "No logs to clear";
+	@cd ./log-output/ && rm * -I || echo "No logs to clear";
