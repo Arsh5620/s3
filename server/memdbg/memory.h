@@ -2,8 +2,8 @@
 # define MEMORY_INCLUDE_GAURD
 
 #include <stddef.h>
-#include "list.h"
-#include "hash_table.h"
+#include "../data-structures/list.h"
+#include "../data-structures/hash_table.h"
 
 #define DEBUG_MEMORY
 

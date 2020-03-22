@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "database.h"
-#include "../defines.h"
-#include "../binarysearch.h"
-#include "../memory.h"
+#include "../general/defines.h"
+#include "../general/binarysearch.h"
+#include "../memdbg/memory.h"
 
 static MYSQL *sql_connection;
 

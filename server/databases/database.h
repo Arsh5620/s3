@@ -5,7 +5,7 @@
 #define DATABASE_INCLUDE_GAURD
 
 #include <mysql.h>
-#include "../strings.h"
+#include "../general/strings.h"
 
 typedef struct sql_connection_information
 {

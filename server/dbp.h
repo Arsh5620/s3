@@ -1,9 +1,9 @@
 # ifndef DBP_INCLUDE_GAURD
 # define DBP_INCLUDE_GAURD
-#include "networking/network.h"
-#include "strings.h"
-#include "list.h"
-#include "parser/parser.h"
+#include "./networking/network.h"
+#include "./general/strings.h"
+#include "./data-structures/list.h"
+#include "./parser/parser.h"
 
 #define DBP_CONN_EMPTYPACKET    0
 #define DBP_CONNEND_FLOW    1

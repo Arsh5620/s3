@@ -1,10 +1,10 @@
-#include "memory.h"
-#include "defines.h"
-
-#include <malloc.h>
-#include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <malloc.h>
+#include <memory.h>
+
+#include "./memory.h"
+#include "../general/defines.h"
 
 #ifdef DEBUG_MEMORY
 

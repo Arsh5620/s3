@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "lexer.h"
-#include "../list.h" // please note that any allocations are not tracked
+#include "../data-structures/list.h"
 
 #define PARSER_STATUS_WAIT_KEY  0
 #define PARSER_STATUS_WAIT_ASSIGN   1

@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include "../networking/network.h"
 #include "../dbp.h"
-#include "../logs.h"
-#include "../file.h"
-#include "../binarysearch.h"
-#include "../defines.h"
-#include "../hash_table.h"
+#include "../logs/logs.h"
+#include "../files/file.h"
+#include "../general/binarysearch.h"
+#include "../general/defines.h"
+#include "../data-structures/hash_table.h"
 
 #define DBP_FILE_TEMP_DIR "./temp/"
 

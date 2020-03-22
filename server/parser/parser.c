@@ -1,9 +1,9 @@
 #include <string.h>
 #include <stdio.h>
 #include "parser.h"
-#include "../strings.h"
-#include "../file.h"
-#include "../memory.h"
+#include "../general/strings.h"
+#include "../files/file.h"
+#include "../memdbg/memory.h"
 
 array_list_s parser_parse(char *buffer, int length)
 {

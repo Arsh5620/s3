@@ -1,7 +1,7 @@
 #include "protocol.h"
-#include "../file.h"
-#include "../defines.h"
-#include "../filemgmt.h"
+#include "../files/file.h"
+#include "../general/defines.h"
+#include "../files/filemgmt.h"
 #include <time.h>
 
 int dbp_create(packet_info_s *info)

@@ -3,12 +3,12 @@
 
 // refer to CONFIGFORMAT for further information
 
-#include "file.h"
-#include "list.h"
-#include "strings.h"
-#include "parser/parser.h"
-#include "./databases/database.h"
-#include "binarysearch.h"
+#include "../files/file.h"
+#include "../data-structures/list.h"
+#include "../parser/parser.h"
+#include "../databases/database.h"
+#include "../general/strings.h"
+#include "../general/binarysearch.h"
 
 database_connection_s config_parse_dbc(char *filename);
 
