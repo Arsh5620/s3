@@ -12,7 +12,7 @@ while(1):
     # string = input()
     # length = 1#len(string)
     length = 0
-    length |= 0xD040000000000000
+    length |= 0xD004000000000000
     filelength = 24
     length += (filelength * 64)
     

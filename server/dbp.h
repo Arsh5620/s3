@@ -1,9 +1,12 @@
 # ifndef DBP_INCLUDE_GAURD
 # define DBP_INCLUDE_GAURD
+
 #include "./networking/network.h"
 #include "./general/strings.h"
 #include "./data-structures/list.h"
 #include "./parser/parser.h"
+#include "./databases/database.h"
+#include "./logs/logs.h"
 
 #define DBP_CONN_EMPTYPACKET    0
 #define DBP_CONNEND_FLOW    1
@@ -13,6 +16,7 @@
 
 typedef struct {
     netconn_info_s connection;
+    logger_s logs;
     char is_init;
 } dbp_s; // device backup protocol
 
@@ -23,7 +27,13 @@ typedef struct dbp_common_attribs {
 } dbp_common_attribs_s;
 
 typedef struct {
-    long header;
+    size_t data_length;
+    short header_length;
+    char magic;
+} dbp_header_s;
+
+typedef struct {
+    dbp_header_s header;
     array_list_s header_list;
     int action;
     int error;
@@ -46,6 +56,6 @@ void dbp_accept_connection_loop(dbp_s *protocol);
 void dbp_shutdown_connection(dbp_s protocol 
     , enum connection_shutdown_type reason);
 int dbp_action_dispatch(packet_info_s info);
-packet_info_s dbp_read_headers(dbp_s *protocol, long header_magic);
+packet_info_s dbp_read_headers(dbp_s *protocol);
 
 #endif
