@@ -13,20 +13,19 @@ while(1):
     # length = 1#len(string)
     length = 0
     length |= 0xD004000000000000
-    filelength = 24
-    length += (filelength * 64)
+
+    notification = input()
+    notification_len = len(notification)
     
-    string = "action=notification\nfilename=filename\ncrc=00565423\n"
+    length += (notification_len)
+    
+    string = "action=create\nfilename=\"filename 2 what the fuck\"\ncrc=00565423\n"
     # string = "action=notification\n"
     string += ' ' * (64 - len(string))
     
     sock.send(length.to_bytes(8, byteorder = "little"))
     sock.send(string.encode())
 
-    stringss = ('A' * (filelength * 64)).encode()
-    
-    sock.send(stringss)
-    
-    time.sleep(1)
+    sock.send(notification.encode())
     # data = sock.recv(4096)
     # print(data)
