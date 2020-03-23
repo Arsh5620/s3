@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 
 #include "../networking/network.h"
+#include "../general/strings.h"
 
 #define FILE_DIR_EXISTS 0x00
 #define FILE_DIR_CREATE_FAILED  0x02
@@ -21,7 +22,7 @@
 #define FILE_NAME_MAXLENGTH     256
 #define FILE_UPLOAD_BUFFER    (1<<20)
 
-#define FILE_UPLOAD_ERR   0x02
+#define FILE_UPLOAD_ERR 0x02
 #define FILE_UPLOAD_COMPLETE  0x00
 
 #define FILE_READER_SUCCESS 0x00
@@ -33,6 +34,7 @@ typedef struct file_write_helper
 {
     size_t current;
     size_t size;
+    string_s filename;
 } file_write_s;
 
 typedef struct {

@@ -18,7 +18,6 @@ HEADERFILES= \
 	./files/filemgmt.h \
 	./memdbg/memory.h \
 	./databases/database.h \
-	./dbp.h \
 	./config/config.h \
 	./protocol/protocol.h \
 	./networking/network.h \
@@ -32,7 +31,6 @@ SOURCEFILES= \
 	./general/strings.c \
 	./data-structures/hash_table.c \
 	./data-structures/list.c \
-	./dbp.c \
 	./files/filemgmt.c \
 	./files/file.c \
 	./memdbg/memory.c \

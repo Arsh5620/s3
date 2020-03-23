@@ -1,4 +1,6 @@
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include "protocol.h"
 
 // the function will attempt to find the most common attributes
@@ -20,18 +22,80 @@ static key_code_pair_s actions[] =
     , {"update", 6, .code = ACTION_UPDATE}
 };
 
-static int call_asserts[][4] = {
+static enum attrib_supported_enum call_asserts[]
+[sizeof(attribs) / sizeof(enum attrib_supported_enum)] = {
     {ATTRIB_ACTION, ATTRIB_CRC, ATTRIB_FILENAME} // ACTION_CREATE
-    , {ATTRIB_ACTION} // ACTION_NOTIFICATION
-    , {ATTRIB_ACTION} // ACTION_REQUEST
-    , {ATTRIB_ACTION} // ACTION_UPDATE
+    , {ATTRIB_ACTION, 0, 0} // ACTION_NOTIFICATION
+    , {ATTRIB_ACTION, 0, 0} // ACTION_REQUEST
+    , {ATTRIB_ACTION, 0, 0} // ACTION_UPDATE
 };
 
-
-int dbp_action_dispatch(packet_info_s info)
+dbp_s dbp_init(unsigned short port)
 {
-    int assert  = dbp_assert_list(info.header_list, attribs
-        , sizeof(attribs) / sizeof(key_code_pair_s)
+    dbp_s protocol = {0};
+    protocol.logs = logs_init();
+    logs_write_printf("starting protocol initialization ...");
+
+    protocol.connection = network_connect_init_sync(port);
+    database_connection_s connect_info  = config_parse_dbc("config.a");
+        
+    if(database_init(connect_info) == DATABASE_SETUP_COMPLETE
+        && database_verify_integrity() == MYSQL_SUCCESS) {
+        protocol.is_init = TRUE;
+    } else {
+        fprintf(stderr, "Failed to setup database connection"
+            ", refer to logs for more information.");
+        exit(SERVER_DATABASE_FAILURE);
+    }
+    return(protocol);
+}
+
+void dbp_accept_connection_loop(dbp_s *protocol)
+{
+    logs_write_printf("waiting for the client to connect ...");
+    while (SUCCESS == 
+        network_connect_accept_sync(&(protocol->connection))) {
+
+        logs_write_printf("client connected: {%s(%d)}"
+            , inet_ntoa(protocol->connection.client_socket.sin_addr)
+            , ntohs(protocol->connection.client_socket.sin_port)); 
+
+        for(;;) {
+            int read_v	= dbp_next(protocol);
+			printf("dbp_next returned value: %d\n", read_v);
+            if(read_v) break;
+        }
+
+        dbp_shutdown_connection(*protocol, DBP_CONNECT_SHUTDOWN_FLOW);
+    }
+    logs_write_printf("network_connect_accept_sync failed: %s, %d."
+        , __FILE__, __LINE__);
+}
+
+void dbp_shutdown_connection(dbp_s protocol
+	, enum connection_shutdown_type reason)
+{
+    if(close(protocol.connection.client) == 0)
+        logs_write_printf("client connection closed: reason(%d)", reason);
+}
+
+void dbp_cleanup(dbp_s protocol_handle)
+{
+    logs_cleanup();
+    return;
+}
+
+// returns 0 for no-error, any other number for error or conn close request
+int dbp_next(dbp_s *protocol)
+{
+    packet_info_s info	= dbp_read_headers(protocol);
+    info.dbp    = protocol;
+	if(info.error) {
+		return(info.error);
+	}
+    info.header_table   = dbp_attribs_hash_table(info);
+
+    int assert  = dbp_assert_list(info.header_list
         , call_asserts[info.action]
         , sizeof(call_asserts[0]) / sizeof(int));
     
@@ -43,18 +107,118 @@ int dbp_action_dispatch(packet_info_s info)
 	//right after we have confirmed that all the required attribs
 	//are present for the function call to succeed, we can parse them
 	//to the structure for dbp_common_attribs_s
+    
     dbp_common_attribs_s attribs = dbp_attribs_parse_all(info);
 	info.attribs	= attribs;
 
+    int prehook = dbp_action_prehook(info);
+    if(prehook)
+        return(prehook);
+
+    if(info.header.data_length > 0) {
+        if(dbp_setup_download_env() == SUCCESS) {
+            info.data_written   = create_download_file(&info);
+        } else
+            return DBP_CONN_SETUP_ENV_FAILED;
+    }
+
+    int posthook = dbp_action_posthook(info);
+    // file_delete(info.data_written.filename.address);
+    m_free(info.data_written.filename.address, MEMORY_FILE_LINE);
+    return(posthook);
+}
+
+file_write_s create_download_file(packet_info_s *info)
+{
+    static int counter = 0;
+
+    char *temp_file;
+    file_write_s fileinfo  =  {0};
+
+    fileinfo.size = info->header.data_length;
+
+    long length  = strings_sprintf(&temp_file, DBP_TEMP_FILE_FORMAT
+        , DBP_FILE_TEMP_DIR
+        , ++counter);
+    
+    FILE *temp  = fopen(temp_file, FILE_MODE_WRITEONLY);
+
+    if(temp == NULL || length <= 0) {
+        logs_write_printf("could not open file for writing");
+        fileinfo.size   = -1;
+        return(fileinfo);
+    }
+    fileinfo.filename.address   = temp_file;
+    fileinfo.filename.length    = length;
+    
+    logs_write_printf("data download started "
+        "{client id: \"%.*s\" uploaded %ld bytes} ..."
+        , info->attribs.filename.length 
+        , info->attribs.filename.address , fileinfo.size);
+
+    clock_t starttime = clock();
+    int download_status   = 
+        file_download(temp, &info->dbp->connection, &fileinfo);
+    clock_t endtime = clock();
+
+    double time_elapsed = 
+        (((double)(endtime - starttime)) / CLOCKS_PER_SEC) * 1000;
+
+    // speed is download size in bytes / 1MB 
+    // * number of times we can download this file in seconds
+    double speed = (((double)fileinfo.size / 1024 / 128) 
+        * (1000 / time_elapsed));
+
+    logs_write_printf
+        ("file upload, status:(%d), time: %.3fms, "
+        "speed: %.3fMb/s"
+        , download_status
+        , time_elapsed , speed);
+    fclose(temp);
+    return(fileinfo);
+}
+
+int dbp_setup_download_env()
+{
+    // first make sure the temporary file directory exists. 
+    int result  = file_dir_mkine(DBP_FILE_TEMP_DIR);
+    if(result != FILE_DIR_EXISTS)
+    {
+        perror("opendir");
+        logs_write_printf("could not open \"" DBP_FILE_TEMP_DIR 
+            "\" dir, check if the program has appropriate "
+            "permissions.");
+        return(FAILED);
+    }
+    return(SUCCESS);
+}
+
+int dbp_action_posthook(packet_info_s info)
+{
+    int result = 0;
+    switch(info.action)
+    {
+        case ACTION_NOTIFICATION:
+            result  = dbp_notification_posthook(&info);
+            break;
+        case ACTION_CREATE:
+            return(SUCCESS);
+            break;
+    }
+    return(result);
+}
+
+int dbp_action_prehook(packet_info_s info)
+{
     int result = 0;
     switch (info.action)
     {
-    case ACTION_NOTIFICATION:
-        result = dbp_protocol_notification(&info);
-        break;
-    case ACTION_CREATE:
-        result = dbp_create(&info);
-        break;
+        case ACTION_NOTIFICATION:
+            result = dbp_notification_prehook(&info);
+            break;
+        case ACTION_CREATE:
+            result = dbp_create_prehook(&info);
+            break;
     }
     return(result);
 }
@@ -63,8 +227,7 @@ int dbp_action_dispatch(packet_info_s info)
 // to make sure that the header contains all the required key:value 
 // pairs needed by the called function.
 int dbp_assert_list(array_list_s list, 
-    key_code_pair_s *codes, int code_length, 
-    int *match, int match_length)
+    enum attrib_supported_enum *match, int match_length)
 {
     int finds[match_length];
     memset(finds, 0, sizeof(finds));
@@ -72,13 +235,15 @@ int dbp_assert_list(array_list_s list,
     for(long i=0; i<list.index; ++i) {
         key_value_pair_s pair   = 
             *(key_value_pair_s*) my_list_get(list, i);
-        int index  =  binary_search((void*) codes
+
+        int index  =  binary_search((void*) attribs
             , sizeof(key_code_pair_s)
-            , code_length
+            , sizeof(attribs) / sizeof(key_code_pair_s)
             , pair.key, pair.key_length
             , binary_search_kc_cmp);
 
-        key_code_pair_s node  = codes[index];
+        key_code_pair_s node  = attribs[index];
+
         for(long j=0; j<match_length; ++j)
         {
             if(node.code == match[j]) {
@@ -88,11 +253,11 @@ int dbp_assert_list(array_list_s list,
         }
     }
 
-    char is_found   = 1;
+    char is_found   = TRUE;
     for (size_t i = 0; i < match_length; i++)
     {
         if(finds[i] == 0 && match[i] != 0) {
-            is_found    = 0;
+            is_found    = FALSE;
             break;
         }
     }
@@ -107,7 +272,7 @@ int dbp_assert_list(array_list_s list,
  * sure that there are not duplicates, if duplicates are found
  * the key:value pair found later is ignored.
  */
-hash_table_s dbp_attribs_find(packet_info_s info)
+hash_table_s dbp_attribs_hash_table(packet_info_s info)
 {
     array_list_s list   = info.header_list;
     int length  = list.index;
@@ -155,7 +320,7 @@ hash_table_s dbp_attribs_find(packet_info_s info)
 dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
 {
     dbp_common_attribs_s attributes = {0};
-    hash_table_s table  = dbp_attribs_find(info);
+    hash_table_s table  = info.header_table;
 
     for(size_t i=0; i<sizeof(attribs) / sizeof(key_code_pair_s); ++i) {
         key_code_pair_s attrib	= attribs[i];
@@ -234,17 +399,20 @@ packet_info_s dbp_read_headers(dbp_s *protocol)
     if(memcmp(pair.key, attribs[0].string, attribs[0].strlen) == 0) {
         // now here to check the action that the client is requesting.
         info.action = binary_search(actions
-            , sizeof(actions)
-            , sizeof(actions)/sizeof(key_code_pair_s)
+            , sizeof(key_code_pair_s)
+            , sizeof(actions) / sizeof(key_code_pair_s)
             , pair.value , pair.value_length
             , binary_search_kc_cmp);
     }
+
     if(info.action  == -1) {
         info.error  = DBP_CONN_INVALID_ACTION;
     }
     return(info);
 }
 
+// for the dbp header length the actual value is the header length from 
+// client multiplied by 16
 inline short dbp_header_length(size_t magic)
 {
     return(((magic & 0x00FF000000000000) >> (6*8)) * 16);
