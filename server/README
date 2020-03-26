@@ -1,31 +1,3 @@
 DBP - device backup protocol
 
-What is this?
-device backup protocol is a protocol designed to backup the device automatically as any changes on 
-the client become known. 
-
-How will this work?
-on the client end, it is client's responsibility to identify changes. the client can do this however 
-they like, the protocol does not defines how the client should handle this processing, the only thing
-that this protocol defines is how the server should handle the processing once the request is sent by 
-the client. 
-
-on the server end, we will receive protocol packets which you can learn more about in networking/PROTOCOL
-we will receive this packet, which will be prepended with a 8 byte header. 
-this 8 byte header is read to get all the required information on processing the rest of the data. 
-other than this 8 byte header, the rest of the header is human-readable to make processing easier for 
-clients, and they would not need any specific processing pattern. 
-the only requirement for the protocol is that the very first key:value pair in the header needs to 
-reference the key "action" which will tell the program what other key:value pairs to expect, and how 
-the rest of the processing should be done. 
-
-for networking refer to networking/PROTOCOL
-for database refer to databases/README
-
-***
-What will be best way for us to implement the key:value retrieval from the parsed file. 
-right now we are only being returned a list and we want to convert the list to a hash table. 
-but we will need a hash table with strings.
-
-
-Author Name: Arshdeep Singh
+Author: Arshdeep Singh (arsh5620@[outlook|gmail].com)

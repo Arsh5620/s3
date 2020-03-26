@@ -1,0 +1,107 @@
+#ifndef ERRORHANDLER_INCLUDE_GAURD
+#define ERRORHANDLER_INCLUDE_GAURD
+
+#include "../logger/logs.h"
+
+/* 
+ * error message string name must begin with the filename prefix
+ * and must end with the arguments required for the printf call. 
+ * for example: ERRORHANDLER_INCLUDEEXCEPTION_SS, means the error 
+ * message is for file name errorhandler.[c|h] and it requires two 
+ * arguments both of which are string. another example would be
+ * PROTOCOL_NULLPACKET_SI, protocol.c [string, int]
+ * and no suffix if the string would not require argument
+ * all suffixes must be notated in this document with their acronyms
+ * String: S
+ * Int: I
+ * Unsigned Int: i
+ * Long: L
+ * Unsigned Long: l
+ * Char: C
+ * Unsigned Char: c
+ * Short: S
+ * Unsigned Short: s
+ * Double: D
+ * Float: F
+ */
+
+#define PROTOCOL_LOG_INIT_COMPLETE \
+	"logging subsystem has been started"
+#define PROTOCOL_NETWORK_SBS_INIT \
+	"setting up network subsystem"
+#define PROTOCOL_MYSQL_LOGIN_INFO_SISS \
+	"attempting to connect to mysql server: \n" \
+    "host: \"%s\"\n" \
+    "port: \"%d\"\n" \
+    "username: \"%s\"\n" \
+    "database: \"%s\""
+#define PROTOCOL_MYSQL_FAILED_CONNECT \
+	"failed to connect to mysql, program will now exit"
+#define PROTOCOL_NETWORK_WAIT_CONNECT \
+	"server is waiting for a client to connect"
+#define PROTOCOL_NETWORK_CLIENT_CONNECT_SI \
+	"a client connected from host \"%s\" and port number %d"
+#define PROTOCOL_SERVER_SHUTDOWN \
+	"server is about to shutdown, finishing cleanup before exit"
+#define PROTOCOL_CLIENT_CONNECT_ABORTED_S \
+	"client connection has been terminated, reason: \"%s\""
+#define PROTOCOL_DOWNLOAD_FILE_NOOPEN \
+	"could not open the temporary file for writing upload from the client"
+#define PROTOCOL_DOWNLOAD_COMPLETE_ISIIFF \
+	"data for file name: \"%.*s\" uploaded %d bytes " \
+	"[status: %d, time: %.3f, speed: %.2fMb/s]"
+#define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS_S \
+	"could not open directory: \"%s\", could be directory permissions issue"
+#define PROTOCOL_ABORTED_CORRUPTION_L \
+	"connection terminated because of corruption: [0x%.16lx]"
+#define PROTOCOL_SHUTDOWN_REASON_FLOW \
+	"expected as per program flow"
+#define PROTOCOL_SHUTDOWN_REASON_CORRUPT \
+	"packet corruption or out of order"
+#define PROTOCOL_SHUTDOWN_REASON_UNKNOWN \
+	"reason unknown"
+#define DATABASE_MYSQL_LIB_INIT_FAILED \
+	"could not initialize mysql client library"
+#define DATABASE_MYSQL_INIT_FAILED \
+	"could not init a mysql handle"
+#define DATABASE_MYSQL_AUTH_FAILED_S \
+	"could not connect or authenticate with mysql server, error: %s"
+#define DATABASE_MYSQL_CONNECTED \
+	"successfully connected to the mysql server"
+#define DATABASE_INTEGRITY_CHECK \
+	"checking database for tables and schema"
+#define DATABASE_INTEGRITY_PING	\
+	"checking database for connection and response, ping"
+#define DATABASE_CONNECTED_SERVER_S \
+	"connected to mysql database, ping successful, server name: \"%s\""
+#define DATABASE_INT_DB_SELECT_FAILED_S \
+	"failed to select the correct database, error: %s"
+#define DATABASE_INT_DB_CREATED_S \
+	"database not found, created database: \"%s\""
+#define DATABASE_INT_DB_CREATE_FAILED_S \
+	"database \"%s\" already exists"
+#define DATABASE_INT_DB_CREATE_ACCESS \
+	"selecting database failed, " \
+	"mysql \"CREATE\" access required"
+#define DATABASE_INT_TABLE_CREATED_S \
+	"table \"%s\" has been created"
+#define DATABASE_INT_TABLE_CREATE_FAILED_SS \
+	"table \"%s\" could not be created, error: %s"
+#define DATABASE_INT_TABLE_FOUND_S \
+	"table \"%s\" already exists"
+#define DATABASE_INT_TABLE_NOT_FOUND_S \
+	"table \"%s\" does not exists"
+#define NOTIFICATION_GENERAL_IS \
+	"client sent a notification: \"%.*s\""
+#define NETWORK_ASSERT_MESSAGE_SSI \
+	"network function \"%s\" error: %s, errno: %d"
+#define NETWORK_PORT_LISTENING \
+	"network init complete on port %d, and is listening with queque length of %d"
+
+#define ERRORS_HANDLE_STDOUT	0b0001
+#define ERRORS_HANDLE_LOGS		0b0010
+#define ERRORS_HANDLE_STDOLOG	0b0011
+
+void error_handle(long handle_type
+	, enum logger_level log_level, char *format, ...);
+#endif // ERRORHANDLER_INCLUDE_GAURD

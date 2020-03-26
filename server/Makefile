@@ -23,8 +23,9 @@ HEADERFILES= \
 	./networking/network.h \
 	./parser/parser.h \
 	./parser/lexer.h \
-	./logs/logs.h \
-	./threading/threads.h
+	./logger/logs.h \
+	./threading/threads.h \
+	./errors/errorhandler.h
 
 SOURCEFILES= \
 	./general/binarysearch.c \
@@ -43,9 +44,9 @@ SOURCEFILES= \
 	./networking/network.c \
 	./parser/parser.c \
 	./parser/lexer.c \
-	./logs/logs.c \
+	./logger/logs.c \
 	./threading/threads.c \
-
+	./errors/errorhandler.c
 
 OBJFILES=${SOURCEFILES:c=o}
 EXECUTABLE=main
@@ -67,4 +68,4 @@ clean:
 	git clean -xid
 
 clean-logs:
-	@cd ./log-output/ && rm * -I || echo "No logs to clear";
+	@cd ./logs/ && rm * -I || echo "No logs to clear";

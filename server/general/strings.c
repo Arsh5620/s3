@@ -3,10 +3,9 @@
 #include <stdio.h>
 #include "../memdbg/memory.h"
 
-// the function will overwrite the buffer pointer, and will 
-// allocate memory on its own, no pre-allocation required, 
-// but caller must free.
-// returns the size of the string written
+// The function will overwrite the buffer pointer, and will 
+// allocate memory, and caller must free.
+// returns: size of the string written
 long strings_svprintf(char **buffer, char *string, va_list list)
 {
     long size   = 0;

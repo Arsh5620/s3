@@ -14,7 +14,7 @@ while(1):
     length = 0
     length |= 0xD004000000000000
 
-    notification = input()
+    notification = input() * 100
     notification_len = len(notification)
     
     length += (notification_len)

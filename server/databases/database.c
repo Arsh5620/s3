@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "database.h"
+#include "../logger/logs.h"
 #include "../general/defines.h"
 #include "../general/binarysearch.h"
 #include "../memdbg/memory.h"
@@ -25,13 +26,14 @@ int database_init(database_connection_s connect)
     if(sql_connection != 0) return(DATABASE_SETUP_COMPLETE);
 
     if (mysql_library_init(0, NULL, NULL)) {
-        fprintf(stderr, "could not initialize MySQL client library.\n");
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+			, DATABASE_MYSQL_LIB_INIT_FAILED);
         exit(SERVER_DATABASE_FAILURE);
     }
     sql_connection  = mysql_init(0);
     if (sql_connection == NULL) {
-        fprintf(stderr, "could not initialize the mysql"
-                    " connection, exiting..\n");
+        error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+			, DATABASE_MYSQL_INIT_FAILED);
         exit(SERVER_DATABASE_FAILURE);
     }
 
@@ -39,23 +41,30 @@ int database_init(database_connection_s connect)
         , connect.host , connect.user
         , connect.passwd , connect.db
         , connect.port , NULL , 0)) {
-        fprintf(stderr, "could not connect to mariaDB server"
-            ", check your connection settings and try again.\n");
-        fprintf(stderr, "%s\n", mysql_error(sql_connection));
+       	error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+			, DATABASE_MYSQL_AUTH_FAILED_S
+			, mysql_error(sql_connection));
         exit(SERVER_DATABASE_FAILURE);
     }
+    error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+			, DATABASE_MYSQL_CONNECTED);
     return(DATABASE_SETUP_COMPLETE);
 }
 
 int database_verify_integrity()
 {
-    printf("db integrity check started ..\n");
+    error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+			, DATABASE_INTEGRITY_CHECK);
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+			, DATABASE_INTEGRITY_PING);
 
     int connection_enabled  = mysql_ping(sql_connection);
-    if(connection_enabled == 0){
-        printf("welcome to server {%s}\n"
-                , mysql_get_server_info(sql_connection));
+    if(connection_enabled == 0) { 
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+			, DATABASE_CONNECTED_SERVER_S
+			, mysql_get_server_info(sql_connection));
     }
+
     if(MYSQL_SUCCESS == mysql_query(sql_connection
         , "CREATE DATABASE IF NOT EXISTS " DATABASE_DB_NAME))
     {
@@ -63,21 +72,24 @@ int database_verify_integrity()
 
         if(MYSQL_SUCCESS != 
                 mysql_select_db(sql_connection, DATABASE_DB_NAME)) {
-            printf("failed to select the correct database ..");
+			error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+				, DATABASE_INT_DB_SELECT_FAILED_S
+				, mysql_error(sql_connection));
             return(MYSQL_ERROR);
         }
 
         if(db_created){
-            printf("database not found,"
-                    " created database \""DATABASE_DB_NAME"\" ..\n");
+            error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+				, DATABASE_INT_DB_CREATED_S, DATABASE_DB_NAME);
             return(database_create_tables());
         } else {
-            printf("database \"%s\" found ..\n", DATABASE_DB_NAME);
+            error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+				, DATABASE_INT_DB_CREATE_FAILED_S, DATABASE_DB_NAME);
             return(database_check_tables());
         }
     } else {
-        printf("checking database failed, \"CREATE\""
-                " access required for the user\n");
+        error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+				, DATABASE_INT_DB_CREATE_ACCESS, DATABASE_DB_NAME);
     }
     return(MYSQL_ERROR);
 }
@@ -85,11 +97,13 @@ int database_verify_integrity()
 int database_create_tables()
 {
     if (mysql_query(sql_connection, DATABASE_TABLE_1) == MYSQL_SUCCESS) {
-        printf("table " DATABASE_TABLE_NAME " created ..\n");
+     error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, DATABASE_INT_TABLE_CREATED_S, DATABASE_TABLE_NAME);
     } else {
-        fprintf(stderr, "table \"" DATABASE_TABLE_NAME 
-        "\" could not be created ..\n");
-        fprintf(stderr, "Error: %s\n", mysql_error(sql_connection));
+        error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+				, DATABASE_INT_TABLE_CREATE_FAILED_SS
+				, DATABASE_DB_NAME
+				, mysql_error(sql_connection));
         return(MYSQL_ERROR);
     }
     return(MYSQL_SUCCESS);
@@ -105,10 +119,11 @@ int database_check_tables()
     // required to clear the session for next query
 
     if (query == MYSQL_SUCCESS) {
-        printf("table \"" DATABASE_TABLE_NAME "\" also found ..\n");
+       error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, DATABASE_INT_TABLE_FOUND_S, DATABASE_TABLE_NAME);
     } else {
-        printf("table \"" DATABASE_TABLE_NAME 
-                    "\" not found, creating ..\n");
+        error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, DATABASE_INT_TABLE_NOT_FOUND_S, DATABASE_TABLE_NAME);
         return(database_create_tables());
     }
     return(MYSQL_SUCCESS);

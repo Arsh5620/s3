@@ -15,7 +15,7 @@
 #include "network.h"
 #include "../general/defines.h"
 #include "../memdbg/memory.h"
-#include "../logs/logs.h"
+#include "../errors/errorhandler.h"
 
 /*
  * return value: 0 for success, any other value for error
@@ -24,21 +24,16 @@
  * standard error and log output.
  */
 int assert_connection(netconn_info_s *conn
-                    , int compare1
-                    , int compare2
-                    , char *function_string
-                    , int error_num)
+    , int compare1
+    , int compare2
+    , char *function_string
+    , int error_num)
 {
     if (compare1 == compare2) {
 		char *error_string  = strerror(errno);
-
-		fprintf(stderr, "%s () failed with error: %s, errno:%d\n"
-                , function_string, error_string, error_num);
-
-        logs_write_printf("%s did not succeed, error"
-            " message: %s, errno: %d, error-code: %d\n"
-            , function_string, error_string, errno, error_num);
-            
+		error_handle(ERRORS_HANDLE_STDOLOG, LOGGER_CATASTROPHIC
+			, NETWORK_ASSERT_MESSAGE_SSI, function_string
+			, error_string, errno);
         exit(SERVER_ERROR_REFER_TO_LOGS);
 	}
     return(SUCCESS);
@@ -57,7 +52,6 @@ netconn_info_s network_connect_init_sync(int port)
     if(assert_connection(&connection, connection.server, INVALID_SOCKET
                     , "socket", SERVER_SOCK_INIT_FAILED))
         return connection;
-
     connection.server_socket.sin_addr.s_addr    = INADDR_ANY;
     connection.server_socket.sin_family         = AF_INET;
     connection.server_socket.sin_port           = htons(port);
@@ -66,14 +60,19 @@ netconn_info_s network_connect_init_sync(int port)
     result = bind(connection.server
                         , (struct sockaddr*) &connection.server_socket
                         , sizeof(struct  sockaddr_in));
+
     if(assert_connection(&connection, result, BIND_ERROR
                     , "bind", SERVER_BIND_FAILED))
         return connection;
-        
+
     result = listen(connection.server, MAX_LISTEN_QUEQUE);
     if(assert_connection(&connection, result, GENERAL_ERROR
                     , "listen", SERVER_LISTEN_FAILED))
         return connection;
+
+    error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, NETWORK_PORT_LISTENING
+		, port , MAX_LISTEN_QUEQUE);
 
     connection.is_setup_complete    = TRUE;
     return connection;
