@@ -16,10 +16,10 @@ int dbp_notification_posthook(packet_info_s *info)
     
     file_reader_fill(&reader, 0, info->header.data_length);
 
-    printf("client sent a notification: \n");
-    printf("%.*s\n", (int)reader.readlength, (char*)reader.buffer);
+	error_handle(ERRORS_HANDLE_STDOLOG, LOGGER_INFO
+		, NOTIFICATION_GENERAL_IS
+		, (int)reader.readlength, (char*)reader.buffer);
 
-    logs_write_printf("notification: %.*s"
-        , (int)reader.readlength, (char*)reader.buffer);
     file_close_reader(&reader);
+	return(SUCCESS);
 }

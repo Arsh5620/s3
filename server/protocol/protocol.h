@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "../networking/network.h"
-#include "../logs/logs.h"
+#include "../errors/errorhandler.h"
 #include "../files/file.h"
 #include "../general/binarysearch.h"
 #include "../general/defines.h"
@@ -22,6 +22,7 @@
 #define DBP_ATTRIBS_ERR_CRC32NOTFOUND   0x0004
 #define DBP_PROTOCOL_MAGIC 0xd0
 #define DBP_TEMP_FILE_FORMAT "%s/download-fn(%ld).tmp"
+#define DBP_CONFIG_FILENAME "config.a"
 
 #define DBP_CONNEND_FLOW    1
 #define DBP_CONNEND_CORRUPT 2

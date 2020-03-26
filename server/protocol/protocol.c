@@ -33,18 +33,28 @@ static enum attrib_supported_enum call_asserts[]
 dbp_s dbp_init(unsigned short port)
 {
     dbp_s protocol = {0};
-    protocol.logs = logs_init();
-    logs_write_printf("starting protocol initialization ...");
+    protocol.logs = logs_open();
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, PROTOCOL_LOG_INIT_COMPLETE);
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, PROTOCOL_NETWORK_SBS_INIT);
 
     protocol.connection = network_connect_init_sync(port);
-    database_connection_s connect_info  = config_parse_dbc("config.a");
+    database_connection_s connect_info  = 
+		config_parse_dbc(DBP_CONFIG_FILENAME);
+
+    error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
+		, PROTOCOL_MYSQL_LOGIN_INFO_SISS
+        , connect_info.host, connect_info.port
+		, connect_info.user
+        , connect_info.db);
         
     if(database_init(connect_info) == DATABASE_SETUP_COMPLETE
         && database_verify_integrity() == MYSQL_SUCCESS) {
         protocol.is_init = TRUE;
     } else {
-        fprintf(stderr, "Failed to setup database connection"
-            ", refer to logs for more information.");
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_CATASTROPHIC
+			, PROTOCOL_MYSQL_FAILED_CONNECT);
         exit(SERVER_DATABASE_FAILURE);
     }
     return(protocol);
@@ -52,12 +62,15 @@ dbp_s dbp_init(unsigned short port)
 
 void dbp_accept_connection_loop(dbp_s *protocol)
 {
-    logs_write_printf("waiting for the client to connect ...");
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		,PROTOCOL_NETWORK_WAIT_CONNECT);
+		
     while (SUCCESS == 
-        network_connect_accept_sync(&(protocol->connection))) {
+        network_connect_accept_sync(&(protocol->connection))){ 
 
-        logs_write_printf("client connected: {%s(%d)}"
-            , inet_ntoa(protocol->connection.client_socket.sin_addr)
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+			, PROTOCOL_NETWORK_CLIENT_CONNECT_SI
+		    , inet_ntoa(protocol->connection.client_socket.sin_addr)
             , ntohs(protocol->connection.client_socket.sin_port)); 
 
         for(;;) {
@@ -68,20 +81,30 @@ void dbp_accept_connection_loop(dbp_s *protocol)
 
         dbp_shutdown_connection(*protocol, DBP_CONNECT_SHUTDOWN_FLOW);
     }
-    logs_write_printf("network_connect_accept_sync failed: %s, %d."
-        , __FILE__, __LINE__);
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, PROTOCOL_SERVER_SHUTDOWN);
 }
 
 void dbp_shutdown_connection(dbp_s protocol
-	, enum connection_shutdown_type reason)
+	, enum connection_shutdown_type type)
 {
-    if(close(protocol.connection.client) == 0)
-        logs_write_printf("client connection closed: reason(%d)", reason);
+    if(close(protocol.connection.client) == 0) {
+		char *reason;
+		if(type == DBP_CONNECT_SHUTDOWN_FLOW)
+			reason	= PROTOCOL_SHUTDOWN_REASON_FLOW;
+		else if(type == DBP_CONNECT_SHUTDOWN_CORRUPTION)
+			reason	= PROTOCOL_SHUTDOWN_REASON_CORRUPT;
+		else
+			reason	= PROTOCOL_SHUTDOWN_REASON_UNKNOWN;
+		
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+			, PROTOCOL_CLIENT_CONNECT_ABORTED_S, reason);
+	}
 }
 
 void dbp_cleanup(dbp_s protocol_handle)
 {
-    logs_cleanup();
+    logs_close();
     return;
 }
 
@@ -134,7 +157,6 @@ file_write_s create_download_file(packet_info_s *info)
 
     char *temp_file;
     file_write_s fileinfo  =  {0};
-
     fileinfo.size = info->header.data_length;
 
     long length  = strings_sprintf(&temp_file, DBP_TEMP_FILE_FORMAT
@@ -144,17 +166,13 @@ file_write_s create_download_file(packet_info_s *info)
     FILE *temp  = fopen(temp_file, FILE_MODE_WRITEONLY);
 
     if(temp == NULL || length <= 0) {
-        logs_write_printf("could not open file for writing");
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+			, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
         fileinfo.size   = -1;
         return(fileinfo);
     }
     fileinfo.filename.address   = temp_file;
     fileinfo.filename.length    = length;
-    
-    logs_write_printf("data download started "
-        "{client id: \"%.*s\" uploaded %ld bytes} ..."
-        , info->attribs.filename.length 
-        , info->attribs.filename.address , fileinfo.size);
 
     clock_t starttime = clock();
     int download_status   = 
@@ -169,10 +187,11 @@ file_write_s create_download_file(packet_info_s *info)
     double speed = (((double)fileinfo.size / 1024 / 128) 
         * (1000 / time_elapsed));
 
-    logs_write_printf
-        ("file upload, status:(%d), time: %.3fms, "
-        "speed: %.3fMb/s"
-        , download_status
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		, PROTOCOL_DOWNLOAD_COMPLETE_ISIIFF
+		, info->attribs.filename.length 
+        , info->attribs.filename.address 
+		, fileinfo.size , download_status
         , time_elapsed , speed);
     fclose(temp);
     return(fileinfo);
@@ -184,10 +203,9 @@ int dbp_setup_download_env()
     int result  = file_dir_mkine(DBP_FILE_TEMP_DIR);
     if(result != FILE_DIR_EXISTS)
     {
-        perror("opendir");
-        logs_write_printf("could not open \"" DBP_FILE_TEMP_DIR 
-            "\" dir, check if the program has appropriate "
-            "permissions.");
+        error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+			, PROTOCOL_SETUP_ENV_DIR_PERMISSIONS_S
+			, DBP_FILE_TEMP_DIR);
         return(FAILED);
     }
     return(SUCCESS);
@@ -370,10 +388,9 @@ packet_info_s dbp_read_headers(dbp_s *protocol)
         // the header size we have received is 
         // not correct, possible protocol corruption.
         // end connection with the client. 
-        logs_write_printf("connection closed as possible"
-            " corruption detected(header: 0x%.16lx)."
-            , magic);
-
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+        	, PROTOCOL_ABORTED_CORRUPTION_L
+			, header.magic);
         info.error  = DBP_CONNEND_CORRUPT;
         return(info);
     }

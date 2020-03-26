@@ -6,6 +6,7 @@
 
 #include <mysql.h>
 #include "../general/strings.h"
+#include "../errors/errorhandler.h"
 
 typedef struct sql_connection_information
 {
