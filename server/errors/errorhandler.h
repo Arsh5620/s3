@@ -2,6 +2,7 @@
 #define ERRORHANDLER_INCLUDE_GAURD
 
 #include "../logger/logs.h"
+#include "../general/defines.h"
 
 /* 
  * error message string name must begin with the filename prefix
@@ -48,10 +49,10 @@
 #define PROTOCOL_DOWNLOAD_FILE_NOOPEN \
 	"could not open the temporary file for writing upload from the client"
 #define PROTOCOL_DOWNLOAD_COMPLETE_ISIIFF \
-	"data for file name: \"%.*s\" uploaded %d bytes " \
+	"data for file name \"%.*s\" uploaded %d bytes " \
 	"[status: %d, time: %.3f, speed: %.2fMb/s]"
 #define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS_S \
-	"could not open directory: \"%s\", could be directory permissions issue"
+	"could not open directory \"%s\", could be directory permissions issue"
 #define PROTOCOL_ABORTED_CORRUPTION_L \
 	"connection terminated because of corruption: [0x%.16lx]"
 #define PROTOCOL_SHUTDOWN_REASON_FLOW \
@@ -96,7 +97,23 @@
 #define NETWORK_ASSERT_MESSAGE_SSI \
 	"network function \"%s\" error: %s, errno: %d"
 #define NETWORK_PORT_LISTENING \
-	"network init complete on port %d, and is listening with queque length of %d"
+	"network init complete on port %d, " \
+	"and is listening with queque length of %d"
+#define MYSQLBIND_QUERY_FAILED \
+	"mysql bind setup failed, bind setup is required" \
+	" for parameterized queries, error: %s"
+#define MYSQLBIND_QUERY_RESULT_FAILED \
+	"mysql bind setup failed, error when performing" \
+	" mysql_store_result, error: %s"
+#define MYSQLBIND_QUERY_COLUMN_DISCOVERED \
+	"column discovery for bind setup in progress, " \
+	"column information found: %.*s.%.*s"
+#define MYSQLBIND_COLUMN_COUNT_ERROR \
+	"selective bind columns requesting more column count than avail"\
+	", column count avail is %d and request is for %d columns"
+#define MYSQLBIND_COLUMN_NOT_FOUND \
+	"requested column for find does not exists in "\
+	"the table, column name: %.*s and length %d"
 
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010

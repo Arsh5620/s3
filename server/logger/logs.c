@@ -103,11 +103,11 @@ logger_s logs_open()
 }
 
 char *log_levels[]	= {
-" [INFO] : "
-, " [DEBUG] : "
-, " [WARN] : "
-, " [ERROR] : "
-, " [CATASTOPHIC] : "
+" [INFO] -> "
+, " [DEBUG] -> "
+, " [WARN] -> "
+, " [ERROR] -> "
+, " [CATASTROPHIC] -> "
 };
 
 // this function returns TRUE for no error, and FALSE if an error occur

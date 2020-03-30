@@ -11,26 +11,25 @@
 
 int filemgmt_file_exists(string_s *folder_name, string_s *file_name)
 {
-    database_table1_s table = {0};
-    table.file_name = *file_name;
+    database_table_bind_s bind_in = database_bind_setup(database_get_handle());
+    database_table_bind_s bind_out = database_bind_setup(database_get_handle());
+	
+	string_s strings[] = {
+		TABLE1_FI_COLUMN_FILE_NAME
+	};
+	MYSQL_BIND *bind_in_some	= database_bind_some(bind_in, strings, 1);
 
-    int select[1]   = { TABLE1_INDEX_FILE_NAME };
+	memcpy(bind_in_some[0].buffer, "what", 5);
+	*(bind_in_some[0].length)	= 4;
 
-    db_table_stmt_s *bind   =
-        database_table1_bind_getselective(&table, select, 1);
-
-    database_table1_s *row  = database_table1_allocate();
-    db_table_stmt_s *table1  = database_table1_bind_get(row);
-    
-    MYSQL_STMT *stmt    = database_table1_query(table1
-        , FILEMGMT_QUERY_FILEFOLDEREXISTS, bind->bind_params);
+    MYSQL_STMT *stmt    = database_table_query(
+		FILEMGMT_QUERY_FILEFOLDEREXISTS
+		, bind_in_some
+		, bind_out.bind_params);
     
     if(stmt)
-        __database_query_print_dbg(stmt, table1);
+        __database_query_print_dbg(stmt, bind_out);
 
     mysql_stmt_close(stmt);
-    database_table1_bind_free(bind);
-    database_table1_bind_free(table1);
-    database_table1_free(row);
     return(0);
 }

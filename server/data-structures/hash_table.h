@@ -38,5 +38,6 @@ hash_table_s hash_table_expand(hash_table_s *table);
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry);
 hash_table_bucket_s hash_table_get(hash_table_s table 
     , char* key, size_t key_length);
+void hash_table_free(hash_table_s table);
 
 # endif
