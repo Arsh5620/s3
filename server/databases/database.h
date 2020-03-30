@@ -6,11 +6,11 @@
 
 #include <mysql.h>
 #include "../general/strings.h"
-#include "../errors/errorhandler.h"
+#include "../data-structures/hash_table.h"
 
 typedef struct sql_connection_information
 {
-    const char host[32];
+    const char host[64];
 	const char user[32];
 	const char passwd[32];
 	const char db[32];
@@ -26,6 +26,43 @@ enum config_types {
     , CONFIG_PORT
 };
 
+typedef struct database_bind_fields {
+    my_bool is_null;
+    my_bool is_error;
+	my_bool is_unsigned;
+    enum enum_field_types type;
+    size_t length;
+    void *buffer;
+	char *name;
+	size_t name_length;
+	char *table_name;
+	size_t table_length;
+	size_t buffer_length;
+	size_t flags;
+	size_t decimals;
+	size_t charsetnr;
+	my_bool is_numeric;
+	my_bool is_primary;
+	my_bool is_unique;
+	my_bool is_multikey;
+	my_bool is_binary;
+	my_bool is_autoincr;
+	my_bool is_not_null;
+	my_bool has_no_defaults;
+	char is_init;
+} database_bind_fields_s;
+
+typedef struct database_table_bind {
+	database_bind_fields_s *fields;
+    MYSQL_BIND *bind_params;
+	size_t bind_param_count;
+	hash_table_s table;
+} database_table_bind_s;
+
+#define DATABASE_BIND_QUERY \
+	"SELECT * FROM " DATABASE_TABLE_NAME " LIMIT 1"
+#define FLAG_ISSET(x) ((x) > 0)
+
 #define DATABASE_SETUP_COMPLETE 0
 
 #define MYSQL_SUCCESS	0
@@ -34,7 +71,7 @@ enum config_types {
 #define DATABASE_DB_NAME	"dbp"
 #define DATABASE_TABLE_NAME	"dbp_file_information"
 
-#define DATABASE_TABLE_1 \
+#define DATABASE_CREATE_TABLE \
 "CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_NAME \
 " (folder_name VARCHAR(256)\
 , file_name VARCHAR(256)\
@@ -48,96 +85,68 @@ enum config_types {
 , permission BIGINT\
 , owner VARCHAR(32));"
 
-enum datetime_values_set {
-    DATETIME_CREATE_DATE    = 0b00001
-    , DATETIME_UPLOAD_DATE  = 0b00010
-    , DATETIME_LASTACCESS_DATE  = 0b00100
-    , DATETIME_LASTCHANGE_DATE  = 0b01000
-    , DATETIME_DELETION_DATE    = 0b10000
-};
-typedef struct database_table1
-{
-    string_s folder_name;
-    string_s file_name;
-    MYSQL_TIME file_cd;
-    MYSQL_TIME file_ud;
-    MYSQL_TIME file_la;
-    MYSQL_TIME file_lm;
-    MYSQL_TIME file_dd;
-    enum datetime_values_set file_times_set;
-    size_t file_size;
-    char file_md5[32];
-    size_t permissions;
-    char owner[32];
-} database_table1_s;
+#define TABLE1_FI_COLUMN_FOLDER_NAME \
+	(string_s){.address="folder_name", .length=11}
+#define TABLE1_FI_COLUMN_FILE_NAME \
+	(string_s){.address="file_name", .length=9}
+#define TABLE1_FI_COLUMN_FILE_CD \
+	(string_s){.address="file_cd", .length=7}
+#define TABLE1_FI_COLUMN_FILE_UD \
+	(string_s){.address="file_ud", .length=7}
+#define TABLE1_FI_COLUMN_FILE_LA \
+	(string_s){.address="file_la", .length=7} 
+#define TABLE1_FI_COLUMN_FILE_LM \
+	(string_s){.address="file_lm", .length=7}
+#define TABLE1_FI_COLUMN_FILE_DD \
+	(string_s){.address="file_dd", .length=7}
+#define TABLE1_FI_COLUMN_FILE_SIZE \
+	(string_s){.address="file_size", .length=9}
+#define TABLE1_FI_COLUMN_FILE_MD5 \
+	(string_s){.address="file_md5", .length=8} 
+#define TABLE1_FI_COLUMN_PERMISSIONS \
+	(string_s){.address="permission", .length=10}
+#define TABLE1_FI_COLUMN_OWNER \
+	(string_s){.address="owner", .length=5}
+	
+#define DATABASE_TABLE_CHECKEXISTS \
+	"SELECT COUNT(*) AS 'A' FROM " DATABASE_TABLE_NAME
 
-enum schema_table1_index {
-    TABLE1_INDEX_FOLDER_NAME    = 0
-    , TABLE1_INDEX_FILE_NAME    = 1
-    , TABLE1_INDEX_FILE_CD  = 2
-    , TABLE1_INDEX_FILE_UD  = 3
-    , TABLE1_INDEX_FILE_LA  = 4
-    , TABLE1_INDEX_FILE_LM  = 5
-    , TABLE1_INDEX_FILE_DD  = 6
-    , TABLE1_INDEX_FILE_SIZE    = 7
-    , TABLE1_INDEX_FILE_MD5 = 8
-    , TABLE1_INDEX_PERMISSIONS  = 9
-    , TABLE1_INDEX_OWNER    = 10
-};
+#define DATABASE_TABLE_FI_INSERT \
+	"INSERT INTO "DATABASE_TABLE_NAME" "\
+	"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-#define DATABASE_TABLE_CHECKEXISTS1 \
-"SELECT COUNT(*) AS 'a' FROM dbp_file_information;"
+#define DATABASE_TABLE_FI_QUERY \
+	"SELECT * FROM " DATABASE_TABLE_NAME
 
-#define DATABASE_TABLE1_INSERT \
-"INSERT INTO "DATABASE_TABLE_NAME" "\
-"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+#define DATABASE_CREATE_DATABASE \
+	"CREATE DATABASE IF NOT EXISTS " DATABASE_DB_NAME
 
-#define DATABASE_TABLE1_QUERY \
-"SELECT * FROM " DATABASE_TABLE_NAME
-
-#define DATABASE_TABLE1_COLUMNCOUNT 11
 #define DATABASE_FOLDERNAME_LEN 256
 #define DATABASE_FILENAME_LEN 256
-
-typedef struct database_table_stmt_group {
-    my_bool is_null[DATABASE_TABLE1_COLUMNCOUNT];
-    my_bool is_error[DATABASE_TABLE1_COLUMNCOUNT];
-    enum enum_field_types types[DATABASE_TABLE1_COLUMNCOUNT];
-    unsigned long int length[DATABASE_TABLE1_COLUMNCOUNT];
-    unsigned long int *length_ptrs[DATABASE_TABLE1_COLUMNCOUNT];
-    char *buffers[DATABASE_TABLE1_COLUMNCOUNT];
-    MYSQL_BIND bind_params[DATABASE_TABLE1_COLUMNCOUNT];
-} db_table_stmt_s;
 
 int database_init(database_connection_s connect);
 int database_verify_integrity();
 
 int database_check_tables();
 int database_create_tables();
+MYSQL *database_get_handle();
 
-void database_bind_param(MYSQL_BIND *bind
-    , enum enum_field_types type
-    , char *buffer_pointer
-    , unsigned long int *length
-    , my_bool *is_null
-    , my_bool *error);
+int database_table_insertrow(char *query, MYSQL_BIND *bind, size_t count);
+MYSQL_STMT *database_table_query
+	(char *query, MYSQL_BIND *bind_in ,MYSQL_BIND *bind_out);
+void __database_query_print_dbg
+	(MYSQL_STMT *stmt, database_table_bind_s bind);
 
-int database_table1_insert(
-    database_table1_s table
-    , db_table_stmt_s * table1);
+/* functions to help with variable binding in mysql*/
 
-db_table_stmt_s *database_table1_bind_get(database_table1_s *table);
-void database_table1_bind_free(db_table_stmt_s *table);
-
-database_table1_s *database_table1_allocate();
-void database_table1_free(database_table1_s *table);
-
-MYSQL_STMT *database_table1_query(db_table_stmt_s *binds
-    , char *query, MYSQL_BIND *in_bind);
-void __database_query_print_dbg(MYSQL_STMT *stmt
-    , db_table_stmt_s *binds);
-db_table_stmt_s *database_table1_bind_getselective(
-    database_table1_s *table
-    , int *select
-    , int count);
+database_table_bind_s database_bind_setup(MYSQL *mysql);
+hash_table_s database_bind_table(database_table_bind_s *bind_table);
+void database_bind_set_flags(database_bind_fields_s *column
+	, size_t flags);
+database_bind_fields_s database_bind_field(MYSQL_FIELD field);
+void database_bind_copybind(database_table_bind_s *table);
+MYSQL_BIND *database_bind_some
+	(database_table_bind_s bind_table, string_s *columns, int count);
+size_t database_bind_column_index
+	(database_table_bind_s bind_table, string_s column_name);
 #endif

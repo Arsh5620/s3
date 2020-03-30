@@ -25,7 +25,7 @@ HEADERFILES= \
 	./parser/lexer.h \
 	./logger/logs.h \
 	./threading/threads.h \
-	./errors/errorhandler.h
+	./errors/errorhandler.h 
 
 SOURCEFILES= \
 	./general/binarysearch.c \
@@ -48,21 +48,17 @@ SOURCEFILES= \
 	./threading/threads.c \
 	./errors/errorhandler.c
 
+
 OBJFILES=${SOURCEFILES:c=o}
 EXECUTABLE=main
-OBJDIR=./build-objects/
 
-all: link-program clean-logs
+all: build-file clean-logs
 
-program: clean-logs
 $(OBJFILES): %.o: %.c
-	@$(CC) -c $< $(CFLAGS) -o $(OBJDIR)`basename $@`
+	@$(CC) -c $< $(CFLAGS) -o $@
 
-link-program: mkobjdir $(OBJFILES)
-	$(CC) -o $(EXECUTABLE) $(OBJDIR)*.o $(LINKFLAGS)
-
-mkobjdir: 
-	@mkdir -p $(OBJDIR)
+build-file: $(OBJFILES)
+	$(CC) -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
 
 clean: 
 	git clean -xid

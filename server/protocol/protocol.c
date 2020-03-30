@@ -73,13 +73,18 @@ void dbp_accept_connection_loop(dbp_s *protocol)
 		    , inet_ntoa(protocol->connection.client_socket.sin_addr)
             , ntohs(protocol->connection.client_socket.sin_port)); 
 
+		int shutdown	= DBP_CONNECT_SHUTDOWN_FLOW;
         for(;;) {
-            int read_v	= dbp_next(protocol);
-			printf("dbp_next returned value: %d\n", read_v);
-            if(read_v) break;
+            int ret	= dbp_next(protocol);
+			printf("dbp_next returned value: %d\n", ret);
+            if(ret){
+				if(ret != DBP_CONNEND_FLOW)
+					shutdown	= DBP_CONNECT_SHUTDOWN_CORRUPTION;
+				break;
+			} 
         }
 
-        dbp_shutdown_connection(*protocol, DBP_CONNECT_SHUTDOWN_FLOW);
+        dbp_shutdown_connection(*protocol, shutdown);
     }
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 		, PROTOCOL_SERVER_SHUTDOWN);
@@ -361,7 +366,7 @@ dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
             break;
         case ATTRIB_CRC: 
             if(bucket.value_len != 8)
-                attributes.filename.error   =
+                attributes.error   =
                             DBP_ATTRIBS_ERR_CRC32NOTFOUND;
 			else 
             	attributes.crc32	= *(unsigned int*) bucket.value;

@@ -11,6 +11,4 @@
 #include "../general/binarysearch.h"
 
 database_connection_s config_parse_dbc(char *filename);
-
-extern key_code_pair_s config_property[5];
 #endif // CONFIG_INCLUDE_GAURD

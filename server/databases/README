@@ -40,3 +40,36 @@ This is how basic mysql communication work:
 
 please make sure to compile the program with link to library openssl for md5 
 "-lssl"
+
+***** 
+How the database queries will actually work. 
+
+Now first of the all the main thing that we need to consider that each time 
+we are performing any sql query that we will need to bind the table rows 
+to actual memory locations where the data is either stored (insert) or where
+the data will be stored after an operation has been performed (select). 
+For performing this bind we need to know about the actual sql table, which 
+we have already described above. Now we need to know what columns are actually
+going to be required for any particular query to be performed. For each 
+column there is, there is a also a columnid in database.h that can be used to 
+link these columns together. But how?
+For binding each column, look at the bind data structure:
+
+MYSQL_BIND: 
+
+unsigned long  *length;          /* output length pointer */
+my_bool        *is_null;         /* Pointer to null indicator */
+void           *buffer;          /* buffer to get/put data */
+/* set this if you want to track data truncations happened during fetch */
+my_bool        *error;
+/* output buffer length, must be set when fetching str/binary */
+unsigned long  buffer_length;
+unsigned long  offset;           /* offset position for char/binary fetch */
+enum enum_field_types buffer_type;  /* buffer type */
+my_bool        is_unsigned;      /* set if integer type is unsigned */
+
+these are all the structure variables that we need for us to bind properly
+And when we are binding params it must be a single array (can be heap/stack)
+but it must be contiguous and it must be the same number of variables as 
+either the result of the select columns, or the number of parameters in a 
+parameterized query. 

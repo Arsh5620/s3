@@ -2,11 +2,11 @@
 # define STRINGS_INCLUDE_GAURD
 
 #include <stdarg.h>
+#include <stdlib.h>
 
 typedef struct string_struct {
     void *address;
-    unsigned long length;
-    int error;
+    size_t length;
 } string_s;
 
 #define STRINGS_BUFFER_SVNPRINTF 256

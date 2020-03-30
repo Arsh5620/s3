@@ -139,19 +139,25 @@ hash_table_bucket_s hash_table_get(hash_table_s table
     , char* key, size_t key_length)
 {    
     size_t hash = hash_hash(table.is_string, key, key_length, table.size);
-    hash_table_bucket_s *entry = &table.memory[hash], result = {0};
+    hash_table_bucket_s *entry = (table.memory + hash), result = {0};
 
     while(((table.is_string == 0 && entry->key != key)
-        || (table.is_string == 1 && entry->key != 0 
-            && memcmp(entry->key, key, key_length)))
+        || (table.is_string == 1 && entry->key != 0
+		&& memcmp(entry->key, key, key_length)))
         && entry->is_occupied) {
         entry++;
         if(entry >= table.memory + table.size)
             entry = table.memory;
     }
 
-    if(entry->key == key)
+    if(entry->is_occupied)
         result  = *entry;
 
     return result;
+}
+
+void hash_table_free(hash_table_s table) 
+{
+	if(table.memory)
+		free(table.memory);
 }

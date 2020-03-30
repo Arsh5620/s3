@@ -2,6 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+key_code_pair_s config_property[5] = {
+    {"database", 8, CONFIG_DATABASE}
+    , {"machine", 7, CONFIG_MACHINE}
+    , {"password", 8, CONFIG_PASSWORD}
+    , {"port", 4, CONFIG_PORT}
+    , {"username", 8, CONFIG_USERNAME}
+};
+
 database_connection_s config_parse_dbc(char *filename)
 {
     FILE *config    = fopen(filename, FILE_MODE_READONLY);
