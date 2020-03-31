@@ -15,12 +15,24 @@ MYSQL *database_get_handle()
 {
 	return(sql_connection);
 }
+
+/* if you need more full binds you can use database_bind_setup
+ * if you need partial binds you can copy global bind using
+ * database_bind_some_copy. If you copy binds it will be your
+ * responsibility to free those binds when not in use. 
+ * ** please don't call free on global bind **
+ * ** make sure to call database_bind_table_clean before use **
+ */
+database_table_bind_s database_get_global_bind()
+{
+	return(binds);
+}
 // after database_init is called a static variable sql_connection
 // is initialized to the connection information and a mysql db 
 // connection is attempted. 
 int database_init(database_connection_s connect)
 {
-    if(sql_connection != 0) return(DATABASE_SETUP_COMPLETE);
+    if(sql_connection != 0) return(MYSQL_SUCCESS);
 
     if (mysql_library_init(0, NULL, NULL)) {
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
@@ -46,7 +58,18 @@ int database_init(database_connection_s connect)
     error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 			, DATABASE_MYSQL_CONNECTED);
 
-    return(DATABASE_SETUP_COMPLETE);
+	if(database_verify_integrity() != MYSQL_SUCCESS){
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_CATASTROPHIC
+			, DATABASE_INTEGRITY_FAILED);
+		exit(SERVER_DATABASE_INTEGRITY);
+	}
+	database_bind_init_global();
+    return(MYSQL_SUCCESS);
+}
+
+void database_bind_init_global()
+{
+	binds = database_bind_setup(sql_connection);
 }
 
 int database_verify_integrity()
@@ -88,17 +111,15 @@ int database_verify_integrity()
         error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 				, DATABASE_INT_DB_CREATE_ACCESS, DATABASE_DB_NAME);
     }
-
-	binds = database_bind_setup(sql_connection);
     return(MYSQL_ERROR);
 }
 
 int database_create_tables()
 {
-    if (mysql_query(sql_connection, DATABASE_CREATE_TABLE) 
+    if (mysql_query(sql_connection, DATABASE_TABLE_FI_CREATE) 
 		== MYSQL_SUCCESS) {
      error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
-		, DATABASE_INT_TABLE_CREATED_S, DATABASE_TABLE_NAME);
+		, DATABASE_INT_TABLE_CREATED_S, DATABASE_TABLE_FI_NAME);
     } else {
         error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 				, DATABASE_INT_TABLE_CREATE_FAILED_SS
@@ -112,7 +133,7 @@ int database_create_tables()
 int database_check_tables()
 {
     int query   = 
-        mysql_query(sql_connection, DATABASE_TABLE_CHECKEXISTS);
+        mysql_query(sql_connection, DATABASE_TABLE_FI_CHECKEXISTS);
 
     MYSQL_RES *result = mysql_store_result(sql_connection);
     mysql_free_result(result); 
@@ -120,10 +141,10 @@ int database_check_tables()
 
     if (query == MYSQL_SUCCESS) {
        error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
-		, DATABASE_INT_TABLE_FOUND_S, DATABASE_TABLE_NAME);
+		, DATABASE_INT_TABLE_FOUND_S, DATABASE_TABLE_FI_NAME);
     } else {
         error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
-		, DATABASE_INT_TABLE_NOT_FOUND_S, DATABASE_TABLE_NAME);
+		, DATABASE_INT_TABLE_NOT_FOUND_S, DATABASE_TABLE_FI_NAME);
         return(database_create_tables());
     }
     return(MYSQL_SUCCESS);
@@ -214,7 +235,7 @@ MYSQL_STMT *database_table_query
         mysql_stmt_close(stmt);
         return(NULL);
     }
-	
+
     result  = mysql_stmt_execute(stmt);
     if(result){
         mysql_stmt_close(stmt);
@@ -231,7 +252,7 @@ MYSQL_STMT *database_table_query
  */
 database_table_bind_s database_bind_setup(MYSQL *mysql)
 {
-	int value	= mysql_query(mysql, DATABASE_BIND_QUERY);
+	int value	= mysql_query(mysql, DATABASE_TABLE_FI_BIND);
 	if(value != 0){
 		error_handle(ERRORS_HANDLE_STDOLOG, LOGGER_CATASTROPHIC
 			, MYSQLBIND_QUERY_FAILED, mysql_error(mysql));
@@ -248,34 +269,95 @@ database_table_bind_s database_bind_setup(MYSQL *mysql)
 
 	MYSQL_FIELD	 *column	= NULL;
 	database_table_bind_s table_binds	= {0};
-
-	database_bind_fields_s	*bind_fields	= 
-		m_malloc(sizeof(database_bind_fields_s) * columns
-			, MEMORY_FILE_LINE);
-	table_binds.fields	= bind_fields;
-	table_binds.bind_params	= 
-		m_malloc(sizeof(MYSQL_BIND) * columns, MEMORY_FILE_LINE);
-	table_binds.bind_param_count	= columns;
-
+	database_bind_allocate(&table_binds, columns);
 	int iterator	= 0;
 	do{
 		column	= mysql_fetch_field(result);
 		if(column == NULL) 
 			break;
+
 		database_bind_fields_s field	= database_bind_field(*column);
-		bind_fields[iterator++] = field;
+		table_binds.fields[iterator++] = field;
 
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
 			, MYSQLBIND_QUERY_COLUMN_DISCOVERED
 			, field.table_length, field.table_name
 			, field.name_length, field.name);
 	} while(column != NULL);
+
 	mysql_free_result(result);
 
-	table_binds.table	= database_bind_table(&table_binds);
-	database_bind_copybind(&table_binds);
+	table_binds.table	= database_bind_maketable(&table_binds);
+	database_bind_linkfields(&table_binds);
 
 	return(table_binds);
+}
+
+database_table_bind_s database_bind_some_copy
+	(database_table_bind_s source, string_s *columns, int count)
+{
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
+		, MYSQLBIND_BIND_COPY_REQUEST
+		, count);
+
+	for(size_t i = 0; i < count; ++i){
+		string_s string	= columns[i];
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
+		, MYSQLBIND_BIND_COPY_REQUEST_INFO
+		, string.length, string.address
+		, string.length);
+	}
+
+	database_table_bind_s dest	= {0};
+
+	if(count > source.bind_param_count) {
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+			, MYSQLBIND_COLUMN_COUNT_ERROR
+			, source.bind_param_count
+			, count);
+		dest.error	= FAILED;
+		return dest;
+	}
+
+	database_bind_allocate(&dest, count);
+
+	for(int i=0; i < count; ++i) {
+		string_s string	= columns[i];
+		hash_table_bucket_s bucket	= 
+			hash_table_get(source.table, string.address, string.length);
+
+		if(bucket.key	== 0) {
+			error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+				, MYSQLBIND_COLUMN_NOT_FOUND
+				, string.length, string.address
+				, string.length);
+			dest.error	= FAILED;
+			return dest;
+		}
+
+		size_t index	= (size_t)bucket.value;
+		// MYSQL_BIND *source_bind	= (source.bind_params + index);
+		// MYSQL_BIND *dest_bind	= (dest.bind_params + i);
+
+		// memcpy(dest_bind, source_bind, sizeof(MYSQL_BIND));
+		dest.fields[i]	= database_bind_field_copy(source.fields[index]);	
+	}
+
+	dest.table	= database_bind_maketable(&dest);
+	database_bind_linkfields(&dest);
+	return(dest);
+}
+
+
+void database_bind_allocate(database_table_bind_s *bind, size_t columns)
+{
+	size_t field_size	= sizeof(database_bind_fields_s) * columns;
+	size_t bind_size	= sizeof(MYSQL_BIND) * columns;
+	database_bind_fields_s	*bind_fields	= 
+		
+	bind->fields	= m_malloc(field_size, MEMORY_FILE_LINE);
+	bind->bind_params	= m_malloc(bind_size, MEMORY_FILE_LINE);
+	bind->bind_param_count	= columns;
 }
 
 size_t database_bind_column_index
@@ -289,34 +371,17 @@ size_t database_bind_column_index
 	}else return(-1);
 }
 
-MYSQL_BIND *database_bind_some
-	(database_table_bind_s bind_table, string_s *columns, int count)
+void database_bind_table_clean(database_table_bind_s bind_table)
 {
-	if(count > bind_table.bind_param_count) {
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
-			, MYSQLBIND_COLUMN_COUNT_ERROR
-			, bind_table.bind_param_count
-			, count);
-		return NULL;
+	for(size_t i = 0; i < bind_table.bind_param_count; ++i)
+	{
+		database_bind_fields_s *field	= bind_table.fields + i;
+		memset(field->buffer, 0, field->buffer_length);
+		field->length	= 0;
+		field->is_null	= 0;
+		field->is_unsigned	= 0;
+		field->is_error	= 0;
 	}
-
-	MYSQL_BIND *bind	= 
-		m_malloc(sizeof(MYSQL_BIND) * count, MEMORY_FILE_LINE);
-	for(int i=0; i < count; ++i) {
-		string_s string	= columns[i];
-		hash_table_bucket_s bucket	= 
-			hash_table_get(bind_table.table, string.address, string.length);
-		if(bucket.key	== 0 || bucket.value == 0) {
-			error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
-				, MYSQLBIND_COLUMN_NOT_FOUND
-				, string.length, string.address
-				, string.length);
-			return NULL;
-		}
-		MYSQL_BIND *bind_l	= (bind_table.bind_params + (size_t)bucket.value);
-		memcpy(bind + i, bind_l, sizeof(MYSQL_BIND));
-	}
-	return(bind);
 }
 
 void database_bind_free(database_table_bind_s bind_table)
@@ -333,7 +398,7 @@ void database_bind_free(database_table_bind_s bind_table)
 	hash_table_free(bind_table.table);
 }
 
-hash_table_s database_bind_table(database_table_bind_s *bind_table)
+hash_table_s database_bind_maketable(database_table_bind_s *bind_table)
 {
 	hash_table_s table	= hash_table_inits();
 	for(size_t i=0; i < bind_table->bind_param_count; ++i){
@@ -349,17 +414,31 @@ hash_table_s database_bind_table(database_table_bind_s *bind_table)
 	return(table);
 }
 
-void database_bind_set_flags(database_bind_fields_s *column
-	, size_t flags)
+database_bind_field_flags_s database_bind_set_flags(size_t flags)
 {
-	column->is_numeric	= FLAG_ISSET(flags & NUM_FLAG);
-	column->is_not_null	= FLAG_ISSET(flags & NOT_NULL_FLAG);
-	column->is_primary	= FLAG_ISSET(flags & PRI_KEY_FLAG);
-	column->is_unique	= FLAG_ISSET(flags & UNIQUE_KEY_FLAG);
-	column->is_multikey	= FLAG_ISSET(flags & MULTIPLE_KEY_FLAG);
-	column->is_binary	= FLAG_ISSET(flags & BINARY_FLAG);
-	column->is_autoincr	= FLAG_ISSET(flags & AUTO_INCREMENT_FLAG);
-	column->has_no_defaults	= FLAG_ISSET(flags & NO_DEFAULT_VALUE_FLAG);
+	database_bind_field_flags_s flags_s;
+	flags_s.is_numeric	= FLAG_ISSET(flags, NUM_FLAG);
+	flags_s.is_not_null	= FLAG_ISSET(flags, NOT_NULL_FLAG);
+	flags_s.is_primary	= FLAG_ISSET(flags, PRI_KEY_FLAG);
+	flags_s.is_unique	= FLAG_ISSET(flags, UNIQUE_KEY_FLAG);
+	flags_s.is_multikey	= FLAG_ISSET(flags, MULTIPLE_KEY_FLAG);
+	flags_s.is_binary	= FLAG_ISSET(flags, BINARY_FLAG);
+	flags_s.is_autoincr	= FLAG_ISSET(flags, AUTO_INCREMENT_FLAG);
+	flags_s.has_no_defaults	= FLAG_ISSET(flags, NO_DEFAULT_VALUE_FLAG);
+	return(flags_s);
+}
+
+database_bind_fields_s database_bind_field_copy
+	(database_bind_fields_s src)
+{
+	database_bind_fields_s dest	= {0};
+	memcpy(&dest, &src, sizeof(database_bind_fields_s));
+	dest.table_name	= m_malloc(src.table_length + 1, MEMORY_FILE_LINE);
+	dest.name	= m_malloc(src.name_length + 1, MEMORY_FILE_LINE);
+	dest.buffer	= m_calloc(src.buffer_length, MEMORY_FILE_LINE);
+	memcpy(dest.name, src.name, src.name_length + 1);
+	memcpy(dest.table_name, src.table_name, src.table_length + 1);
+	return(dest);
 }
 
 database_bind_fields_s database_bind_field(MYSQL_FIELD field)
@@ -372,20 +451,19 @@ database_bind_fields_s database_bind_field(MYSQL_FIELD field)
 	column.decimals	= field.decimals;
 	column.charsetnr	= field.charsetnr;
 	column.buffer_length	= field.length;
-	database_bind_set_flags(&column, field.flags);
 	size_t buffer_length	= field.length;
-	if(column.is_numeric)	
+	if(FLAG_ISSET(field.flags, NUM_FLAG))	
 		buffer_length	= sizeof(long long);
 	column.table_name	= m_malloc(field.table_length + 1, MEMORY_FILE_LINE);
 	column.name	= m_malloc(field.name_length + 1, MEMORY_FILE_LINE);
-	column.buffer	= m_malloc(buffer_length, MEMORY_FILE_LINE);
+	column.buffer	= m_calloc(buffer_length, MEMORY_FILE_LINE);
 	memcpy(column.name, field.name, field.name_length + 1);
 	memcpy(column.table_name, field.table, field.table_length + 1);
 	column.is_init	= TRUE;
 	return(column);
 }
 
-void database_bind_copybind(database_table_bind_s *table)
+void database_bind_linkfields(database_table_bind_s *table)
 {
 	for(int i=0; i< table->bind_param_count; ++i){
 		database_bind_fields_s *field	= (table->fields + i);

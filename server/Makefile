@@ -54,7 +54,7 @@ EXECUTABLE=main
 
 all: build-file clean-logs
 
-$(OBJFILES): %.o: %.c
+$(OBJFILES): %.o: %.c $(HEADERFILES)
 	@$(CC) -c $< $(CFLAGS) -o $@
 
 build-file: $(OBJFILES)
@@ -65,3 +65,4 @@ clean:
 
 clean-logs:
 	@cd ./logs/ && rm * -I || echo "No logs to clear";
+	@cd ./temp/ && rm * -I || echo "No temp files to clear";
