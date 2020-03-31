@@ -49,8 +49,7 @@ dbp_s dbp_init(unsigned short port)
 		, connect_info.user
         , connect_info.db);
         
-    if(database_init(connect_info) == DATABASE_SETUP_COMPLETE
-        && database_verify_integrity() == MYSQL_SUCCESS) {
+    if(database_init(connect_info) == MYSQL_SUCCESS) {
         protocol.is_init = TRUE;
     } else {
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_CATASTROPHIC

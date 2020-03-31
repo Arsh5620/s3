@@ -41,6 +41,10 @@ typedef struct database_bind_fields {
 	size_t flags;
 	size_t decimals;
 	size_t charsetnr;
+	char is_init;
+} database_bind_fields_s;
+
+typedef struct database_bind_field_flags {
 	my_bool is_numeric;
 	my_bool is_primary;
 	my_bool is_unique;
@@ -49,41 +53,23 @@ typedef struct database_bind_fields {
 	my_bool is_autoincr;
 	my_bool is_not_null;
 	my_bool has_no_defaults;
-	char is_init;
-} database_bind_fields_s;
+} database_bind_field_flags_s;
 
 typedef struct database_table_bind {
 	database_bind_fields_s *fields;
     MYSQL_BIND *bind_params;
 	size_t bind_param_count;
 	hash_table_s table;
+	int error;
 } database_table_bind_s;
-
-#define DATABASE_BIND_QUERY \
-	"SELECT * FROM " DATABASE_TABLE_NAME " LIMIT 1"
-#define FLAG_ISSET(x) ((x) > 0)
-
-#define DATABASE_SETUP_COMPLETE 0
 
 #define MYSQL_SUCCESS	0
 #define MYSQL_ERROR		1
 
 #define DATABASE_DB_NAME	"dbp"
-#define DATABASE_TABLE_NAME	"dbp_file_information"
+#define DATABASE_TABLE_FI_NAME	"file_information"
 
-#define DATABASE_CREATE_TABLE \
-"CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_NAME \
-" (folder_name VARCHAR(256)\
-, file_name VARCHAR(256)\
-, file_cd DATE\
-, file_ud DATE\
-, file_la DATE\
-, file_lm DATE\
-, file_dd DATE\
-, file_size BIGINT\
-, file_md5 VARCHAR(32)\
-, permission BIGINT\
-, owner VARCHAR(32));"
+/* table name: file_information, column information */
 
 #define TABLE1_FI_COLUMN_FOLDER_NAME \
 	(string_s){.address="folder_name", .length=11}
@@ -107,46 +93,70 @@ typedef struct database_table_bind {
 	(string_s){.address="permission", .length=10}
 #define TABLE1_FI_COLUMN_OWNER \
 	(string_s){.address="owner", .length=5}
-	
-#define DATABASE_TABLE_CHECKEXISTS \
-	"SELECT COUNT(*) AS 'A' FROM " DATABASE_TABLE_NAME
+
+#define DATABASE_TABLE_FI_CREATE \
+	"CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_FI_NAME \
+	" (folder_name VARCHAR(256)" \
+	", file_name VARCHAR(256)" \
+	", file_cd DATE" \
+	", file_ud DATE" \
+	", file_la DATE" \
+	", file_lm DATE" \
+	", file_dd DATE" \
+	", file_size BIGINT" \
+	", file_md5 VARCHAR(32)" \
+	", permission BIGINT" \
+	", owner VARCHAR(32));"
+
+#define DATABASE_TABLE_FI_BIND \
+	"SELECT * FROM " DATABASE_TABLE_FI_NAME " LIMIT 1"
+
+#define DATABASE_TABLE_FI_CHECKEXISTS \
+	"SELECT COUNT(*) AS 'A' FROM " DATABASE_TABLE_FI_NAME
 
 #define DATABASE_TABLE_FI_INSERT \
-	"INSERT INTO "DATABASE_TABLE_NAME" "\
+	"INSERT INTO "DATABASE_TABLE_FI_NAME" "\
 	"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 #define DATABASE_TABLE_FI_QUERY \
-	"SELECT * FROM " DATABASE_TABLE_NAME
+	"SELECT * FROM " DATABASE_TABLE_FI_NAME
 
 #define DATABASE_CREATE_DATABASE \
 	"CREATE DATABASE IF NOT EXISTS " DATABASE_DB_NAME
 
-#define DATABASE_FOLDERNAME_LEN 256
-#define DATABASE_FILENAME_LEN 256
+#define FLAG_ISSET(x, y) ((x & y) > 0)
 
 int database_init(database_connection_s connect);
-int database_verify_integrity();
 
+int database_verify_integrity();
 int database_check_tables();
 int database_create_tables();
+
 MYSQL *database_get_handle();
+database_table_bind_s database_get_global_bind();
 
 int database_table_insertrow(char *query, MYSQL_BIND *bind, size_t count);
-MYSQL_STMT *database_table_query
-	(char *query, MYSQL_BIND *bind_in ,MYSQL_BIND *bind_out);
-void __database_query_print_dbg
-	(MYSQL_STMT *stmt, database_table_bind_s bind);
+MYSQL_STMT *database_table_query(char *query
+	, MYSQL_BIND *bind_in 
+	, MYSQL_BIND *bind_out);
+void __database_query_print_dbg(MYSQL_STMT *stmt
+	, database_table_bind_s bind);
 
 /* functions to help with variable binding in mysql*/
 
+void database_bind_init_global();
 database_table_bind_s database_bind_setup(MYSQL *mysql);
-hash_table_s database_bind_table(database_table_bind_s *bind_table);
-void database_bind_set_flags(database_bind_fields_s *column
-	, size_t flags);
+void database_bind_allocate(database_table_bind_s *bind, size_t columns);
+hash_table_s database_bind_maketable(database_table_bind_s *bind_table);
+database_bind_field_flags_s database_bind_set_flags(size_t flags);
 database_bind_fields_s database_bind_field(MYSQL_FIELD field);
-void database_bind_copybind(database_table_bind_s *table);
-MYSQL_BIND *database_bind_some
-	(database_table_bind_s bind_table, string_s *columns, int count);
+void database_bind_linkfields(database_table_bind_s *table);
+database_bind_fields_s 
+	database_bind_field_copy(database_bind_fields_s src);
+database_table_bind_s 
+	database_bind_some_copy(database_table_bind_s bind_table
+	, string_s *columns
+	, int count);
 size_t database_bind_column_index
 	(database_table_bind_s bind_table, string_s column_name);
 #endif

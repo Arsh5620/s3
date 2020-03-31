@@ -71,6 +71,8 @@
 	"successfully connected to the mysql server"
 #define DATABASE_INTEGRITY_CHECK \
 	"checking database for tables and schema"
+#define DATABASE_INTEGRITY_FAILED \
+	"failed to create database/table schema, integrity check failed"
 #define DATABASE_INTEGRITY_PING	\
 	"checking database for connection and response, ping"
 #define DATABASE_CONNECTED_SERVER_S \
@@ -106,14 +108,17 @@
 	"mysql bind setup failed, error when performing" \
 	" mysql_store_result, error: %s"
 #define MYSQLBIND_QUERY_COLUMN_DISCOVERED \
-	"column discovery for bind setup in progress, " \
-	"column information found: %.*s.%.*s"
+	"column discovery for bind setup found: %.*s.%.*s"
 #define MYSQLBIND_COLUMN_COUNT_ERROR \
 	"selective bind columns requesting more column count than avail"\
 	", column count avail is %d and request is for %d columns"
 #define MYSQLBIND_COLUMN_NOT_FOUND \
 	"requested column for find does not exists in "\
 	"the table, column name: %.*s and length %d"
+#define MYSQLBIND_BIND_COPY_REQUEST \
+	"copy of binds requested, for %d columns"
+#define MYSQLBIND_BIND_COPY_REQUEST_INFO \
+	"column information for bind copy: name \"%.*s\" with length %d"
 
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
