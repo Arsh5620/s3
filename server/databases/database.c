@@ -192,23 +192,18 @@ int database_table_insertrow(char *query, MYSQL_BIND *bind, size_t count)
 //     return(MYSQL_SUCCESS);
 // }
 
-/**
- * "this function should not be used in production or non-debug builds"
- * should only be used to print all out the records returned
- * by running a sql select like statement
- */
-void __database_query_print_dbg
-	(MYSQL_STMT *stmt, database_table_bind_s bind)
+
+char database_table_rowexists(MYSQL_STMT *stmt)
 {   
-	printf("hello hi how are you\n");
-    while (mysql_stmt_fetch(stmt) == 0)
+	char row_exists	= FALSE;
+	while (mysql_stmt_fetch(stmt) == 0)
     {
-		int column_index	= 
-			database_bind_column_index(bind, TABLE1_FI_COLUMN_FOLDER_NAME);
-		char *buffer	= bind.fields[column_index].buffer;
-        printf("what the fuck, %s\n", buffer);
+		row_exists	= TRUE;
+		// int column_index	= 
+		// 	database_bind_column_index(bind, TABLE1_FI_COLUMN_FOLDER_NAME);
+		// char *buffer	= bind.fields[column_index].buffer;
     }
-	printf("%s is the sql error\n", mysql_stmt_error(stmt));
+	return(row_exists);
 }
 
 MYSQL_STMT *database_table_query
@@ -293,7 +288,7 @@ database_table_bind_s database_bind_setup(MYSQL *mysql)
 	return(table_binds);
 }
 
-database_table_bind_s database_bind_some_copy
+database_table_bind_s database_bind_select_copy
 	(database_table_bind_s source, string_s *columns, int count)
 {
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
@@ -352,9 +347,7 @@ database_table_bind_s database_bind_some_copy
 void database_bind_allocate(database_table_bind_s *bind, size_t columns)
 {
 	size_t field_size	= sizeof(database_bind_fields_s) * columns;
-	size_t bind_size	= sizeof(MYSQL_BIND) * columns;
-	database_bind_fields_s	*bind_fields	= 
-		
+	size_t bind_size	= sizeof(MYSQL_BIND) * columns;		
 	bind->fields	= m_malloc(field_size, MEMORY_FILE_LINE);
 	bind->bind_params	= m_malloc(bind_size, MEMORY_FILE_LINE);
 	bind->bind_param_count	= columns;
@@ -384,18 +377,22 @@ void database_bind_table_clean(database_table_bind_s bind_table)
 	}
 }
 
-void database_bind_free(database_table_bind_s bind_table)
+void database_bind_free(database_table_bind_s bind)
 {
-	for(size_t i=0; i < bind_table.bind_param_count; ++i)
+	for(size_t i=0; i < bind.bind_param_count; ++i)
 	{
-		database_bind_fields_s field	= bind_table.fields[i];
+		database_bind_fields_s field	= bind.fields[i];
 		m_free(field.name, MEMORY_FILE_LINE);
 		m_free(field.table_name, MEMORY_FILE_LINE);
 		m_free(field.buffer, MEMORY_FILE_LINE);
 	}
-	m_free(bind_table.fields, MEMORY_FILE_LINE);
-	m_free(bind_table.bind_params, MEMORY_FILE_LINE);
-	hash_table_free(bind_table.table);
+	m_free(bind.fields, MEMORY_FILE_LINE);
+	m_free(bind.bind_params, MEMORY_FILE_LINE);
+	hash_table_free(bind.table);
+
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
+			, MYSQLBIND_BIND_FREE
+			, bind.bind_param_count);
 }
 
 hash_table_s database_bind_maketable(database_table_bind_s *bind_table)
@@ -477,4 +474,10 @@ void database_bind_linkfields(database_table_bind_s *table)
 		bind.buffer_length	= field->buffer_length;
 		table->bind_params[i]	= bind;
 	}
+}
+
+void database_bind_data_copy(MYSQL_BIND *bind, string_s string)
+{
+	memcpy(bind->buffer, string.address, string.length);
+	*(bind->length) = string.length;
 }
