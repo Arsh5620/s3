@@ -3,36 +3,50 @@
 // the relocation data. 
 #include <string.h>
 #include "filemgmt.h"
+#include "../errors/errorhandler.h"
 #include "../databases/database.h"
-
-#define FILEMGMT_QUERY_FILEFOLDEREXISTS  \
-	"SELECT * FROM " DATABASE_TABLE_FI_NAME \
-	" WHERE file_name = ? and folder_name = ?"
 
 int filemgmt_file_exists(string_s *folder_name, string_s *file_name)
 {
+	if(file_name == NULL || folder_name == NULL)
+		return(FILE_INPUT_ERROR);
+
     database_table_bind_s bind_out = database_get_global_bind();
 	
 	string_s strings[] = {
 		TABLE1_FI_COLUMN_FILE_NAME
 		, TABLE1_FI_COLUMN_FOLDER_NAME
 	};
-	database_table_bind_s bind_in	= database_bind_some_copy(bind_out, strings, 2);
+	database_table_bind_s bind_in	= database_bind_select_copy(bind_out
+		, strings, sizeof(strings) / sizeof(string_s));
 
-	memcpy(bind_in.bind_params[0].buffer, "what", 5);
-	*(bind_in.bind_params[0].length)	= 4;
+	int file_index	= database_bind_column_index(bind_in
+		, TABLE1_FI_COLUMN_FILE_NAME);
 
-	memcpy(bind_in.bind_params[1].buffer, "hi", 3);
-	*(bind_in.bind_params[1].length)	= 2;
+	int folder_index	= database_bind_column_index(bind_in
+		, TABLE1_FI_COLUMN_FOLDER_NAME);
+	
+	if(file_index < 0 || folder_index < 0)
+		return(FILE_INPUT_ERROR);
+
+	database_bind_data_copy(bind_in.bind_params + file_index
+		, *file_name);
+	database_bind_data_copy(bind_in.bind_params + folder_index
+		, *folder_name);
 
     MYSQL_STMT *stmt    = database_table_query(
 		FILEMGMT_QUERY_FILEFOLDEREXISTS
 		, bind_in.bind_params
 		, bind_out.bind_params);
-    
-    if(stmt)
-        __database_query_print_dbg(stmt, bind_out);
+	int recordexists	= database_table_rowexists(stmt);
 
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
+			, FILEMGMT_RECORD_STATUS
+			, folder_name->length, folder_name->address
+			, file_name->length, file_name->address
+			, recordexists);
+
+	database_bind_free(bind_in);
     mysql_stmt_close(stmt);
-    return(0);
+    return(recordexists > 0);
 }
