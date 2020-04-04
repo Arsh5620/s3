@@ -12,6 +12,7 @@ static key_code_pair_s attribs[] =
     {"action", 6, .code = ATTRIB_ACTION}
     , {"crc", 3, .code = ATTRIB_CRC}
     , {"filename", 8, .code = ATTRIB_FILENAME}
+    , {"folder", 6, .code = ATTRIB_FOLDER}
 };
 
 static key_code_pair_s actions[] = 
@@ -24,7 +25,7 @@ static key_code_pair_s actions[] =
 
 static enum attrib_supported_enum call_asserts[]
 [sizeof(attribs) / sizeof(enum attrib_supported_enum)] = {
-    {ATTRIB_ACTION, ATTRIB_CRC, ATTRIB_FILENAME} // ACTION_CREATE
+    {ATTRIB_ACTION, ATTRIB_CRC, ATTRIB_FILENAME, ATTRIB_FOLDER} // ACTION_CREATE
     , {ATTRIB_ACTION, 0, 0} // ACTION_NOTIFICATION
     , {ATTRIB_ACTION, 0, 0} // ACTION_REQUEST
     , {ATTRIB_ACTION, 0, 0} // ACTION_UPDATE
@@ -138,7 +139,7 @@ int dbp_next(dbp_s *protocol)
     dbp_common_attribs_s attribs = dbp_attribs_parse_all(info);
 	info.attribs	= attribs;
 
-    int prehook = dbp_action_prehook(info);
+    int prehook = dbp_action_prehook(&info);
     if(prehook)
         return(prehook);
 
@@ -149,10 +150,28 @@ int dbp_next(dbp_s *protocol)
             return DBP_CONN_SETUP_ENV_FAILED;
     }
 
-    int posthook = dbp_action_posthook(info);
+    int posthook = dbp_action_posthook(&info);
     // file_delete(info.data_written.filename.address);
+	printf("this is the output");
+	
+	if(info.response.dbp_response)
+		dbp_response_write(&info);
     m_free(info.data_written.filename.address, MEMORY_FILE_LINE);
     return(posthook);
+}
+
+int dbp_response_write(packet_info_s *info)
+{
+	printf("this is the output");
+	switch (info->response.dbp_response)
+	{
+	case DBP_RESPONSE_ACK:
+		network_connection_write(&info->dbp->connection, "hi, how are you. ", 12);
+		break;
+	
+	default:
+		break;
+	}
 }
 
 file_write_s create_download_file(packet_info_s *info)
@@ -215,13 +234,13 @@ int dbp_setup_download_env()
     return(SUCCESS);
 }
 
-int dbp_action_posthook(packet_info_s info)
+int dbp_action_posthook(packet_info_s *info)
 {
     int result = 0;
-    switch(info.action)
+    switch(info->action)
     {
         case ACTION_NOTIFICATION:
-            result  = dbp_notification_posthook(&info);
+            result  = dbp_notification_posthook(info);
             break;
         case ACTION_CREATE:
             return(SUCCESS);
@@ -230,16 +249,16 @@ int dbp_action_posthook(packet_info_s info)
     return(result);
 }
 
-int dbp_action_prehook(packet_info_s info)
+int dbp_action_prehook(packet_info_s *info)
 {
     int result = 0;
-    switch (info.action)
+    switch (info->action)
     {
         case ACTION_NOTIFICATION:
-            result = dbp_notification_prehook(&info);
+            result = dbp_notification_prehook(info);
             break;
         case ACTION_CREATE:
-            result = dbp_create_prehook(&info);
+            result = dbp_create_prehook(info);
             break;
     }
     return(result);
@@ -361,6 +380,15 @@ dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
             else {
                 attributes.filename.address = bucket.value;
                 attributes.filename.length  = bucket.value_len;
+            }
+            break;
+		case ATTRIB_FOLDER:
+            if(bucket.value_len > FILE_NAME_MAXLENGTH 
+                || bucket.value_len <= 0)
+                attributes.error   = DBP_ATTRIBS_ERR_NAMETOOLONG;
+            else {
+                attributes.folder_name.address = bucket.value;
+                attributes.folder_name.length  = bucket.value_len;
             }
             break;
         case ATTRIB_CRC: 

@@ -50,7 +50,7 @@
 	"could not open the temporary file for writing upload from the client"
 #define PROTOCOL_DOWNLOAD_COMPLETE_ISIIFF \
 	"data for file name \"%.*s\" uploaded %d bytes " \
-	"[status: %d, time: %.3f, speed: %.2fMb/s]"
+	"[status: %d, time: %.3fms, speed: %.2fMb/s]"
 #define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS_S \
 	"could not open directory \"%s\", could be directory permissions issue"
 #define PROTOCOL_ABORTED_CORRUPTION_L \
@@ -119,6 +119,10 @@
 	"copy of binds requested, for %d columns"
 #define MYSQLBIND_BIND_COPY_REQUEST_INFO \
 	"column information for bind copy: name \"%.*s\" with length %d"
+#define MYSQLBIND_BIND_FREE \
+	"bind free for params count %d"
+#define FILEMGMT_RECORD_STATUS \
+	"record with folder name \"%.*s\", and file name \"%.*s\" has status %d"
 
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010

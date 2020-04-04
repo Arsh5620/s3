@@ -44,6 +44,7 @@
 		"protocol.h": "c",
 		"optional": "c",
 		"istream": "c",
-		"ostream": "c"
+		"ostream": "c",
+		"errorhandler.h": "c"
 	}
 }
