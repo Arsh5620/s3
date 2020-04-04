@@ -32,6 +32,11 @@
 #define DBP_CONN_SETUP_ENV_FAILED   6
 #define DBP_CONN_NOTIFICATION_SIZE  7
 
+enum dbp_response_enum {
+	DBP_RESPONSE_NONE
+	, DBP_RESPONSE_ACK
+};
+
 // one-to-one mapping to the actions_supported
 enum actions_supported_enum {
     ACTION_CREATE = 0
@@ -43,6 +48,7 @@ enum actions_supported_enum {
 enum attrib_supported_enum {
     ATTRIB_ACTION = 128
     , ATTRIB_FILENAME
+    , ATTRIB_FOLDER
     , ATTRIB_CRC
 };
 
@@ -54,6 +60,7 @@ typedef struct {
 
 typedef struct dbp_common_attribs {
     string_s filename;
+	string_s folder_name;
     unsigned int crc32;
     int error;
 } dbp_common_attribs_s;
@@ -65,6 +72,10 @@ typedef struct {
 } dbp_header_s;
 
 typedef struct {
+	enum dbp_response_enum dbp_response;
+} dbp_response_s;
+
+typedef struct {
     dbp_header_s header;
     array_list_s header_list;
     hash_table_s header_table;
@@ -73,6 +84,7 @@ typedef struct {
     int error;
     dbp_s *dbp;
     dbp_common_attribs_s attribs;
+	dbp_response_s response;
 } packet_info_s;
 
 enum connection_shutdown_type {
@@ -89,7 +101,8 @@ void dbp_accept_connection_loop(dbp_s *protocol);
 
 void dbp_shutdown_connection(dbp_s protocol 
     , enum connection_shutdown_type reason);
-int dbp_action_prehook(packet_info_s info);
+int dbp_response_write(packet_info_s *info);
+int dbp_action_prehook(packet_info_s *info);
 packet_info_s dbp_read_headers(dbp_s *protocol);
 
 int dbp_notification_posthook(packet_info_s *info);
@@ -108,6 +121,6 @@ char dbp_header_magic(size_t magic);
 size_t dbp_data_length(size_t magic);
 
 int dbp_setup_download_env();
-int dbp_action_posthook(packet_info_s info);
+int dbp_action_posthook(packet_info_s *info);
 
 #endif //PROTOCOL_INCLUDE_GAURD

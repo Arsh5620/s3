@@ -54,3 +54,5 @@
 #define BIND_ERROR  	-1
 #define GENERAL_ERROR  	-1
 #define NULL_ZERO		0
+
+typedef char boolean;
