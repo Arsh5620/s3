@@ -139,9 +139,7 @@ int database_table_insertrow(char *query, MYSQL_BIND *bind, size_t count);
 MYSQL_STMT *database_table_query(char *query
 	, MYSQL_BIND *bind_in 
 	, MYSQL_BIND *bind_out);
-void __database_query_print_dbg(MYSQL_STMT *stmt
-	, database_table_bind_s bind);
-
+char database_table_rowexists(MYSQL_STMT *stmt);
 /* functions to help with variable binding in mysql*/
 
 void database_bind_init_global();
@@ -154,9 +152,11 @@ void database_bind_linkfields(database_table_bind_s *table);
 database_bind_fields_s 
 	database_bind_field_copy(database_bind_fields_s src);
 database_table_bind_s 
-	database_bind_some_copy(database_table_bind_s bind_table
+	database_bind_select_copy(database_table_bind_s bind_table
 	, string_s *columns
 	, int count);
-size_t database_bind_column_index
-	(database_table_bind_s bind_table, string_s column_name);
+void database_bind_free(database_table_bind_s bind);
+void database_bind_data_copy(MYSQL_BIND *bind, string_s string);
+size_t database_bind_column_index(database_table_bind_s bind_table
+	, string_s column_name);
 #endif
