@@ -1,59 +1,74 @@
 #include <memory.h>
+#include <assert.h>
 #include "list.h"
 
-array_list_s my_list_new(size_t size , size_t entry_length)
+my_list_s my_list_new(size_t count , size_t block)
 {
-    array_list_s array_list = {0};
+    my_list_s list = {0};
 
-    size_t memory_needed    = (size * entry_length);
-    array_list.entry_length = entry_length;
-    array_list.length   = size;
-    array_list.memory   = calloc(memory_needed, 1);
+    size_t size	= (count * block);
+    list.block	= block;
+    list.size	= size;
+    list.address	= calloc(size, 1);
 
-    if(array_list.memory == (void*)0){
-        printf("Allocating memory failed with calloc,"
-            " file: %s, lineno: %d\n", __FILE__, __LINE__);
-    }
-    return(array_list);
+    assert(list.address != (void*)0);
+    return(list);
 }
 
-void my_list_expand_memory(array_list_s *list) 
+void my_list_grow(my_list_s *list) 
 {
-    list->length    += DEFAULT_MEMORY_INCREASE;
-    size_t new_size = list->length * list->entry_length;
+    list->size	+= LIST_INCREASE;
+    size_t size = list->size * list->block;
 
-	void *memory = 0;
-	size_t copy_size = (list->index * list->entry_length);
-	if ((memory = realloc(list->memory, new_size)) == 0) {
-		memory = calloc(new_size, 1);
-		memcpy(memory, list->memory, copy_size);
-		free(list->memory);
+	size_t copy = (list->count * list->block);
+	char *address	= realloc(list->address, copy);
+
+	if (NULL == address) {
+		address = calloc(size, 1);
+		assert(address != NULL);
+
+		memcpy(address, list->address, copy);
+		free(list->address); /* free the original memory space after copy */
+	} else {
+		/* zero the memory after list->count elements */
+        memset(address + copy, 0, size - copy);
 	}
-	else 
-        memset(((char*)memory + copy_size), 0, new_size - copy_size);
-    list->memory = memory;
+    list->address = address;
 }
 
-size_t my_list_push(array_list_s *list, char *entry)
+size_t my_list_push(my_list_s *list, char *entry)
 {
-    if(list->index == list->length)
-        my_list_expand_memory(list);
+    if (list->count == list->size)
+        my_list_grow(list);
 
-    memcpy((list->memory + (list->index * list->entry_length))
-        , entry, list->entry_length);
-    return(list->index++);
+	size_t size	= list->count * list->block;
+    memcpy(list->address + size, entry, list->block);
+
+	list->count++;
+    return(list->count - 1);
 }
 
-void *my_list_get(array_list_s list, size_t index)
+char *my_list_get(my_list_s list, size_t index)
 {
-    if(index <= list.length)
-        return (list.memory + (index * list.entry_length));
-    else 
+    if (index >= 0 && index <  list.count) {
+		size_t size	= list.block * index;
+        return (list.address + size);
+	} else  {
         return (NULL);
+	}
 }
 
-void my_list_delete(array_list_s list) 
+void my_list_remove(my_list_s list, size_t index)
 {
-    if(list.memory)
-        free(list.memory);
+	assert(index >= 0 && index < list.count);
+	size_t move	= (list.count - index) * list.block;
+	size_t add	= (index * list.block);
+	memmove(list.address + add
+		, list.address + add + list.block, move);
+}
+
+void my_list_free(my_list_s list) 
+{
+    if (list.address)
+        free(list.address);
 }

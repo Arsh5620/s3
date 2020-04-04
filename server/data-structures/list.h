@@ -3,18 +3,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEFAULT_MEMORY_INCREASE 128
+#define LIST_INCREASE 128
 
 typedef struct array_list {
-    size_t index;
-    size_t length;
-    short entry_length;
-    char *memory;
-} array_list_s;
+    size_t count;	/* current count of the elements */
+    size_t size;	/* max size of elements allowed */
+    int block;	/* size of a single element in bytes */
+    char *address;	/* memory address for the list */
+} my_list_s;
 
-array_list_s my_list_new(size_t size , size_t entry_length);
-void *my_list_get(array_list_s list, size_t index);
-size_t my_list_push(array_list_s* list, char* memory);
-void my_list_delete(array_list_s list);
+void my_list_free(my_list_s list) ;
+char *my_list_get(my_list_s list, size_t index);
+void my_list_remove(my_list_s list, size_t index);
+size_t my_list_push(my_list_s* list, char* memory);
+my_list_s my_list_new(size_t size , size_t entry_length);
 
 #endif
