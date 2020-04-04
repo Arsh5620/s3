@@ -1,73 +1,59 @@
+#include <string.h> 
+#include <assert.h>
 #include "hash_table.h"
-#include <string.h>
 
 /**
- * return value: unsigned int
- * this function calculates a hash given the in and the modulus
+ * this function calculates a hash given the number and the modulus
  * the modulus must be a power of 2
  */
-unsigned long hash_long(unsigned long in, unsigned long modulus)
+size_t hash_long(size_t number, size_t modulus)
 {
-    unsigned int _a1    = in & 0xFFFFFFFF
-                , _a2   = (~in >> 32) & 0xFFFFFFFF;
-    unsigned long li = (((_a1 * 2726656) ^ (_a2 * 9931)) + _a2);
-    li += ~li / modulus;
-	return li & (modulus - 1);
+	size_t a	= ~number
+		, b	= number * 2726656
+		, c	= b ^ (a * 9931)  + a
+		, d	= c + (~c / modulus)
+		, e	= d & (modulus - 1);
+	return(e);
 }
 
+// http://www.cse.yorku.ca/~oz/hash.html
 unsigned long hash_string(char *memory, long len, unsigned long modulus)
-{
-    char *m1    = memory;
-    unsigned long in    = 0;
-    for(long i=0; i<len; ++i) {
-        in += *m1;
-        unsigned int _a1    = in & 0xFFFFFFFF
-            , _a2   = (~in >> 32) & 0xFFFFFFFF;
-        in = (((_a1 * 2726656) ^ (_a2 * 9931)) + _a2);
-    }
-    in += ~in / modulus;
-    return in & (modulus - 1);
+{ 
+    int c;
+	unsigned long hash = 5381;
+	char *addrlen	= memory + len;
+
+    while (c = *memory++, memory < addrlen)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
 }
 
-size_t hash_hash(char is_string , char *memory
-    , size_t len, size_t modulus)
+size_t hash_hash(hash_input_u value, size_t len, char is_str, size_t mod)
 {
-    size_t hash  = 0;
-    if(is_string)
-        hash    = hash_string(memory, len, modulus);
-    else {
-        size_t i = (size_t)memory;
-        hash    = hash_long(i, modulus);
-    }
+    size_t hash  = 
+		is_str 
+		? hash_string(value.address, len, mod) 
+		: hash_long(value.number, mod);
     return(hash);
 }
 
 /*
  * hash_table_init inits a new hash_table_s structure 
- * it allocated memory for HASH_TABLE_DEFAULT_SIZE buckets, 
+ * it allocates memory for HASH_TABLE_DEFAULT_SIZE buckets, 
  * and returns the structure which can later be used to fill the 
  * table and make use of it. 
  */
-hash_table_s hash_table_initl()
+hash_table_s hash_table_init(long count, char is_string)
 {
-    return(hash_table_initn(HASH_TABLE_DEFAULT_SIZE, 0));
-}
-
-hash_table_s hash_table_inits()
-{
-    return(hash_table_initn(HASH_TABLE_DEFAULT_SIZE, 1));
-}
-
-hash_table_s hash_table_initn(long size, char is_string)
-{
-    hash_table_s hash_table = {0};
-    hash_table.size	= size;
-    hash_table.raw_size	= size * sizeof(hash_table_bucket_s);
-    hash_table.fill_factor	= size * HASH_TABLE_FILL_FACTOR;
-    hash_table.memory	= 
-        (hash_table_bucket_s*) calloc(hash_table.raw_size, 1);
-    hash_table.is_string    = is_string;
-    return(hash_table);
+    hash_table_s table	= {0};
+    table.size	= count;
+    table.fill	= count * HASH_FILL;
+    table.is_string	= is_string;
+    size_t raw_size	= count * sizeof(hash_table_bucket_s);
+    table.memory	= (hash_table_bucket_s*) calloc(raw_size, 1);
+	assert(table.memory != NULL);
+    return(table);
 }
 
 /*
@@ -77,24 +63,40 @@ hash_table_s hash_table_initn(long size, char is_string)
  */
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry)
 {
-    size_t hash = 
-        hash_hash(table->is_string, entry.key, entry.key_len, table->size);
+    size_t hash = hash_hash(entry.key
+		, entry.key_len, table->is_string, table->size);
     
-    hash_table_bucket_s *destination = &table->memory[hash];
-    
-    while (destination->is_occupied == HASH_OCCUPIED)
+    hash_table_bucket_s *dest	= (table->memory + hash);    
+    while (dest->is_occupied == HASH_OCCUPIED)
     {
-        ++destination;
-        if(destination >= (table->memory + table->size))
-            destination = table->memory;
+        dest++;
+        if(dest >= (table->memory + table->size))
+            dest	= table->memory;
     }
 
     entry.is_occupied   = HASH_OCCUPIED;
-    *destination = entry;
-    table->index++;
+    *dest = entry;
+    table->count++;
 
-    if(table->index >= table->fill_factor)
+    if(table->count >= table->fill)
         hash_table_expand(table);
+}
+
+// https://research.cs.vt.edu/AVresearch/hashing/deletion.php
+void hash_table_remove(hash_table_s *table
+	, hash_input_u key, size_t key_length)
+{
+    size_t hash = hash_hash(key, key_length, table->is_string, table->size);
+    hash_table_bucket_s *addr	= (table->memory + hash);
+
+	while(hash_compare(*addr, key, key_length, table->is_string)) {
+        addr++;
+        if(addr >= table->memory + table->size)
+            addr = table->memory;
+    }
+
+	memset(addr, 0, sizeof(*addr));
+	addr->is_occupied	= HASH_TOMBSTONE;
 }
 
 /*
@@ -107,28 +109,51 @@ void hash_table_add(hash_table_s *table, hash_table_bucket_s entry)
  * this function will release the previously allocated memory
  * if needs to.
  */
-hash_table_s hash_table_expand(hash_table_s *table)
+void hash_table_expand(hash_table_s *table)
 {
-    unsigned int original_size  = table->size;
+    size_t size	= table->size;
+    size_t raw_size = table->size * sizeof(hash_table_bucket_s);
 
-    table->index	= 0;
-    table->size	*= HASH_TABLE_EXPAND_SIZE;
-    table->raw_size = table->size * sizeof(hash_table_bucket_s);
-    table->fill_factor	= table->size * HASH_TABLE_FILL_FACTOR;
+    table->count	= 0;
+    table->size	*= HASH_EXPAND;
+    table->fill	= table->size * HASH_FILL;
 
-    hash_table_bucket_s *source  = table->memory, *source_copy = source;
-    table->memory  = (hash_table_bucket_s*)calloc(table->raw_size, 1);
+    hash_table_bucket_s *src  = table->memory, *src0	= src;
+    table->memory  = (hash_table_bucket_s*) calloc(raw_size, 1);
+	assert(table->memory != NULL);
 
-    while(original_size--) {
-        if(source->is_occupied)
-            hash_table_add(table, *source);
-        source++;
+	size_t i	= table->size;
+    while (i--) {
+		// we don't want to copy tombstoned buckets
+        if (src->is_occupied == HASH_OCCUPIED)
+            hash_table_add(table, *src);
+        src++;
     }
 
-    if(source_copy != NULL)
-        free(source_copy);
+    if(src0 != NULL)
+        free(src0);
+}
 
-    return(*table);
+/* 
+ * this function will check if we should continue looking into next bucket
+ * when performing linear search
+ */
+char inline hash_compare(hash_table_bucket_s bucket
+	, hash_input_u key, size_t key_len, char is_string)
+{
+	if (is_string == 0) {
+		if(bucket.key.number == key.number)
+			return(0);
+	} else if (is_string == 1) {
+		if(bucket.key.address == NULL
+			|| memcmp(bucket.key.address, key.address, key_len))
+			return(0);
+	} else return(0);
+
+// we can continue searching if the bucket is full or has a tombstone
+	if(!bucket.is_occupied)
+		return(0);
+	return(1);
 }
 
 /*
@@ -136,28 +161,27 @@ hash_table_s hash_table_expand(hash_table_s *table)
  * returns: hash_table_bucket_s
  */
 hash_table_bucket_s hash_table_get(hash_table_s table
-    , char* key, size_t key_length)
+    , hash_input_u key, size_t key_length)
 {    
-    size_t hash = hash_hash(table.is_string, key, key_length, table.size);
-    hash_table_bucket_s *entry = (table.memory + hash), result = {0};
+    size_t hash = hash_hash(key, key_length, table.is_string, table.size);
+    hash_table_bucket_s *addr	= (table.memory + hash)
+		, result = {0};
 
-    while(((table.is_string == 0 && entry->key != key)
-        || (table.is_string == 1 && entry->key != 0
-		&& memcmp(entry->key, key, key_length)))
-        && entry->is_occupied) {
-        entry++;
-        if(entry >= table.memory + table.size)
-            entry = table.memory;
+    while(hash_compare(*addr, key, key_length, table.is_string)) {
+        addr++;
+        if(addr >= table.memory + table.size)
+            addr = table.memory;
     }
 
-    if(entry->is_occupied)
-        result  = *entry;
+    if(addr->is_occupied)
+        result  = *addr;
 
     return result;
 }
 
 void hash_table_free(hash_table_s table) 
 {
-	if(table.memory)
+	if (table.memory) {
 		free(table.memory);
+	}
 }
