@@ -26,7 +26,7 @@ unsigned long hash_string(char *memory, long len, unsigned long modulus)
     while (c = *memory++, memory < addrlen)
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
-    return hash;
+    return hash & (modulus-1);
 }
 
 size_t hash_hash(hash_input_u value, size_t len, char is_str, size_t mod)
@@ -112,17 +112,17 @@ void hash_table_remove(hash_table_s *table
 void hash_table_expand(hash_table_s *table)
 {
     size_t size	= table->size;
-    size_t raw_size = table->size * sizeof(hash_table_bucket_s);
 
     table->count	= 0;
     table->size	*= HASH_EXPAND;
     table->fill	= table->size * HASH_FILL;
 
+    size_t raw_size = table->size * sizeof(hash_table_bucket_s);
     hash_table_bucket_s *src  = table->memory, *src0	= src;
     table->memory  = (hash_table_bucket_s*) calloc(raw_size, 1);
 	assert(table->memory != NULL);
 
-	size_t i	= table->size;
+	size_t i	= size;
     while (i--) {
 		// we don't want to copy tombstoned buckets
         if (src->is_occupied == HASH_OCCUPIED)
@@ -138,7 +138,7 @@ void hash_table_expand(hash_table_s *table)
  * this function will check if we should continue looking into next bucket
  * when performing linear search
  */
-char inline hash_compare(hash_table_bucket_s bucket
+char hash_compare(hash_table_bucket_s bucket
 	, hash_input_u key, size_t key_len, char is_string)
 {
 	if (is_string == 0) {
@@ -146,7 +146,7 @@ char inline hash_compare(hash_table_bucket_s bucket
 			return(0);
 	} else if (is_string == 1) {
 		if(bucket.key.address == NULL
-			|| memcmp(bucket.key.address, key.address, key_len))
+			|| memcmp(bucket.key.address, key.address, key_len) == 0)
 			return(0);
 	} else return(0);
 
@@ -167,7 +167,8 @@ hash_table_bucket_s hash_table_get(hash_table_s table
     hash_table_bucket_s *addr	= (table.memory + hash)
 		, result = {0};
 
-    while(hash_compare(*addr, key, key_length, table.is_string)) {
+	int i =0;
+    while(i = hash_compare(*addr, key, key_length, table.is_string), i) {
         addr++;
         if(addr >= table.memory + table.size)
             addr = table.memory;
