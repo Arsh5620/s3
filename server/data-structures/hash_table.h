@@ -32,19 +32,16 @@ typedef struct hash_table_struct {
 #define HASH_TOMBSTONE   1
 #define HASH_DEFAULT	128
 
-// hash table init long key
-hash_table_s hash_table_initl();
-
-// hash table init string key
-hash_table_s hash_table_inits();
-
 // hash table init custom with n elements buffer
-hash_table_s hash_table_initn(long size, char is_key_string);
+hash_table_s hash_table_init(long size, char is_string);
 void hash_table_expand(hash_table_s *table);
-
+void hash_table_remove(hash_table_s *table
+	, hash_input_u key, size_t key_length);
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry);
 hash_table_bucket_s hash_table_get(hash_table_s table
     , hash_input_u key, size_t key_length);
 void hash_table_free(hash_table_s table);
-
+char inline hash_compare(hash_table_bucket_s bucket
+	, hash_input_u key, size_t key_len, char is_string);
+	
 # endif
