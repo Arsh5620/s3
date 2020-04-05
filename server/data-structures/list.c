@@ -8,7 +8,7 @@ my_list_s my_list_new(size_t count , size_t block)
 
     size_t size	= (count * block);
     list.block	= block;
-    list.size	= size;
+    list.size	= count;
     list.address	= calloc(size, 1);
 
     assert(list.address != (void*)0);
@@ -21,7 +21,7 @@ void my_list_grow(my_list_s *list)
     size_t size = list->size * list->block;
 
 	size_t copy = (list->count * list->block);
-	char *address	= realloc(list->address, copy);
+	char *address	= realloc(list->address, size);
 
 	if (NULL == address) {
 		address = calloc(size, 1);
@@ -58,13 +58,15 @@ char *my_list_get(my_list_s list, size_t index)
 	}
 }
 
-void my_list_remove(my_list_s list, size_t index)
+void my_list_remove(my_list_s *list, size_t index)
 {
-	assert(index >= 0 && index < list.count);
-	size_t move	= (list.count - index) * list.block;
-	size_t add	= (index * list.block);
-	memmove(list.address + add
-		, list.address + add + list.block, move);
+	assert(index >= 0 && index < list->count);
+
+	size_t move	= (list->count - index - 1) * list->block;
+	size_t add	= (index * list->block);
+	memmove(list->address + add
+		, list->address + add + list->block, move);
+	list->count--;
 }
 
 void my_list_free(my_list_s list) 
