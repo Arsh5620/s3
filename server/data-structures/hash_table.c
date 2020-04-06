@@ -8,12 +8,9 @@
  */
 size_t hash_long(size_t number, size_t modulus)
 {
-	size_t a	= ~number
-		, b	= number * 2726656
-		, c	= b ^ (a * 9931)  + a
-		, d	= c + (~c / modulus)
-		, e	= d & (modulus - 1);
-	return(e);
+	unsigned int a	= number & 0xFFFFFFFF;
+    size_t c = ((a * 6654657629) ^ (a * 98767787)) + a;
+	return c & (modulus - 1); 
 }
 
 // http://www.cse.yorku.ca/~oz/hash.html
@@ -56,6 +53,13 @@ hash_table_s hash_table_init(long count, char is_string)
     return(table);
 }
 
+static long collision_count	= 0;
+
+long hash_collision_count()
+{
+	return(collision_count);
+}
+
 /*
  * as first parameter this functions expects handle returned by 
  * hash_table_init(), and then it tries to add the "entry" to the 
@@ -65,8 +69,11 @@ void hash_table_add(hash_table_s *table, hash_table_bucket_s entry)
 {
     size_t hash = hash_hash(entry.key
 		, entry.key_len, table->is_string, table->size);
-    
-    hash_table_bucket_s *dest	= (table->memory + hash);    
+
+    hash_table_bucket_s *dest	= (table->memory + hash);  
+	if(dest->is_occupied)
+		collision_count++;
+
     while (dest->is_occupied == HASH_OCCUPIED)
     {
         dest++;
@@ -111,6 +118,7 @@ void hash_table_remove(hash_table_s *table
  */
 void hash_table_expand(hash_table_s *table)
 {
+	collision_count	= 0;
     size_t size	= table->size;
 
     table->count	= 0;
