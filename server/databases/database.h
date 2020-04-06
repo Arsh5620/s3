@@ -4,19 +4,20 @@
 #ifndef DATABASE_INCLUDE_GAURD
 #define DATABASE_INCLUDE_GAURD
 
+#include <stddef.h>
 #include <mysql.h>
 #include "../general/strings.h"
 #include "../data-structures/hash_table.h"
+#include "../config/config.h"
 
 typedef struct sql_connection_information
 {
-    const char host[64];
-	const char user[32];
-	const char passwd[32];
-	const char db[32];
+    char *host;
+	char *user;
+	char *passwd;
+	char *db;
 	unsigned int port;
 } database_connection_s;
-
 
 enum config_types {
     CONFIG_USERNAME
@@ -24,6 +25,19 @@ enum config_types {
     , CONFIG_DATABASE
     , CONFIG_MACHINE
     , CONFIG_PORT
+};
+
+struct config_parse config_property[5] = {
+	STRUCT_CONFIG_PARSE("database", CONFIG_DATABASE
+		, database_connection_s, db, CONFIG_TYPE_STRING)
+	, STRUCT_CONFIG_PARSE("machine", CONFIG_MACHINE
+		, database_connection_s, host, CONFIG_TYPE_STRING)
+	, STRUCT_CONFIG_PARSE("password", CONFIG_PASSWORD
+		, database_connection_s, passwd, CONFIG_TYPE_STRING)
+    , STRUCT_CONFIG_PARSE("port", CONFIG_PORT
+		, database_connection_s, port, CONFIG_TYPE_INT)
+    , STRUCT_CONFIG_PARSE("username", CONFIG_USERNAME
+		, database_connection_s, user, CONFIG_TYPE_STRING)
 };
 
 typedef struct database_bind_fields {
