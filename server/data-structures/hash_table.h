@@ -12,8 +12,8 @@ typedef struct {
 	/* union allows for us to use both addresses and numbers */
 	hash_input_u key; 
 	hash_input_u value;
-    long key_len;
-    long value_len;
+    int key_len;
+    int value_len;
     char is_occupied;
 } hash_table_bucket_s;
 
@@ -27,12 +27,13 @@ typedef struct hash_table_struct {
 
 #define HASH_EXPAND	2
 #define HASH_EMPTY	0
-#define HASH_FILL	.75
+#define HASH_FILL	.85
 #define HASH_OCCUPIED   1
 #define HASH_TOMBSTONE   1
 #define HASH_DEFAULT	128
 
 // hash table init custom with n elements buffer
+long hash_collision_count();
 hash_table_s hash_table_init(long size, char is_string);
 void hash_table_expand(hash_table_s *table);
 void hash_table_remove(hash_table_s *table
