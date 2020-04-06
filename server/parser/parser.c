@@ -5,11 +5,11 @@
 #include "../files/file.h"
 #include "../memdbg/memory.h"
 
-array_list_s parser_parse(char *buffer, int length)
+my_list_s parser_parse(char *buffer, int length)
 {
     lexer_s lex = lexer_init(buffer, length);
     lexer_status_s status = {0};
-    array_list_s list   = my_list_new(12, sizeof(key_value_pair_s));
+    my_list_s list   = my_list_new(12, sizeof(key_value_pair_s));
     do
     {
         status.warnno   = 0;
@@ -25,16 +25,16 @@ array_list_s parser_parse(char *buffer, int length)
     return(list);
 }
 
-void parser_release_list(array_list_s list)
+void parser_release_list(my_list_s list)
 {
-    for(long i = 0; i < list.index; ++i) {
+    for(long i = 0; i < list.count; ++i) {
         key_value_pair_s pair = *(key_value_pair_s*)my_list_get(list, i);
         if(pair.key)
             free(pair.key);
     }
 }
 
-void parser_push_copy(array_list_s *list, key_value_pair_s pair)
+void parser_push_copy(my_list_s *list, key_value_pair_s pair)
 {
     if(pair.key_length == 0) // the node is a comment line
         return;
@@ -65,7 +65,7 @@ void parser_push_copy(array_list_s *list, key_value_pair_s pair)
 * this memory should be released using parser_release_list
 * when no longer required. 
 */
-array_list_s parser_parse_file(FILE *file)
+my_list_s parser_parse_file(FILE *file)
 {
     file_reader_s reader    = file_init_reader(file);
 
@@ -74,7 +74,7 @@ array_list_s parser_parse_file(FILE *file)
 
     lexer_s lex = lexer_init(reader.buffer, reader.readlength);
     lexer_status_s status = {0};
-    array_list_s list   = my_list_new(12, sizeof(key_value_pair_s));
+    my_list_s list   = my_list_new(12, sizeof(key_value_pair_s));
     key_value_pair_s pair = {0};
 
     do

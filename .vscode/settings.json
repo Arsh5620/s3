@@ -45,6 +45,11 @@
 		"optional": "c",
 		"istream": "c",
 		"ostream": "c",
-		"errorhandler.h": "c"
+		"errorhandler.h": "c",
+		"random": "c",
+		"numeric": "c",
+		"cstddef": "c",
+		"stdio.h": "c",
+		"stddef.h": "c"
 	}
 }

@@ -6,3 +6,4 @@ server/temp/*
 build
 tests
 client
+unit-testing

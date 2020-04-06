@@ -23,6 +23,7 @@ typedef struct hash_table_struct {
     size_t size;
     size_t fill;
     char is_string;
+	long collision_count;
 } hash_table_s;
 
 #define HASH_EXPAND	2
@@ -42,7 +43,7 @@ void hash_table_add(hash_table_s *table, hash_table_bucket_s entry);
 hash_table_bucket_s hash_table_get(hash_table_s table
     , hash_input_u key, size_t key_length);
 void hash_table_free(hash_table_s table);
-char inline hash_compare(hash_table_bucket_s bucket
+char hash_compare(hash_table_bucket_s bucket
 	, hash_input_u key, size_t key_len, char is_string);
 	
 # endif

@@ -8,8 +8,7 @@
  */
 size_t hash_long(size_t number, size_t modulus)
 {
-	unsigned int a	= number & 0xFFFFFFFF;
-    size_t c = ((a * 6654657629) ^ (a * 98767787)) + a;
+    size_t c = ((number * 6654657629) ^ (number * 98767787)) + number;
 	return c & (modulus - 1); 
 }
 
@@ -53,11 +52,9 @@ hash_table_s hash_table_init(long count, char is_string)
     return(table);
 }
 
-static long collision_count	= 0;
-
-long hash_collision_count()
+long hash_collision_count(hash_table_s table)
 {
-	return(collision_count);
+	return(table.collision_count);
 }
 
 /*
@@ -72,7 +69,7 @@ void hash_table_add(hash_table_s *table, hash_table_bucket_s entry)
 
     hash_table_bucket_s *dest	= (table->memory + hash);  
 	if(dest->is_occupied)
-		collision_count++;
+		table->collision_count++;
 
     while (dest->is_occupied == HASH_OCCUPIED)
     {
@@ -118,7 +115,7 @@ void hash_table_remove(hash_table_s *table
  */
 void hash_table_expand(hash_table_s *table)
 {
-	collision_count	= 0;
+	table->collision_count	= 0;
     size_t size	= table->size;
 
     table->count	= 0;
@@ -146,7 +143,7 @@ void hash_table_expand(hash_table_s *table)
  * this function will check if we should continue looking into next bucket
  * when performing linear search
  */
-char hash_compare(hash_table_bucket_s bucket
+char inline hash_compare(hash_table_bucket_s bucket
 	, hash_input_u key, size_t key_len, char is_string)
 {
 	if (is_string == 0) {
