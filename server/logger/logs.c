@@ -17,10 +17,10 @@ static logger_s logs = {0};
 // logs_gettime_s will allocate 64 bytes and format the current
 // time according to format, check strftime for more information
 // set ns (nanosecond) to 1 to use the LOG_DATE_FORMAT_NS
-// use m_free to free memory when not in use anymore.
+// use free to free memory when not in use anymore.
 char *logs_gettime_s(char *format, char ns, size_t *len)
 {
-    char *memory    = m_malloc(LOG_MAX_TIMESTRINGL, MEMORY_FILE_LINE);
+    char *memory    = malloc(LOG_MAX_TIMESTRINGL);
 	if(memory == NULL)
 		return(NULL);
 
@@ -43,13 +43,13 @@ char *logs_gettime_s(char *format, char ns, size_t *len)
 	}
 
     if(ns) {
-        char *nsf	= m_malloc(LOG_MAX_TIMESTRINGL, MEMORY_FILE_LINE);
+        char *nsf	= malloc(LOG_MAX_TIMESTRINGL);
 		if(nsf == NULL)
 			return(NULL);
 
         int length	= sprintf(nsf, LOG_DATE_FORMAT_NS
 			, memory, time.tv_nsec / 1000);
-		m_free(memory, MEMORY_FILE_LINE);
+		free(memory);
 
 		if (length < 0)
 			return(NULL);
@@ -68,7 +68,7 @@ int logs_open_file(logger_s *log)
     strings_sprintf(&log->filename, 
 		LOG_FILE_NAME, LOG_DIR_NAME, dateformat);   
 
-	m_free(dateformat, MEMORY_FILE_LINE); 
+	free(dateformat); 
     log->file_p	= fopen(log->filename, "w+");
 
     if(log->file_p == NULL) {
@@ -124,7 +124,7 @@ size_t logs_write(enum logger_level level
 	char *dateformat	= logs_gettime_s(LOG_DATE_FORMAT, TRUE, &length);
     int write	= fwrite(dateformat, 1, length, logs.file_p);
 
-	m_free(dateformat, MEMORY_FILE_LINE);
+	free(dateformat);
 
 	char *log_level;
 	if (level >= LOGGER_INFO && level <= LOGGER_CATASTROPHIC)
@@ -144,7 +144,7 @@ size_t logs_write(enum logger_level level
 		
         fwrite(LOG_FILE_NEWLINE, 1, 2, logs.file_p);
 
-		m_free(buffer, MEMORY_FILE_LINE);
+		free(buffer);
 		if(length != write)
 			is_error	= TRUE;
 	}
@@ -162,7 +162,7 @@ size_t logs_write(enum logger_level level
 
 void logs_close()
 {
-    m_free(logs.filename, MEMORY_FILE_LINE);
+    free(logs.filename);
 
     if(fclose(logs.file_p) != 0)
         printf("Could not close the file open for logging.\n");
