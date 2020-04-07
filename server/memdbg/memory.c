@@ -2,163 +2,150 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <memory.h>
+#include <assert.h>
 
 #include "./memory.h"
 #include "../general/defines.h"
+#include "../errors/errorhandler.h"
 
 #ifdef DEBUG_MEMORY
 
-// the program is found to have limitations in case the operating system 
-// assigned a just-freed block to the new mallocation the address
-// for which already exists in the table. 
-
-static malloc_s track = {0}; // only available in the same object file
-
-void memory_exit(int reason)
-{
-    if(reason   == MALLOC_FAILED)
-        printf("malloc");
-    if(reason   == CALLOC_FAILED)
-        printf("calloc");
-    if(reason   == REALLOC_FAILED)
-        printf("realloc");
-
-    if(reason == MALLOC_FAILED 
-        || reason == CALLOC_FAILED 
-        || reason == REALLOC_FAILED)
-        printf(" failed possibly due to low memory, program will "
-            "now exit, please check logs and program exit code for"
-            " more info.\n");
-    
-    if(reason == FREE_FAILED)
-        printf("cannot free memory when tried, program will exit, and "
-            "your OS will free all the memory.\n");
-    exit(reason);
-}
+static malloc_s allocations	= {0};
 
 void memory_track_add(void * address
     , long size , char *file_name , long line_no)
 {
-    if(track.is_init == FALSE){
-        track.list  = 
+    if (allocations.is_init == FALSE) 
+	{
+        allocations.list  = 
             my_list_new(MEMORY_TABLE_SIZE, sizeof(malloc_node_s));
-        track.hash  = hash_table_initn(MEMORY_TABLE_SIZE, 0);
-        track.is_init   = TRUE;
+        allocations.hash  = hash_table_init(MEMORY_TABLE_SIZE, 0);
+        allocations.is_init   = TRUE;
     }
     
-    malloc_node_s track_node = {0};
-    track_node.type = MEMORY_ALLOC_MALLOC;
-    
-    track_node.file_name    = file_name;
-    track_node.line_no  = line_no;
-    track_node.size = size;
-    track_node.address  = address;
-    track_node.counter  = 1;
+    malloc_node_s track_node = {
+    	.address  = address
+		, .last_update	= MEMORY_ALLOC_MALLOC
+	};
 
-    long index = my_list_push(&track.list, (char*) &track_node);
+	malloc_update_s node	= {
+    	.type = MEMORY_ALLOC_MALLOC
+    	, .file_name    = file_name
+    	, .line_no  = line_no
+    	, .size = size
+	};
 
-    hash_table_bucket_s hash_entry = 
-        {(void*)address, 0, (void*)index, 0, 1};
-    hash_table_add(&track.hash, hash_entry);
+	linked_list_push(&track_node.updates, (char*)&node, sizeof(node));
+    long index = my_list_push(&allocations.list, (char*) &track_node);
+
+    hash_table_bucket_s hash_entry = {
+		.key.address	= (void*) address
+		, .value.number	=  index
+		, .key_len	= 0
+		, .value_len	= 0
+		, .is_occupied	= 0
+	};
+
+    hash_table_add(&allocations.hash, hash_entry);
+	memory_log_handle(MEMORY_ALLOC_MALLOC, &track_node, &node);
 }
 
-void memory_track_update(void * address
-    , void *prev_addr , long size
+void memory_track_update(void * address, void *new_addr, long size
     , char *file_name , long line_no , malloc_enum type)
 {
-    hash_table_bucket_s entry   = 
-        hash_table_get(track.hash, (void*) prev_addr, 0);
+	hash_input_u key	= { .address = (void*) address };
+    hash_table_bucket_s entry   = hash_table_get(allocations.hash, key, 0);
     
-    if(prev_addr == NULL || entry.is_occupied != TRUE) {
-        printf("Could not update store for address %p, failed!\n"
-            , address);
+    if(entry.is_occupied != TRUE) 
+	{
+        error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG,
+			MEMORY_ALLOCATION_ERROR, MEMORY_ALLOCATION_NOENTRY);
         return;
     }
 
-    size_t index   = (unsigned long)entry.value;
-    malloc_node_s *list_i   = 
-        (malloc_node_s*)my_list_get(track.list, index);
-    
+    malloc_node_s *allocation   = 
+        (malloc_node_s*)my_list_get(allocations.list, entry.value.number);
 
-    list_i->type    = type;
-    list_i->prev_address    = prev_addr;
-    list_i->address = address;
-    list_i->file_name   = file_name;
-    list_i->line_no = line_no;
-    list_i->counter++;
+	allocation->last_update	= type;
 
-    if(size != -1)
-        list_i->size    = size;
+	malloc_update_s node	= { 
+    	.type = type
+    	, .file_name    = file_name
+    	, .line_no  = line_no
+    	, .size = size
+	};
 
-    if(address != NULL) {
-        // both addresses must point to the same list node.
-        hash_table_bucket_s hash_entry = 
-            {(void*)address, 0, (void*)index, 0, 0};
-        hash_table_add(&track.hash, hash_entry);
-    }
+	linked_list_push(&allocation->updates, (char*)&node, sizeof(node));
+
+	if (type == MEMORY_ALLOC_FREE) 
+	{
+		hash_input_u	rmindex	= (hash_input_u){
+			.address = address
+		};
+		hash_table_remove(&allocations.hash, rmindex, 0);
+	}
+	else if (type == MEMORY_ALLOC_REALLOC 
+		&& new_addr != NULL 
+		&& address != new_addr) 
+	{
+		memory_track_add(new_addr, size, file_name, line_no);
+		allocation->new_addr	= new_addr;
+		malloc_update_s node	= {
+    		.type = MEMORY_ALLOC_FREE
+    		, .file_name    = file_name
+    		, .line_no  = line_no
+    		, .size = size
+		};
+		linked_list_push(&allocation->updates, (char*)&node, sizeof(node));
+	}
+
+	memory_log_handle(type, allocation, &node);
 }
 
 void *m_malloc(size_t size, char *file_name, long line_no)
 {
     void *memory    = malloc(size);
-    if(memory == NULL)
-        memory_exit(MALLOC_FAILED);
-
+    assert(memory != NULL);
     memory_track_add(memory, size, file_name, line_no);
-
     return(memory);
 }
 
 void *m_calloc(size_t size, char *file_name, long line_no)
 {
     void *memory    = calloc(size, 1);
-    if(memory == NULL)
-        memory_exit(CALLOC_FAILED);
-
+    assert(memory != NULL);
     memory_track_add(memory, size, file_name, line_no);
-
     return(memory);
 }
 
 void *m_realloc(void *address, long size, char *file_name, long line_no)
 {
     void *memory    = realloc(address, size);
-
-    memory_track_update(memory, address
+	size	= memory == NULL ? -1 : size;
+    memory_track_update(address, memory
         , size, file_name, line_no, MEMORY_ALLOC_REALLOC);
-
     return(memory);
 }
 
 void m_free(void *address, char *file_name, long line_no)
 {
-    if(address){
+    if (address) 
+	{
         free(address);
-        memory_track_update(NULL, address, -1, file_name
+        memory_track_update(address, address, -1, file_name
             , line_no, MEMORY_ALLOC_FREE);
     }
 }
 
-void memory_print_debug()
+void memory_log_handle(malloc_enum type
+	, malloc_node_s *node, malloc_update_s *update)
 {
-    printf("tracked memory allocations:\n\n");
-    for(size_t i=0; i<track.list.index; ++i){
-        malloc_node_s j = (*(malloc_node_s*)my_list_get(track.list, i));
-        printf("address: %p\n"
-                    "previous address: %p\n"
-                    "(de)allocating file name: %s\n"
-                    "(de)allocating file line number: %ld\n"
-                    "request type: %d\n"
-                    "requested size: %ld\n"
-                    "counter: %ld\n"
-                    , j.address, j.prev_address
-                    , j.file_name, j.line_no
-                    , j.type, j.size, j.counter);
-
-        printf("*** preview ***\n%.*s\n*** ***\n\n"
-                    , (int)(j.size > 100 ? 100: j.size)   
-                    , (char*) j.address);
-    }
+	static char *mem_types[]	= {"malloc", "calloc", "realloc", "free"};
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG,
+		MEMORY_ALLOCATION_LOG
+		, node->address, node->new_addr
+		, mem_types[update->type], update->size
+		, update->file_name, update->line_no);
 }
 
 #else
