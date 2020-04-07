@@ -38,8 +38,10 @@ void my_list_grow(my_list_s *list)
 
 size_t my_list_push(my_list_s *list, char *entry)
 {
-    if (list->count == list->size)
+    if (list->count == list->size) 
+	{
         my_list_grow(list);
+	}
 
 	size_t size	= list->count * list->block;
     memcpy(list->address + size, entry, list->block);

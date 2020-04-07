@@ -27,18 +27,7 @@ enum config_types {
     , CONFIG_PORT
 };
 
-struct config_parse config_property[5] = {
-	STRUCT_CONFIG_PARSE("database", CONFIG_DATABASE
-		, database_connection_s, db, CONFIG_TYPE_STRING)
-	, STRUCT_CONFIG_PARSE("machine", CONFIG_MACHINE
-		, database_connection_s, host, CONFIG_TYPE_STRING)
-	, STRUCT_CONFIG_PARSE("password", CONFIG_PASSWORD
-		, database_connection_s, passwd, CONFIG_TYPE_STRING)
-    , STRUCT_CONFIG_PARSE("port", CONFIG_PORT
-		, database_connection_s, port, CONFIG_TYPE_INT)
-    , STRUCT_CONFIG_PARSE("username", CONFIG_USERNAME
-		, database_connection_s, user, CONFIG_TYPE_STRING)
-};
+#define CONFIG_COUNT	sizeof(config_property)/sizeof(struct config_parse)
 
 typedef struct database_bind_fields {
     my_bool is_null;
@@ -140,7 +129,7 @@ typedef struct database_table_bind {
 
 #define FLAG_ISSET(x, y) ((x & y) > 0)
 
-int database_init(database_connection_s connect);
+int database_init();
 
 int database_verify_integrity();
 int database_check_tables();

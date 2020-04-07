@@ -120,14 +120,15 @@ netconn_data_s network_data_readstream(netconn_info_s *conn, int size)
         memory  = (char*) data.spare;
         data.is_spare   = TRUE;
     }
-    else if (size < MAX_ALLOWED_NETWORK_BUFFER) {
+    else 
+	{
+		if (size > MAX_ALLOWED_NETWORK_BUFFER)
+		{
+			size = MAX_ALLOWED_NETWORK_BUFFER;
+        	data.error_code = SERVER_OUT_OF_MEMORY;
+		}
         memory  = m_malloc(size, MEMORY_FILE_LINE);
         data.is_malloc  = TRUE;
-    }
-    else {
-        data.is_error   = TRUE;
-        data.error_code = SERVER_OUT_OF_MEMORY;
-        return(data);
     }
 
     size_t i = 0;

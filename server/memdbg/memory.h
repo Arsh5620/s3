@@ -43,7 +43,8 @@ typedef struct {
 
 #endif
 
-void memory_print_debug();
+void memory_cleanup();
+char *memory_log_gettype(int i);
 void memory_log_handle(malloc_enum type
 	, malloc_node_s *node, malloc_update_s *update);
 void m_free(void *address, char *file_name, long line_no);

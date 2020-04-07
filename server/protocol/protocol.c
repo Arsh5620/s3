@@ -31,6 +31,18 @@ static enum attrib_supported_enum call_asserts[]
     , {ATTRIB_ACTION, 0, 0} // ACTION_UPDATE
 };
 
+size_t binary_search_kc_cmp(void *memory, char *str, size_t strlen)
+{
+    key_code_pair_s *s    = (key_code_pair_s*) memory;
+    int cmp = memcmp(str, s->string, strlen); // order does matter
+    if(cmp == 0 && s->strlen > strlen)
+        cmp--;
+    else if(cmp == 0 && s->strlen < strlen)
+        cmp++;
+
+    return(cmp);
+}
+
 dbp_s dbp_init(unsigned short port)
 {
     dbp_s protocol = {0};
@@ -41,16 +53,8 @@ dbp_s dbp_init(unsigned short port)
 		, PROTOCOL_NETWORK_SBS_INIT);
 
     protocol.connection = network_connect_init_sync(port);
-    database_connection_s connect_info  = 
-		config_parse_dbc(DBP_CONFIG_FILENAME);
-
-    error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
-		, PROTOCOL_MYSQL_LOGIN_INFO_SISS
-        , connect_info.host, connect_info.port
-		, connect_info.user
-        , connect_info.db);
         
-    if(database_init(connect_info) == MYSQL_SUCCESS) {
+    if(database_init(DBP_CONFIG_FILENAME) == MYSQL_SUCCESS) {
         protocol.is_init = TRUE;
     } else {
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_CATASTROPHIC
@@ -162,7 +166,6 @@ int dbp_next(dbp_s *protocol)
 
 int dbp_response_write(packet_info_s *info)
 {
-	printf("this is the output");
 	switch (info->response.dbp_response)
 	{
 	case DBP_RESPONSE_ACK:
@@ -172,6 +175,7 @@ int dbp_response_write(packet_info_s *info)
 	default:
 		break;
 	}
+	return(0);
 }
 
 file_write_s create_download_file(packet_info_s *info)
@@ -267,13 +271,13 @@ int dbp_action_prehook(packet_info_s *info)
 // this function should be called before dispatching the request
 // to make sure that the header contains all the required key:value 
 // pairs needed by the called function.
-int dbp_assert_list(array_list_s list, 
+int dbp_assert_list(my_list_s list, 
     enum attrib_supported_enum *match, int match_length)
 {
     int finds[match_length];
     memset(finds, 0, sizeof(finds));
 
-    for(long i=0; i<list.index; ++i) {
+    for(long i=0; i<list.count; ++i) {
         key_value_pair_s pair   = 
             *(key_value_pair_s*) my_list_get(list, i);
 
@@ -315,10 +319,10 @@ int dbp_assert_list(array_list_s list,
  */
 hash_table_s dbp_attribs_hash_table(packet_info_s info)
 {
-    array_list_s list   = info.header_list;
-    int length  = list.index;
+    my_list_s list   = info.header_list;
+    int length  = list.count;
 
-    hash_table_s table  = hash_table_inits();
+    hash_table_s table  = hash_table_init(10, 1);
 
     for(int i=0; i<length; ++i) {
         key_value_pair_s pair   =
@@ -335,15 +339,16 @@ hash_table_s dbp_attribs_hash_table(packet_info_s info)
         if(attrib != -1) {  
             key_code_pair_s attr  = attribs[attrib];
             hash_table_bucket_s b   = 
-                hash_table_get(table, attr.string, attr.strlen);
+                hash_table_get(table,(hash_input_u){.address = attr.string}
+					, attr.strlen);
             if(b.is_occupied){
 				//ignore and continue to the next pair
 				continue;
             }
             hash_table_bucket_s b1  = {0};
-            b1.key  = attr.string;
+            b1.key.address  = attr.string;
             b1.key_len  = attr.strlen;
-            b1.value    = pair.value;
+            b1.value.address   = pair.value;
 			b1.value_len	= pair.value_length;
 
             hash_table_add(&table, b1);
@@ -366,7 +371,8 @@ dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
     for(size_t i=0; i<sizeof(attribs) / sizeof(key_code_pair_s); ++i) {
         key_code_pair_s attrib	= attribs[i];
 		hash_table_bucket_s bucket	= 
-			hash_table_get(table, attrib.string, attrib.strlen);
+			hash_table_get(table, (hash_input_u){.address = attrib.string}
+			, attrib.strlen);
 
         switch (attrib.code)
         {
@@ -378,7 +384,7 @@ dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
                 || bucket.value_len <= 0)
                 attributes.error   = DBP_ATTRIBS_ERR_NAMETOOLONG;
             else {
-                attributes.filename.address = bucket.value;
+                attributes.filename.address = bucket.value.address;
                 attributes.filename.length  = bucket.value_len;
             }
             break;
@@ -387,7 +393,7 @@ dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
                 || bucket.value_len <= 0)
                 attributes.error   = DBP_ATTRIBS_ERR_NAMETOOLONG;
             else {
-                attributes.folder_name.address = bucket.value;
+                attributes.folder_name.address = bucket.value.address;
                 attributes.folder_name.length  = bucket.value_len;
             }
             break;
@@ -396,7 +402,7 @@ dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info)
                 attributes.error   =
                             DBP_ATTRIBS_ERR_CRC32NOTFOUND;
 			else 
-            	attributes.crc32	= *(unsigned int*) bucket.value;
+            	attributes.crc32	= *(unsigned int*) bucket.value.address;
             break;
         }
     }
@@ -431,13 +437,13 @@ packet_info_s dbp_read_headers(dbp_s *protocol)
         network_data_readstream(&protocol->connection, header.header_length);
 
     char *address = network_data_address(&header1);
-    array_list_s header_list    = 
+    my_list_s header_list    = 
         parser_parse(address, header1.data_length);
         
     info.action = -1;
     
     key_value_pair_s pair   = {0};
-    if(header_list.index > 0){
+    if(header_list.count > 0){
         pair    = *(key_value_pair_s*) my_list_get(header_list, 0);
 	    info.header_list    = header_list;
     } else {

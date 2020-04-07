@@ -95,7 +95,7 @@ void config_copy_data(char *struct_memory, int offset
  *	bindings for the struct config_parse, and then you will pass this into 
  *	the functions as configs. See example usage in the Config.md
 */
-char *config_parse_files(char *filename, struct config_parse *configs
+void config_parse_files(char *filename, struct config_parse *configs
 	, int config_count, char *struct_memory) 
 {
 	FILE *config	= fopen(filename, FILE_MODE_READONLY);

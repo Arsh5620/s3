@@ -42,4 +42,6 @@ void config_copy_data(char *struct_memory, int offset
 	, int size, key_value_pair_s *pair, enum config_data_type type);
 void config_read_all(my_list_s list, struct config_parse *configs
 	, int config_count, char *struct_memory);
+void config_parse_files(char *filename, struct config_parse *configs
+	, int config_count, char *struct_memory) ;
 #endif // CONFIG_INCLUDE_GAURD

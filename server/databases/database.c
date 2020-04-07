@@ -11,6 +11,19 @@
 static MYSQL *sql_connection;
 static database_table_bind_s binds;
 
+struct config_parse config_property[5] = {
+	STRUCT_CONFIG_PARSE("database", CONFIG_DATABASE
+		, database_connection_s, db, CONFIG_TYPE_STRING)
+	, STRUCT_CONFIG_PARSE("machine", CONFIG_MACHINE
+		, database_connection_s, host, CONFIG_TYPE_STRING)
+	, STRUCT_CONFIG_PARSE("password", CONFIG_PASSWORD
+		, database_connection_s, passwd, CONFIG_TYPE_STRING)
+    , STRUCT_CONFIG_PARSE("port", CONFIG_PORT
+		, database_connection_s, port, CONFIG_TYPE_INT)
+    , STRUCT_CONFIG_PARSE("username", CONFIG_USERNAME
+		, database_connection_s, user, CONFIG_TYPE_STRING)
+};
+
 MYSQL *database_get_handle()
 {
 	return(sql_connection);
@@ -30,8 +43,18 @@ database_table_bind_s database_get_global_bind()
 // after database_init is called a static variable sql_connection
 // is initialized to the connection information and a mysql db 
 // connection is attempted. 
-int database_init(database_connection_s connect)
+int database_init(char *config_file)
 {
+	database_connection_s connect = {0};
+	config_parse_files(config_file
+		, config_property, CONFIG_COUNT, (char*)&connect);
+
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
+		, PROTOCOL_MYSQL_LOGIN_INFO_SISS
+        , connect.host, connect.port
+		, connect.user
+        , connect.db);
+
     if(sql_connection != 0) return(MYSQL_SUCCESS);
 
     if (mysql_library_init(0, NULL, NULL)) {
@@ -319,9 +342,10 @@ database_table_bind_s database_bind_select_copy
 	for(int i=0; i < count; ++i) {
 		string_s string	= columns[i];
 		hash_table_bucket_s bucket	= 
-			hash_table_get(source.table, string.address, string.length);
+			hash_table_get(source.table
+			, (hash_input_u){.address = string.address}, string.length);
 
-		if(bucket.key	== 0) {
+		if(bucket.key.address == NULL) {
 			error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 				, MYSQLBIND_COLUMN_NOT_FOUND
 				, string.length, string.address
@@ -330,7 +354,7 @@ database_table_bind_s database_bind_select_copy
 			return dest;
 		}
 
-		size_t index	= (size_t)bucket.value;
+		size_t index	= bucket.value.number;
 		// MYSQL_BIND *source_bind	= (source.bind_params + index);
 		// MYSQL_BIND *dest_bind	= (dest.bind_params + i);
 
@@ -357,9 +381,10 @@ size_t database_bind_column_index
 	(database_table_bind_s bind_table, string_s column_name)
 {
 	hash_table_bucket_s bucket	= hash_table_get(bind_table.table
-		, column_name.address, column_name.length);
-	if(bucket.is_occupied && bucket.key != 0) {
-		size_t index	= (size_t)bucket.value;
+		,(hash_input_u){.address = column_name.address} 
+		, column_name.length);
+	if(bucket.is_occupied && bucket.key.address != NULL) {
+		size_t index	= bucket.value.number;
 		return(index);
 	}else return(-1);
 }
@@ -397,14 +422,14 @@ void database_bind_free(database_table_bind_s bind)
 
 hash_table_s database_bind_maketable(database_table_bind_s *bind_table)
 {
-	hash_table_s table	= hash_table_inits();
+	hash_table_s table	= hash_table_init(10, 1);
 	for(size_t i=0; i < bind_table->bind_param_count; ++i){
 		database_bind_fields_s *field	= (bind_table->fields + i);
 
 		hash_table_bucket_s bucket = {0};
-		bucket.key	= field->name;
+		bucket.key.address	= field->name;
 		bucket.key_len	= field->name_length;
-		bucket.value	= (char*)i;
+		bucket.value.number	= i;
 		bucket.value_len	= 0;
 		hash_table_add(&table, bucket);
 	}
