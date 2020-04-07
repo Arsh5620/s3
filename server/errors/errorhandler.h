@@ -123,6 +123,14 @@
 	"bind free for params count %d"
 #define FILEMGMT_RECORD_STATUS \
 	"record with folder name \"%.*s\", and file name \"%.*s\" has status %d"
+#define MEMORY_ALLOCATION_LOG \
+	"{{address:\"%p\", new address:\"%p\"}, " \
+		"{request type: \"%s\", request size: %d}, " \
+		"{file name: \"%s\", file line number: %d}}"
+#define MEMORY_ALLOCATION_ERROR \
+	"{{address:\"%p\", new address:\"%p\"} error: %s"
+#define MEMORY_ALLOCATION_NOENTRY \
+	"address not found in table"
 
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010

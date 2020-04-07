@@ -19,7 +19,7 @@ long strings_svprintf(char **buffer, char *string, va_list list)
         return -1;
 
     size++;             /* For '\0' */
-    pointer = m_calloc(size, MEMORY_FILE_LINE);
+    pointer = calloc(1, size);
     if (pointer == NULL)
         return -1;
 
@@ -29,7 +29,7 @@ long strings_svprintf(char **buffer, char *string, va_list list)
     va_end(copy);
 
     if (size < 0) {
-        m_free(pointer, MEMORY_FILE_LINE);
+        free(pointer);
         return -1;
     }
 
