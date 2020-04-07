@@ -25,7 +25,8 @@ HEADERFILES= \
 	./parser/lexer.h \
 	./logger/logs.h \
 	./threading/threads.h \
-	./errors/errorhandler.h 
+	./errors/errorhandler.h \
+	./data-structures/linked_list.h
 
 SOURCEFILES= \
 	./general/binarysearch.c \
@@ -46,7 +47,9 @@ SOURCEFILES= \
 	./parser/lexer.c \
 	./logger/logs.c \
 	./threading/threads.c \
-	./errors/errorhandler.c
+	./errors/errorhandler.c \
+	./data-structures/linked_list.c
+
 
 
 OBJFILES=${SOURCEFILES:c=o}

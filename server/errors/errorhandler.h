@@ -124,11 +124,12 @@
 #define FILEMGMT_RECORD_STATUS \
 	"record with folder name \"%.*s\", and file name \"%.*s\" has status %d"
 #define MEMORY_ALLOCATION_LOG \
-	"{{address:\"%p\", new address:\"%p\"}, " \
-		"{request type: \"%s\", request size: %d}, " \
-		"{file name: \"%s\", file line number: %d}}"
+	"{\n\t{address:\"%p\", new address:\"%p\"}\n\t, " \
+		"{request type: \"%s\", request size: %d}\n\t, " \
+		"{file name: \"%s\", file line number: %d}\n}"
 #define MEMORY_ALLOCATION_ERROR \
-	"{{address:\"%p\", new address:\"%p\"} error: %s"
+	MEMORY_ALLOCATION_LOG ", error: %s"
+
 #define MEMORY_ALLOCATION_NOENTRY \
 	"address not found in table"
 

@@ -50,6 +50,11 @@ void memory_track_add(void * address
 	memory_log_handle(MEMORY_ALLOC_MALLOC, &track_node, &node);
 }
 
+/*
+ * note: realloc with different dest address is implemented as subsequent
+ * calls to malloc and free respectively. no change for realloc with 
+ * same dest address.
+ */
 void memory_track_update(void * address, void *new_addr, long size
     , char *file_name , long line_no , malloc_enum type)
 {
@@ -58,8 +63,13 @@ void memory_track_update(void * address, void *new_addr, long size
     
     if(entry.is_occupied != TRUE) 
 	{
+		char *errorm	= MEMORY_ALLOCATION_NOENTRY;
         error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG,
-			MEMORY_ALLOCATION_ERROR, MEMORY_ALLOCATION_NOENTRY);
+			MEMORY_ALLOCATION_ERROR
+			, address, new_addr
+			, memory_log_gettype(type), size
+			, file_name, line_no
+			, errorm);
         return;
     }
 
@@ -90,12 +100,12 @@ void memory_track_update(void * address, void *new_addr, long size
 	{
 		memory_track_add(new_addr, size, file_name, line_no);
 		allocation->new_addr	= new_addr;
-		malloc_update_s node	= {
-    		.type = MEMORY_ALLOC_FREE
-    		, .file_name    = file_name
-    		, .line_no  = line_no
-    		, .size = size
-		};
+		
+    	node.type	= MEMORY_ALLOC_FREE;
+    	node.file_name	= file_name;
+    	node.line_no	= line_no;
+    	node.size	= 0;
+		
 		linked_list_push(&allocation->updates, (char*)&node, sizeof(node));
 	}
 
@@ -132,20 +142,37 @@ void m_free(void *address, char *file_name, long line_no)
     if (address) 
 	{
         free(address);
-        memory_track_update(address, address, -1, file_name
+        memory_track_update(address, address, 0, file_name
             , line_no, MEMORY_ALLOC_FREE);
     }
+}
+
+char *memory_log_gettype(int i)
+{
+	static char *mem_types[]	= {"malloc", "calloc", "realloc", "free"};
+	return(mem_types[i]);
 }
 
 void memory_log_handle(malloc_enum type
 	, malloc_node_s *node, malloc_update_s *update)
 {
-	static char *mem_types[]	= {"malloc", "calloc", "realloc", "free"};
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG,
 		MEMORY_ALLOCATION_LOG
 		, node->address, node->new_addr
-		, mem_types[update->type], update->size
+		, memory_log_gettype(update->type), update->size
 		, update->file_name, update->line_no);
+}
+
+// function to release all the memory used by the structures
+void memory_cleanup()
+{
+	hash_table_free(allocations.hash);
+	for (long i=0; i<allocations.list.count; ++i)
+	{
+		malloc_node_s *node = (malloc_node_s*)my_list_get(allocations.list, i);
+		linked_list_free(&node->updates);
+	}
+	my_list_free(allocations.list);
 }
 
 #else

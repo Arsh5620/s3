@@ -77,7 +77,7 @@ typedef struct {
 
 typedef struct {
     dbp_header_s header;
-    array_list_s header_list;
+    my_list_s header_list;
     hash_table_s header_table;
     file_write_s data_written;
     int action;
@@ -109,7 +109,7 @@ int dbp_notification_posthook(packet_info_s *info);
 int dbp_notification_prehook(packet_info_s *info);
 int dbp_create_prehook(packet_info_s *protocol);
 
-int dbp_assert_list(array_list_s list, 
+int dbp_assert_list(my_list_s list, 
     enum attrib_supported_enum *match, int match_length);
 hash_table_s dbp_attribs_hash_table(packet_info_s info);
 dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info);
