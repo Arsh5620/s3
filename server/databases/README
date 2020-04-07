@@ -73,3 +73,11 @@ And when we are binding params it must be a single array (can be heap/stack)
 but it must be contiguous and it must be the same number of variables as 
 either the result of the select columns, or the number of parameters in a 
 parameterized query. 
+
+*****
+How database binds are setup:
+
+Before any parameterized query can be performed a bind would need to be setup. 
+this will be "binding" the query variable to a memory address. 
+So when our sql executes it will know where to put the result of the query. 
+And this address can later be retrieved and used by us.
