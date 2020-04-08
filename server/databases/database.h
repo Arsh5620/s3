@@ -30,21 +30,20 @@ enum config_types {
 #define CONFIG_COUNT	sizeof(config_property)/sizeof(struct config_parse)
 
 typedef struct database_bind_fields {
-    my_bool is_null;
+	/*
+	 * all of the elements of this structure are required to complete binds
+	 */
+    size_t length;
+    my_bool is_null;	
     my_bool is_error;
 	my_bool is_unsigned;
+
     enum enum_field_types type;
-    size_t length;
-    void *buffer;
-	char *name;
-	size_t name_length;
-	char *table_name;
-	size_t table_length;
-	size_t buffer_length;
+	string_s name;
+	string_s buffer;
+
 	size_t flags;
-	size_t decimals;
-	size_t charsetnr;
-	char is_init;
+	char init_complete;
 } database_bind_fields_s;
 
 typedef struct database_bind_field_flags {
@@ -59,11 +58,16 @@ typedef struct database_bind_field_flags {
 } database_bind_field_flags_s;
 
 typedef struct database_table_bind {
-	database_bind_fields_s *fields;
-    MYSQL_BIND *bind_params;
-	size_t bind_param_count;
-	hash_table_s table;
+	/**
+	 * database_bind_fields_s contain the actual information about the binds
+	 * where as bind_params is the format that mysql api accepts the bind in
+	 */
 	int error;
+	size_t count;
+	string_s table_name;
+    MYSQL_BIND *bind_params;
+	hash_table_s hash_table;
+	database_bind_fields_s *fields;
 } database_table_bind_s;
 
 #define MYSQL_SUCCESS	0
@@ -72,30 +76,19 @@ typedef struct database_table_bind {
 #define DATABASE_DB_NAME	"dbp"
 #define DATABASE_TABLE_FI_NAME	"file_information"
 
-/* table name: file_information, column information */
+#define STRING_S(x)	(string_s){.address=x, .length=sizeof(x)-1}
 
-#define TABLE1_FI_COLUMN_FOLDER_NAME \
-	(string_s){.address="folder_name", .length=11}
-#define TABLE1_FI_COLUMN_FILE_NAME \
-	(string_s){.address="file_name", .length=9}
-#define TABLE1_FI_COLUMN_FILE_CD \
-	(string_s){.address="file_cd", .length=7}
-#define TABLE1_FI_COLUMN_FILE_UD \
-	(string_s){.address="file_ud", .length=7}
-#define TABLE1_FI_COLUMN_FILE_LA \
-	(string_s){.address="file_la", .length=7} 
-#define TABLE1_FI_COLUMN_FILE_LM \
-	(string_s){.address="file_lm", .length=7}
-#define TABLE1_FI_COLUMN_FILE_DD \
-	(string_s){.address="file_dd", .length=7}
-#define TABLE1_FI_COLUMN_FILE_SIZE \
-	(string_s){.address="file_size", .length=9}
-#define TABLE1_FI_COLUMN_FILE_MD5 \
-	(string_s){.address="file_md5", .length=8} 
-#define TABLE1_FI_COLUMN_PERMISSIONS \
-	(string_s){.address="permission", .length=10}
-#define TABLE1_FI_COLUMN_OWNER \
-	(string_s){.address="owner", .length=5}
+#define TABLE1_FI_COLUMN_FOLDER_NAME	STRING_S("folder_name")
+#define TABLE1_FI_COLUMN_FILE_NAME		STRING_S("file_name")
+#define TABLE1_FI_COLUMN_FILE_CD		STRING_S("file_cd")
+#define TABLE1_FI_COLUMN_FILE_UD		STRING_S("file_ud")
+#define TABLE1_FI_COLUMN_FILE_LA		STRING_S("file_la")
+#define TABLE1_FI_COLUMN_FILE_LM		STRING_S("file_lm")
+#define TABLE1_FI_COLUMN_FILE_DD		STRING_S("file_dd")
+#define TABLE1_FI_COLUMN_FILE_SIZE		STRING_S("file_size")
+#define TABLE1_FI_COLUMN_FILE_MD5		STRING_S("file_md5")
+#define TABLE1_FI_COLUMN_PERMISSIONS	STRING_S("permission")
+#define TABLE1_FI_COLUMN_OWNER			STRING_S("owner")
 
 #define DATABASE_TABLE_FI_CREATE \
 	"CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_FI_NAME \
@@ -152,12 +145,9 @@ hash_table_s database_bind_maketable(database_table_bind_s *bind_table);
 database_bind_field_flags_s database_bind_set_flags(size_t flags);
 database_bind_fields_s database_bind_field(MYSQL_FIELD field);
 void database_bind_linkfields(database_table_bind_s *table);
-database_bind_fields_s 
-	database_bind_field_copy(database_bind_fields_s src);
-database_table_bind_s 
-	database_bind_select_copy(database_table_bind_s bind_table
-	, string_s *columns
-	, int count);
+database_bind_fields_s database_bind_field_copy(database_bind_fields_s src);
+database_table_bind_s database_bind_select_copy(
+	database_table_bind_s bind_table, string_s *columns, int count);
 void database_bind_free(database_table_bind_s bind);
 void database_bind_data_copy(MYSQL_BIND *bind, string_s string);
 size_t database_bind_column_index(database_table_bind_s bind_table
