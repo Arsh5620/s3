@@ -51,6 +51,7 @@
 		"cstddef": "c",
 		"stdio.h": "c",
 		"stddef.h": "c",
-		"hash_table.h": "c"
+		"hash_table.h": "c",
+		"stdarg.h": "c"
 	}
 }

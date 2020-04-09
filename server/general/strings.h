@@ -11,6 +11,16 @@ typedef struct string_struct {
 
 #define STRINGS_BUFFER_SVNPRINTF 256
 
+/*
+ * calloc is _length + 1 for NULL byte
+ */
+#define STRING_S_MALLOC(_string, _data, _length) \
+{ \
+	_string.address=m_calloc(_length + 1, MEMORY_FILE_LINE);\
+	memcpy(_string.address, _data, _length);\
+	_string.length=_length;\
+}
+
 long strings_svprintf(char **buffer, char *string, va_list list);
 long strings_sprintf(char **buffer, char *string, ...);
 void strings_to_lowercase(void *memory, int length);

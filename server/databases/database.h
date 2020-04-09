@@ -139,7 +139,7 @@ char database_table_rowexists(MYSQL_STMT *stmt);
 /* functions to help with variable binding in mysql*/
 
 void database_bind_init_global();
-database_table_bind_s database_bind_setup(MYSQL *mysql);
+database_table_bind_s database_bind_setup(MYSQL *mysql, char *select_query);
 void database_bind_allocate(database_table_bind_s *bind, size_t columns);
 hash_table_s database_bind_maketable(database_table_bind_s *bind_table);
 database_bind_field_flags_s database_bind_set_flags(size_t flags);
@@ -152,4 +152,5 @@ void database_bind_free(database_table_bind_s bind);
 void database_bind_data_copy(MYSQL_BIND *bind, string_s string);
 size_t database_bind_column_index(database_table_bind_s bind_table
 	, string_s column_name);
+string_s database_bind_buffer_set(long length, unsigned int flags);
 #endif
