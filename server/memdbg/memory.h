@@ -47,6 +47,7 @@ void memory_cleanup();
 char *memory_log_gettype(int i);
 void memory_log_handle(malloc_enum type
 	, malloc_node_s *node, malloc_update_s *update);
+long memory_get_allocation_size(malloc_node_s *node);
 void m_free(void *address, char *file_name, long line_no);
 void *m_malloc(size_t size, char *file_name, long line_no);
 void *m_calloc(size_t size, char *file_name, long line_no);

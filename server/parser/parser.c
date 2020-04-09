@@ -30,7 +30,7 @@ void parser_release_list(my_list_s list)
     for(long i = 0; i < list.count; ++i) {
         key_value_pair_s pair = *(key_value_pair_s*)my_list_get(list, i);
         if(pair.key)
-            free(pair.key);
+            m_free(pair.key, MEMORY_FILE_LINE);
     }
 }
 

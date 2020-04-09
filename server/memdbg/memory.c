@@ -60,7 +60,7 @@ void memory_track_update(void * address, void *new_addr, long size
 {
 	hash_input_u key	= { .address = (void*) address };
     hash_table_bucket_s entry   = hash_table_get(allocations.hash, key, 0);
-    
+
     if(entry.is_occupied != TRUE) 
 	{
 		char *errorm	= MEMORY_ALLOCATION_NOENTRY;
@@ -75,6 +75,11 @@ void memory_track_update(void * address, void *new_addr, long size
 
     malloc_node_s *allocation   = 
         (malloc_node_s*)my_list_get(allocations.list, entry.value.number);
+
+	if (type == MEMORY_ALLOC_FREE && size == 0)
+	{
+		size	= memory_get_allocation_size(allocation);
+	}
 
 	allocation->last_update	= type;
 
@@ -104,12 +109,18 @@ void memory_track_update(void * address, void *new_addr, long size
     	node.type	= MEMORY_ALLOC_FREE;
     	node.file_name	= file_name;
     	node.line_no	= line_no;
-    	node.size	= 0;
+    	node.size	= size;
 		
 		linked_list_push(&allocation->updates, (char*)&node, sizeof(node));
 	}
 
 	memory_log_handle(type, allocation, &node);
+}
+
+long memory_get_allocation_size(malloc_node_s *node)
+{
+	malloc_update_s *update	= (linked_list_node_s*)(node->updates.last)->data;
+	return(update->size);
 }
 
 void *m_malloc(size_t size, char *file_name, long line_no)
