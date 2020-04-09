@@ -15,30 +15,30 @@
 #define MEMORY_TABLE_SIZE   2048
 
 typedef enum {
-    MEMORY_ALLOC_MALLOC
-    , MEMORY_ALLOC_CALLOC
-    , MEMORY_ALLOC_REALLOC
-    , MEMORY_ALLOC_FREE
+	MEMORY_ALLOC_MALLOC
+	, MEMORY_ALLOC_CALLOC
+	, MEMORY_ALLOC_REALLOC
+	, MEMORY_ALLOC_FREE
 } malloc_enum;
 
 typedef struct memory_allocation_update {
 	char *file_name; // please use the compiler directive __FILE__
-    long size; 
-    long line_no; // please use compiler directive __LINE__
-    malloc_enum type;
+	long size; 
+	long line_no; // please use compiler directive __LINE__
+	malloc_enum type;
 } malloc_update_s;
 
 typedef struct memory_allocation_table {
-    char *address;
+	char *address;
 	char *new_addr;	/* only used with reallocations */
 	malloc_enum	last_update;
 	linked_list_s updates;
 } malloc_node_s;
 
 typedef struct {
-    my_list_s list;
-    hash_table_s hash;
-    char is_init;
+	my_list_s list;
+	hash_table_s hash;
+	char is_init;
 } malloc_s;
 
 #endif

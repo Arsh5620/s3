@@ -5,8 +5,8 @@
 #include <stdlib.h>
 
 typedef struct string_struct {
-    void *address;
-    size_t length;
+	void *address;
+	size_t length;
 } string_s;
 
 #define STRINGS_BUFFER_SVNPRINTF 256

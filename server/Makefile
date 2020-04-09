@@ -2,7 +2,7 @@
 
 CC=gcc # C language compiler
 ifeq ($(RELEASE), 1)
-    CFLAGS =-O3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+	CFLAGS =-O3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
 else
 	CFLAGS =-ggdb3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
 endif

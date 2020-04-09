@@ -39,36 +39,36 @@ enum dbp_response_enum {
 
 // one-to-one mapping to the actions_supported
 enum actions_supported_enum {
-    ACTION_CREATE = 0
-    , ACTION_NOTIFICATION
-    , ACTION_REQUEST
-    , ACTION_UPDATE
+	ACTION_CREATE = 0
+	, ACTION_NOTIFICATION
+	, ACTION_REQUEST
+	, ACTION_UPDATE
 };
 
 enum attrib_supported_enum {
-    ATTRIB_ACTION = 128
-    , ATTRIB_FILENAME
-    , ATTRIB_FOLDER
-    , ATTRIB_CRC
+	ATTRIB_ACTION = 128
+	, ATTRIB_FILENAME
+	, ATTRIB_FOLDER
+	, ATTRIB_CRC
 };
 
 typedef struct {
-    netconn_info_s connection;
-    logger_s logs;
-    char is_init;
+	netconn_info_s connection;
+	logger_s logs;
+	char is_init;
 } dbp_s; // device backup protocol
 
 typedef struct dbp_common_attribs {
-    string_s filename;
+	string_s filename;
 	string_s folder_name;
-    unsigned int crc32;
-    int error;
+	unsigned int crc32;
+	int error;
 } dbp_common_attribs_s;
 
 typedef struct {
-    size_t data_length;
-    unsigned short header_length;
-    unsigned char magic;
+	size_t data_length;
+	unsigned short header_length;
+	unsigned char magic;
 } dbp_header_s;
 
 typedef struct {
@@ -76,20 +76,20 @@ typedef struct {
 } dbp_response_s;
 
 typedef struct {
-    dbp_header_s header;
-    my_list_s header_list;
-    hash_table_s header_table;
-    file_write_s data_written;
-    int action;
-    int error;
-    dbp_s *dbp;
-    dbp_common_attribs_s attribs;
+	dbp_header_s header;
+	my_list_s header_list;
+	hash_table_s header_table;
+	file_write_s data_written;
+	int action;
+	int error;
+	dbp_s *dbp;
+	dbp_common_attribs_s attribs;
 	dbp_response_s response;
 } packet_info_s;
 
 enum connection_shutdown_type {
-    DBP_CONNECT_SHUTDOWN_FLOW
-    , DBP_CONNECT_SHUTDOWN_CORRUPTION
+	DBP_CONNECT_SHUTDOWN_FLOW
+	, DBP_CONNECT_SHUTDOWN_CORRUPTION
 };
 
 int dbp_next(dbp_s *protocol);
@@ -100,7 +100,7 @@ void dbp_accept_connection_loop(dbp_s *protocol);
 // internal functions -- should not be used outside. 
 
 void dbp_shutdown_connection(dbp_s protocol 
-    , enum connection_shutdown_type reason);
+	, enum connection_shutdown_type reason);
 int dbp_response_write(packet_info_s *info);
 int dbp_action_prehook(packet_info_s *info);
 packet_info_s dbp_read_headers(dbp_s *protocol);
@@ -110,7 +110,7 @@ int dbp_notification_prehook(packet_info_s *info);
 int dbp_create_prehook(packet_info_s *protocol);
 
 int dbp_assert_list(my_list_s list, 
-    enum attrib_supported_enum *match, int match_length);
+	enum attrib_supported_enum *match, int match_length);
 hash_table_s dbp_attribs_hash_table(packet_info_s info);
 dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info);
 file_write_s create_download_file(packet_info_s *info);

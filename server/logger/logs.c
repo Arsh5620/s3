@@ -20,34 +20,34 @@ static logger_s logs = {0};
 // use free to free memory when not in use anymore.
 char *logs_gettime_s(char *format, char ns, size_t *len)
 {
-    char *memory    = malloc(LOG_MAX_TIMESTRINGL);
+	char *memory    = malloc(LOG_MAX_TIMESTRINGL);
 	if(memory == NULL)
 		return(NULL);
 
-    struct timespec time;
-    if(clock_gettime(CLOCK_REALTIME, &time) != 0)
-        return(NULL);
+	struct timespec time;
+	if(clock_gettime(CLOCK_REALTIME, &time) != 0)
+		return(NULL);
 
-    struct tm local;
-    if(localtime_r(&(time.tv_sec), &local) == NULL)
-        return(NULL);
-    
-    int length = strftime(memory, LOG_MAX_TIMESTRINGL, format, &local);
+	struct tm local;
+	if(localtime_r(&(time.tv_sec), &local) == NULL)
+		return(NULL);
+	
+	int length = strftime(memory, LOG_MAX_TIMESTRINGL, format, &local);
 
-    if(length == 0) {
-        return(NULL);
+	if(length == 0) {
+		return(NULL);
 	}
 
 	if(len != NULL) {
 		*len	= length;
 	}
 
-    if(ns) {
-        char *nsf	= malloc(LOG_MAX_TIMESTRINGL);
+	if(ns) {
+		char *nsf	= malloc(LOG_MAX_TIMESTRINGL);
 		if(nsf == NULL)
 			return(NULL);
 
-        int length	= sprintf(nsf, LOG_DATE_FORMAT_NS
+		int length	= sprintf(nsf, LOG_DATE_FORMAT_NS
 			, memory, time.tv_nsec / 1000);
 		free(memory);
 
@@ -56,50 +56,50 @@ char *logs_gettime_s(char *format, char ns, size_t *len)
 		if(len != NULL)
 			*len	= length;
 		return(nsf);
-    }
-    return(memory);
+	}
+	return(memory);
 }
 
 int logs_open_file(logger_s *log)
 {
 	size_t length	= 0;
-    char *dateformat	= logs_gettime_s(LOG_DATE_FORMAT, FALSE, &length);
+	char *dateformat	= logs_gettime_s(LOG_DATE_FORMAT, FALSE, &length);
 
-    strings_sprintf(&log->filename, 
+	strings_sprintf(&log->filename, 
 		LOG_FILE_NAME, LOG_DIR_NAME, dateformat);   
 
 	free(dateformat); 
-    log->file_p	= fopen(log->filename, "w+");
+	log->file_p	= fopen(log->filename, "w+");
 
-    if(log->file_p == NULL) {
-        fprintf(stderr, "Could not initialize the logging subsystem,"
-                " program will now exit.\n");
-        return(FAILED);
-    }
-    return(SUCCESS);
+	if(log->file_p == NULL) {
+		fprintf(stderr, "Could not initialize the logging subsystem,"
+				" program will now exit.\n");
+		return(FAILED);
+	}
+	return(SUCCESS);
 }
 
 logger_s logs_open()
 {
-    if(logs.is_init == TRUE) 
+	if(logs.is_init == TRUE) 
 		return logs;
 
-    logger_s log    = {0};
-    if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
-    { 
-        printf("could not open directory for writing logs, "
-                "logging subsystem unavailable.");
-        return log;
-    }
-    if(logs_open_file(&log) == FAILED) {
-        printf("could not open the file for writing logs, "
-                "logging subsystem unavailable");
-        return log;
-    }
+	logger_s log    = {0};
+	if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
+	{ 
+		printf("could not open directory for writing logs, "
+				"logging subsystem unavailable.");
+		return log;
+	}
+	if(logs_open_file(&log) == FAILED) {
+		printf("could not open the file for writing logs, "
+				"logging subsystem unavailable");
+		return log;
+	}
 
-    log.is_init	= TRUE;
-    logs	= log;
-    return(log);
+	log.is_init	= TRUE;
+	logs	= log;
+	return(log);
 }
 
 char *log_levels[]	= {
@@ -114,15 +114,15 @@ char *log_levels[]	= {
 size_t logs_write(enum logger_level level
 	, char *string, va_list variable_args) 
 {
-    if(logs.is_init == FALSE) {
-        vprintf(string, variable_args); // prints to the console output
-        return(FALSE);
-    }
-    
+	if(logs.is_init == FALSE) {
+		vprintf(string, variable_args); // prints to the console output
+		return(FALSE);
+	}
+	
 	char is_error	= 0;
 	size_t length	= 0;
 	char *dateformat	= logs_gettime_s(LOG_DATE_FORMAT, TRUE, &length);
-    int write	= fwrite(dateformat, 1, length, logs.file_p);
+	int write	= fwrite(dateformat, 1, length, logs.file_p);
 
 	free(dateformat);
 
@@ -142,7 +142,7 @@ size_t logs_write(enum logger_level level
 		length  = strings_svprintf(&buffer, string, variable_args);
 		write	= fwrite(buffer, 1, length, logs.file_p);
 		
-        fwrite(LOG_FILE_NEWLINE, 1, 2, logs.file_p);
+		fwrite(LOG_FILE_NEWLINE, 1, 2, logs.file_p);
 
 		free(buffer);
 		if(length != write)
@@ -156,14 +156,14 @@ size_t logs_write(enum logger_level level
 		return(FALSE);
 	}
 
-    fflush(logs.file_p);
-    return(TRUE);
+	fflush(logs.file_p);
+	return(TRUE);
 }
 
 void logs_close()
 {
-    free(logs.filename);
+	free(logs.filename);
 
-    if(fclose(logs.file_p) != 0)
-        printf("Could not close the file open for logging.\n");
+	if(fclose(logs.file_p) != 0)
+		printf("Could not close the file open for logging.\n");
 }

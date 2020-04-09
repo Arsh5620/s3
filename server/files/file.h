@@ -32,28 +32,28 @@
 
 typedef struct file_write_helper
 {
-    size_t current;
-    size_t size;
-    string_s filename;
+	size_t current;
+	size_t size;
+	string_s filename;
 } file_write_s;
 
 typedef struct {
-    FILE *file;
-    struct stat stats;    
+	FILE *file;
+	struct stat stats;    
 
-    char *buffer;
-    long index
-        , readlength
-        , maxlength;
-    char is_eof;
+	char *buffer;
+	long index
+		, readlength
+		, maxlength;
+	char is_eof;
 } file_reader_s;
 
 int file_dir_mkine(char *dir_name);
 int file_delete(char *filename);
 FILE *file_open(char *name, int length, char *mode);
 int file_download(FILE *file
-                    , netconn_info_s *network
-                    , file_write_s *info);
+					, netconn_info_s *network
+					, file_write_s *info);
 
 struct stat file_read_stat(FILE *file);
 file_reader_s file_init_reader(FILE *file);

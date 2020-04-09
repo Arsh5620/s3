@@ -24,13 +24,13 @@
 #define PARSER_STATUS_ERRUNEXPECTED_TOOLONG 262
 
 typedef struct {
-    char *key;
-    char *value;
+	char *key;
+	char *value;
 
-    int key_length;
-    int value_length;
+	int key_length;
+	int value_length;
 
-    char is_valid;
+	char is_valid;
 } key_value_pair_s;
 
 my_list_s parser_parse(char *buffer, int length);
@@ -42,6 +42,6 @@ void parser_print_status(lexer_s lexer, lexer_status_s status);
 void parser_print_warn(lexer_s lexer, lexer_status_s status);
 void parser_print_err(lexer_s lexer, lexer_status_s status);
 void parser_print_lineinfo(lexer_s lexer,
-    lexer_status_s status, char is_err);
+	lexer_status_s status, char is_err);
 
 #endif // PARSER_INCLUDE_GAURD

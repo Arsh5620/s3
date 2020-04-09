@@ -20,12 +20,12 @@
  */
 typedef struct network_connection_information
 {
-    int server;
-    int client;
-    struct sockaddr_in server_socket;
-    struct sockaddr_in client_socket;
-    char is_setup_complete;
-    int error_code;
+	int server;
+	int client;
+	struct sockaddr_in server_socket;
+	struct sockaddr_in client_socket;
+	char is_setup_complete;
+	int error_code;
 } netconn_info_s;
 
  /*
@@ -35,14 +35,14 @@ typedef struct network_connection_information
   */
 typedef struct network_connection_data_read
 {
-    char is_spare;
-    char is_malloc;
-    char is_file;
-    char is_error;
-    char *data_address;
-    size_t data_length;
-    int error_code;
-    char spare[8];
+	char is_spare;
+	char is_malloc;
+	char is_file;
+	char is_error;
+	char *data_address;
+	size_t data_length;
+	int error_code;
+	char spare[8];
 } netconn_data_s;
 
 /**
@@ -51,14 +51,14 @@ typedef struct network_connection_data_read
  * we will be able to do the converstion and use this struct.
  */
 typedef struct {
-    union
-    {
-        char _char;
-        short _short;
-        int _int;
-        long int _long;
-    } data_types_u;
-    char is_error;
+	union
+	{
+		char _char;
+		short _short;
+		int _int;
+		long int _long;
+	} data_types_u;
+	char is_error;
 } data_types_s;
 
 netconn_info_s network_connect_init_sync(int);

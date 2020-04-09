@@ -12,17 +12,17 @@ typedef struct {
 	/* union allows for us to use both addresses and numbers */
 	hash_input_u key; 
 	hash_input_u value;
-    int key_len;
-    int value_len;
-    char is_occupied;
+	int key_len;
+	int value_len;
+	char is_occupied;
 } hash_table_bucket_s;
 
 typedef struct hash_table_struct {
-    hash_table_bucket_s *memory;
-    size_t count;
-    size_t size;
-    size_t fill;
-    char is_string;
+	hash_table_bucket_s *memory;
+	size_t count;
+	size_t size;
+	size_t fill;
+	char is_string;
 	long collision_count;
 } hash_table_s;
 
@@ -41,7 +41,7 @@ void hash_table_remove(hash_table_s *table
 	, hash_input_u key, size_t key_length);
 void hash_table_add(hash_table_s *table, hash_table_bucket_s entry);
 hash_table_bucket_s hash_table_get(hash_table_s table
-    , hash_input_u key, size_t key_length);
+	, hash_input_u key, size_t key_length);
 void hash_table_free(hash_table_s table);
 char hash_compare(hash_table_bucket_s bucket
 	, hash_input_u key, size_t key_len, char is_string);

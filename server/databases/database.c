@@ -19,9 +19,9 @@ struct config_parse config_property[5] = {
 		, database_connection_s, host, CONFIG_TYPE_STRING)
 	, STRUCT_CONFIG_PARSE("password", CONFIG_PASSWORD
 		, database_connection_s, passwd, CONFIG_TYPE_STRING)
-    , STRUCT_CONFIG_PARSE("port", CONFIG_PORT
+	, STRUCT_CONFIG_PARSE("port", CONFIG_PORT
 		, database_connection_s, port, CONFIG_TYPE_INT)
-    , STRUCT_CONFIG_PARSE("username", CONFIG_USERNAME
+	, STRUCT_CONFIG_PARSE("username", CONFIG_USERNAME
 		, database_connection_s, user, CONFIG_TYPE_STRING)
 };
 
@@ -53,38 +53,38 @@ int database_init(char *config_file)
 
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
 		, PROTOCOL_MYSQL_LOGIN_INFO_SISS
-        , connect.host, connect.port
+		, connect.host, connect.port
 		, connect.user
-        , connect.db);
+		, connect.db);
 
-    if(sql_connection != 0) return(MYSQL_SUCCESS);
+	if(sql_connection != 0) return(MYSQL_SUCCESS);
 
-    if (mysql_library_init(0, NULL, NULL))
+	if (mysql_library_init(0, NULL, NULL))
 	{
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 			, DATABASE_MYSQL_LIB_INIT_FAILED);
-        exit(SERVER_DATABASE_FAILURE);
-    }
+		exit(SERVER_DATABASE_FAILURE);
+	}
 
-    sql_connection 	= mysql_init(NULL);
-    if (sql_connection == NULL) 
+	sql_connection 	= mysql_init(NULL);
+	if (sql_connection == NULL) 
 	{
-        error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 			, DATABASE_MYSQL_INIT_FAILED);
-        exit(SERVER_DATABASE_FAILURE);
-    }
+		exit(SERVER_DATABASE_FAILURE);
+	}
 
-    if (NULL == mysql_real_connect(sql_connection
-        , connect.host , connect.user
-        , connect.passwd , connect.db
-        , connect.port , NULL , 0))
+	if (NULL == mysql_real_connect(sql_connection
+		, connect.host , connect.user
+		, connect.passwd , connect.db
+		, connect.port , NULL , 0))
 	{
-       	error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+	   	error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 			, DATABASE_MYSQL_AUTH_FAILED_S
 			, mysql_error(sql_connection));
-        exit(SERVER_DATABASE_FAILURE);
-    }
-    error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		exit(SERVER_DATABASE_FAILURE);
+	}
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 			, DATABASE_MYSQL_CONNECTED);
 
 	if(database_verify_integrity() != MYSQL_SUCCESS)
@@ -95,7 +95,7 @@ int database_init(char *config_file)
 	}
 
 	database_bind_init_global();
-    return(MYSQL_SUCCESS);
+	return(MYSQL_SUCCESS);
 }
 
 void database_bind_init_global()
@@ -105,112 +105,112 @@ void database_bind_init_global()
 
 int database_verify_integrity()
 {
-    error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 			, DATABASE_INTEGRITY_CHECK);
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 			, DATABASE_INTEGRITY_PING);
 
-    int connection_enabled  = mysql_ping(sql_connection);
-    if(connection_enabled == 0) { 
+	int connection_enabled  = mysql_ping(sql_connection);
+	if(connection_enabled == 0) { 
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 			, DATABASE_CONNECTED_SERVER_S
 			, mysql_get_server_info(sql_connection));
-    }
+	}
 
-    if(MYSQL_SUCCESS == mysql_query(sql_connection
-        , DATABASE_CREATE_DATABASE))
-    {
-        size_t  db_created  = mysql_affected_rows(sql_connection);
-        if(MYSQL_SUCCESS != 
-                mysql_select_db(sql_connection, DATABASE_DB_NAME)) {
+	if(MYSQL_SUCCESS == mysql_query(sql_connection
+		, DATABASE_CREATE_DATABASE))
+	{
+		size_t  db_created  = mysql_affected_rows(sql_connection);
+		if(MYSQL_SUCCESS != 
+				mysql_select_db(sql_connection, DATABASE_DB_NAME)) {
 			error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 				, DATABASE_INT_DB_SELECT_FAILED_S
 				, mysql_error(sql_connection));
-            return(MYSQL_ERROR);
-        }
+			return(MYSQL_ERROR);
+		}
 
-        if(db_created){
-            error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+		if(db_created){
+			error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 				, DATABASE_INT_DB_CREATED_S, DATABASE_DB_NAME);
-            return(database_create_tables());
-        } else {
-            error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+			return(database_create_tables());
+		} else {
+			error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 				, DATABASE_INT_DB_CREATE_FAILED_S, DATABASE_DB_NAME);
-            return(database_check_tables());
-        }
-    } else {
-        error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+			return(database_check_tables());
+		}
+	} else {
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 				, DATABASE_INT_DB_CREATE_ACCESS, DATABASE_DB_NAME);
-    }
-    return(MYSQL_ERROR);
+	}
+	return(MYSQL_ERROR);
 }
 
 int database_create_tables()
 {
-    if (mysql_query(sql_connection, DATABASE_TABLE_FI_CREATE) 
+	if (mysql_query(sql_connection, DATABASE_TABLE_FI_CREATE) 
 		== MYSQL_SUCCESS) {
-     error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+	 error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 		, DATABASE_INT_TABLE_CREATED_S, DATABASE_TABLE_FI_NAME);
-    } else {
-        error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
+	} else {
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_ERROR
 				, DATABASE_INT_TABLE_CREATE_FAILED_SS
 				, DATABASE_DB_NAME
 				, mysql_error(sql_connection));
-        return(MYSQL_ERROR);
-    }
-    return(MYSQL_SUCCESS);
+		return(MYSQL_ERROR);
+	}
+	return(MYSQL_SUCCESS);
 }
 
 int database_check_tables()
 {
-    int query   = 
-        mysql_query(sql_connection, DATABASE_TABLE_FI_CHECKEXISTS);
+	int query   = 
+		mysql_query(sql_connection, DATABASE_TABLE_FI_CHECKEXISTS);
 
-    MYSQL_RES *result = mysql_store_result(sql_connection);
-    mysql_free_result(result); 
-    // required to clear the session for next query
+	MYSQL_RES *result = mysql_store_result(sql_connection);
+	mysql_free_result(result); 
+	// required to clear the session for next query
 
-    if (query == MYSQL_SUCCESS) {
-       error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+	if (query == MYSQL_SUCCESS) {
+	   error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 		, DATABASE_INT_TABLE_FOUND_S, DATABASE_TABLE_FI_NAME);
-    } else {
-        error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+	} else {
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 		, DATABASE_INT_TABLE_NOT_FOUND_S, DATABASE_TABLE_FI_NAME);
-        return(database_create_tables());
-    }
-    return(MYSQL_SUCCESS);
+		return(database_create_tables());
+	}
+	return(MYSQL_SUCCESS);
 }
 
 int database_table_insertrow(char *query, MYSQL_BIND *bind, size_t count)
 {
-    MYSQL_STMT *stmt = mysql_stmt_init(sql_connection);
-    if(stmt == NULL)
-        return(MYSQL_ERROR);
+	MYSQL_STMT *stmt = mysql_stmt_init(sql_connection);
+	if(stmt == NULL)
+		return(MYSQL_ERROR);
 
-    int result  = mysql_stmt_prepare(stmt, query , strlen(query));
+	int result  = mysql_stmt_prepare(stmt, query , strlen(query));
 
-    if(result){
-        mysql_stmt_close(stmt);
-        return(MYSQL_ERROR);
-    }
+	if(result){
+		mysql_stmt_close(stmt);
+		return(MYSQL_ERROR);
+	}
 	int bind_count	= mysql_stmt_param_count(stmt);
 	if(bind_count != count)
 		return(MYSQL_ERROR);
 
-    result  = mysql_stmt_bind_param(stmt, bind);
+	result  = mysql_stmt_bind_param(stmt, bind);
 
-    if(result){
-        mysql_stmt_close(stmt);
-        return(MYSQL_ERROR);
-    }
+	if(result){
+		mysql_stmt_close(stmt);
+		return(MYSQL_ERROR);
+	}
 
-    result  = mysql_stmt_execute(stmt);
-    if(result){
-        mysql_stmt_close(stmt);
-        return(MYSQL_ERROR);
-    }
-    
-    return(mysql_affected_rows(sql_connection) > 0);
+	result  = mysql_stmt_execute(stmt);
+	if(result){
+		mysql_stmt_close(stmt);
+		return(MYSQL_ERROR);
+	}
+	
+	return(mysql_affected_rows(sql_connection) > 0);
 }
 
 // int database_table_query_results(MYSQL_STMT *statment)
@@ -228,46 +228,46 @@ char database_table_rowexists(MYSQL_STMT *stmt)
 {   
 	char row_exists	= FALSE;
 	while (mysql_stmt_fetch(stmt) == 0)
-    {
+	{
 		row_exists	= TRUE;
 		// int column_index	= 
 		// 	database_bind_column_index(bind, TABLE1_FI_COLUMN_FOLDER_NAME);
 		// char *buffer	= bind.fields[column_index].buffer;
-    }
+	}
 	return(row_exists);
 }
 
 MYSQL_STMT *database_table_query
 	(char *query, MYSQL_BIND *bind_in ,MYSQL_BIND *bind_out)
 {
-    MYSQL_STMT *stmt    = mysql_stmt_init(sql_connection);
-    if(stmt == NULL)
-        return(NULL);
-    
-    // as per the example on mariadb docs, -1 means strlen internally
-    int result  = mysql_stmt_prepare(stmt, query, -1);
-    if(result){
-        printf("sql could not finish, error: %s\n", mysql_stmt_error(stmt));
-        mysql_stmt_close(stmt);
-        return(NULL);
-    }
-    result  = mysql_stmt_bind_result(stmt, bind_out);
-    if(result){
-        mysql_stmt_close(stmt);
-        return(NULL);
-    }
-    result  = mysql_stmt_bind_param(stmt, bind_in);
-    if(result){
-        mysql_stmt_close(stmt);
-        return(NULL);
-    }
+	MYSQL_STMT *stmt    = mysql_stmt_init(sql_connection);
+	if(stmt == NULL)
+		return(NULL);
+	
+	// as per the example on mariadb docs, -1 means strlen internally
+	int result  = mysql_stmt_prepare(stmt, query, -1);
+	if(result){
+		printf("sql could not finish, error: %s\n", mysql_stmt_error(stmt));
+		mysql_stmt_close(stmt);
+		return(NULL);
+	}
+	result  = mysql_stmt_bind_result(stmt, bind_out);
+	if(result){
+		mysql_stmt_close(stmt);
+		return(NULL);
+	}
+	result  = mysql_stmt_bind_param(stmt, bind_in);
+	if(result){
+		mysql_stmt_close(stmt);
+		return(NULL);
+	}
 
-    result  = mysql_stmt_execute(stmt);
-    if(result){
-        mysql_stmt_close(stmt);
-        return(NULL);
-    }
-    return(stmt);
+	result  = mysql_stmt_execute(stmt);
+	if(result){
+		mysql_stmt_close(stmt);
+		return(NULL);
+	}
+	return(stmt);
 }
 
 /* functions to help with binding memory for mysql in C */
