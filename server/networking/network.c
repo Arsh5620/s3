@@ -24,19 +24,19 @@
  * standard error and log output.
  */
 int assert_connection(netconn_info_s *conn
-    , int compare1
-    , int compare2
-    , char *function_string
-    , int error_num)
+	, int compare1
+	, int compare2
+	, char *function_string
+	, int error_num)
 {
-    if (compare1 == compare2) {
+	if (compare1 == compare2) {
 		char *error_string  = strerror(errno);
 		error_handle(ERRORS_HANDLE_STDOLOG, LOGGER_CATASTROPHIC
 			, NETWORK_ASSERT_MESSAGE_SSI, function_string
 			, error_string, errno);
-        exit(SERVER_ERROR_REFER_TO_LOGS);
+		exit(SERVER_ERROR_REFER_TO_LOGS);
 	}
-    return(SUCCESS);
+	return(SUCCESS);
 }
 
 /*
@@ -46,36 +46,36 @@ int assert_connection(netconn_info_s *conn
  */
 netconn_info_s network_connect_init_sync(int port)
 {
-    netconn_info_s connection = {0};
+	netconn_info_s connection = {0};
 
-    connection.server =  socket(AF_INET, SOCK_STREAM, 0);
-    if(assert_connection(&connection, connection.server, INVALID_SOCKET
-                    , "socket", SERVER_SOCK_INIT_FAILED))
-        return connection;
-    connection.server_socket.sin_addr.s_addr    = INADDR_ANY;
-    connection.server_socket.sin_family         = AF_INET;
-    connection.server_socket.sin_port           = htons(port);
+	connection.server =  socket(AF_INET, SOCK_STREAM, 0);
+	if(assert_connection(&connection, connection.server, INVALID_SOCKET
+					, "socket", SERVER_SOCK_INIT_FAILED))
+		return connection;
+	connection.server_socket.sin_addr.s_addr    = INADDR_ANY;
+	connection.server_socket.sin_family         = AF_INET;
+	connection.server_socket.sin_port           = htons(port);
 
-    int result = 0;
-    result = bind(connection.server
-                        , (struct sockaddr*) &connection.server_socket
-                        , sizeof(struct  sockaddr_in));
+	int result = 0;
+	result = bind(connection.server
+						, (struct sockaddr*) &connection.server_socket
+						, sizeof(struct  sockaddr_in));
 
-    if(assert_connection(&connection, result, BIND_ERROR
-                    , "bind", SERVER_BIND_FAILED))
-        return connection;
+	if(assert_connection(&connection, result, BIND_ERROR
+					, "bind", SERVER_BIND_FAILED))
+		return connection;
 
-    result = listen(connection.server, MAX_LISTEN_QUEQUE);
-    if(assert_connection(&connection, result, GENERAL_ERROR
-                    , "listen", SERVER_LISTEN_FAILED))
-        return connection;
+	result = listen(connection.server, MAX_LISTEN_QUEQUE);
+	if(assert_connection(&connection, result, GENERAL_ERROR
+					, "listen", SERVER_LISTEN_FAILED))
+		return connection;
 
-    error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
 		, NETWORK_PORT_LISTENING
 		, port , MAX_LISTEN_QUEQUE);
 
-    connection.is_setup_complete    = TRUE;
-    return connection;
+	connection.is_setup_complete    = TRUE;
+	return connection;
 }
 
 /*
@@ -86,17 +86,17 @@ netconn_info_s network_connect_init_sync(int port)
  */
 int network_connect_accept_sync(netconn_info_s *connection)
 {
-    socklen_t struct_len = sizeof(struct sockaddr_in);
+	socklen_t struct_len = sizeof(struct sockaddr_in);
 
 	connection->client	= accept(connection->server
-                            , (struct sockaddr*) &connection->client_socket
+							, (struct sockaddr*) &connection->client_socket
 							, &struct_len);
-    
-    // if assert fails as a side effect it will call exit()
-    assert_connection(connection, connection->client, GENERAL_ERROR
-                            , "accept", SERVER_ACCEPT_FAILED);
-    
-    return(SUCCESS);
+	
+	// if assert fails as a side effect it will call exit()
+	assert_connection(connection, connection->client, GENERAL_ERROR
+							, "accept", SERVER_ACCEPT_FAILED);
+	
+	return(SUCCESS);
 }
 
 /*
@@ -112,46 +112,46 @@ int network_connect_accept_sync(netconn_info_s *connection)
  */
 netconn_data_s network_data_readstream(netconn_info_s *conn, int size)
 {
-    netconn_data_s  data = {0};
+	netconn_data_s  data = {0};
 
-    char *memory = 0;
+	char *memory = 0;
 
-    if(size <=8 && size >=0) {
-        memory  = (char*) data.spare;
-        data.is_spare   = TRUE;
-    }
-    else 
+	if(size <=8 && size >=0) {
+		memory  = (char*) data.spare;
+		data.is_spare   = TRUE;
+	}
+	else 
 	{
 		if (size > MAX_ALLOWED_NETWORK_BUFFER)
 		{
 			size = MAX_ALLOWED_NETWORK_BUFFER;
-        	data.error_code = SERVER_OUT_OF_MEMORY;
+			data.error_code = SERVER_OUT_OF_MEMORY;
 		}
-        memory  = m_malloc(size, MEMORY_FILE_LINE);
-        data.is_malloc  = TRUE;
-    }
+		memory  = m_malloc(size, MEMORY_FILE_LINE);
+		data.is_malloc  = TRUE;
+	}
 
-    size_t i = 0;
-    for (; i < size;)
-    {
-        int length  = read(conn->client, memory + i, (size - i));
+	size_t i = 0;
+	for (; i < size;)
+	{
+		int length  = read(conn->client, memory + i, (size - i));
 
-        if (length == 0) {
-            if((i + length) != size){
-                data.is_error   = TRUE;
-            }
-            break;
-        }
-        else if (length < 0) {
-            data.is_error   = TRUE;
-            break;
-        }
-        else i  += length;
-    }
+		if (length == 0) {
+			if((i + length) != size){
+				data.is_error   = TRUE;
+			}
+			break;
+		}
+		else if (length < 0) {
+			data.is_error   = TRUE;
+			break;
+		}
+		else i  += length;
+	}
 
-    data.data_address   = memory;
-    data.data_length    = i;
-    return (data);
+	data.data_address   = memory;
+	data.data_length    = i;
+	return (data);
 }
 
 /*
@@ -161,12 +161,12 @@ netconn_data_s network_data_readstream(netconn_info_s *conn, int size)
  */
 char *network_data_address(netconn_data_s *data)
 {
-    if(data->is_spare == TRUE)
-        return (char*)&data->spare;
-    else if(data->is_malloc == TRUE)
-        return (data->data_address);
-    else 
-        return (0);
+	if(data->is_spare == TRUE)
+		return (char*)&data->spare;
+	else if(data->is_malloc == TRUE)
+		return (data->data_address);
+	else 
+		return (0);
 }
 
 /*
@@ -174,8 +174,8 @@ char *network_data_address(netconn_data_s *data)
  */
 void network_data_free(netconn_data_s data)
 {
-    if(data.is_malloc)
-        m_free(data.data_address, MEMORY_FILE_LINE); 
+	if(data.is_malloc)
+		m_free(data.data_address, MEMORY_FILE_LINE); 
 }
 
 /* 
@@ -185,32 +185,32 @@ void network_data_free(netconn_data_s data)
  */
 int network_connection_write(netconn_info_s *conn, char *data, int length)
 {
-    int data_written = 0;
-    while (data_written < length) {
-        int written = write(conn->client, data + data_written
-                                , length - data_written);
-        
-        if (written < 1)
-            return(FAILED);
-        else 
-            data_written += written;
-    }
-    return(SUCCESS);
+	int data_written = 0;
+	while (data_written < length) {
+		int written = write(conn->client, data + data_written
+								, length - data_written);
+		
+		if (written < 1)
+			return(FAILED);
+		else 
+			data_written += written;
+	}
+	return(SUCCESS);
 }
 
 #define NETWORK_DATA_READ_TYPE(data_type) \
 data_types_s network_data_read_##data_type(netconn_info_s *conn) \
 { \
-    data_types_s type_s = {0}; \
-    netconn_data_s data = (network_data_readstream(conn\
-        , sizeof(data_type))); \
-    if (data.is_spare == TRUE) { \
-        type_s.data_types_u._##data_type = *(data_type*)&data.spare; \
-    } \
-    else { \
-        type_s.is_error = TRUE; \
-    } \
-    return type_s; \
+	data_types_s type_s = {0}; \
+	netconn_data_s data = (network_data_readstream(conn\
+		, sizeof(data_type))); \
+	if (data.is_spare == TRUE) { \
+		type_s.data_types_u._##data_type = *(data_type*)&data.spare; \
+	} \
+	else { \
+		type_s.is_error = TRUE; \
+	} \
+	return type_s; \
 }
 
 // basically instead of copy pasting the same code 4 times
@@ -224,12 +224,12 @@ NETWORK_DATA_READ_TYPE(long);
 /* example:
 data_types_s network_data_read_char(netconn_info_s *conn) 
 { 
-    data_types_s type_s = {0}; 
-    netconn_data_s data = (network_data_readxbytes(conn, sizeof(char)));
-    if (data.is_spare == TRUE) { 
-        type_s.data_types_u._char = *(char*)&data.spare; 
-    } else { 
-        type_s.is_error = TRUE; 
-    } 
-    return type_s; 
+	data_types_s type_s = {0}; 
+	netconn_data_s data = (network_data_readxbytes(conn, sizeof(char)));
+	if (data.is_spare == TRUE) { 
+		type_s.data_types_u._char = *(char*)&data.spare; 
+	} else { 
+		type_s.is_error = TRUE; 
+	} 
+	return type_s; 
 }*/

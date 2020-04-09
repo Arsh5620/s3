@@ -12,7 +12,7 @@
 
 typedef struct sql_connection_information
 {
-    char *host;
+	char *host;
 	char *user;
 	char *passwd;
 	char *db;
@@ -20,11 +20,11 @@ typedef struct sql_connection_information
 } database_connection_s;
 
 enum config_types {
-    CONFIG_USERNAME
-    , CONFIG_PASSWORD
-    , CONFIG_DATABASE
-    , CONFIG_MACHINE
-    , CONFIG_PORT
+	CONFIG_USERNAME
+	, CONFIG_PASSWORD
+	, CONFIG_DATABASE
+	, CONFIG_MACHINE
+	, CONFIG_PORT
 };
 
 #define CONFIG_COUNT	sizeof(config_property)/sizeof(struct config_parse)
@@ -33,12 +33,12 @@ typedef struct database_bind_fields {
 	/*
 	 * all of the elements of this structure are required to complete binds
 	 */
-    size_t length;
-    my_bool is_null;	
-    my_bool is_error;
+	size_t length;
+	my_bool is_null;	
+	my_bool is_error;
 	my_bool is_unsigned;
 
-    enum enum_field_types type;
+	enum enum_field_types type;
 	string_s name;
 	string_s buffer;
 
@@ -65,7 +65,7 @@ typedef struct database_table_bind {
 	int error;
 	size_t count;
 	string_s table_name;
-    MYSQL_BIND *bind_params;
+	MYSQL_BIND *bind_params;
 	hash_table_s hash_table;
 	database_bind_fields_s *fields;
 } database_table_bind_s;

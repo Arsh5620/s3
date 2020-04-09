@@ -15,17 +15,17 @@
 
 typedef struct logger
 {
-    FILE *file_p;
-    char *filename;
-    char is_init;
+	FILE *file_p;
+	char *filename;
+	char is_init;
 } logger_s;
 
 enum logger_level {
-    LOGGER_INFO
-    , LOGGER_DEBUG
-    , LOGGER_WARN
-    , LOGGER_ERROR 
-    , LOGGER_CATASTROPHIC // program WILL exit. 
+	LOGGER_INFO
+	, LOGGER_DEBUG
+	, LOGGER_WARN
+	, LOGGER_ERROR 
+	, LOGGER_CATASTROPHIC // program WILL exit. 
 };
 
 logger_s logs_open();

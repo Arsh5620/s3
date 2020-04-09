@@ -8,60 +8,60 @@
 // returns: size of the string written
 long strings_svprintf(char **buffer, char *string, va_list list)
 {
-    long size   = 0;
-    char *pointer   = NULL;
+	long size   = 0;
+	char *pointer   = NULL;
 
-    va_list copy;
-    va_copy(copy, list);
-    size = vsnprintf(pointer, size, string, list);
+	va_list copy;
+	va_copy(copy, list);
+	size = vsnprintf(pointer, size, string, list);
 
-    if (size < 0)
-        return -1;
+	if (size < 0)
+		return -1;
 
-    size++;             /* For '\0' */
-    pointer = calloc(1, size);
-    if (pointer == NULL)
-        return -1;
+	size++;             /* For '\0' */
+	pointer = calloc(1, size);
+	if (pointer == NULL)
+		return -1;
 
-    size = vsnprintf(pointer, size, string, copy);
-    
-    va_end(list);
-    va_end(copy);
+	size = vsnprintf(pointer, size, string, copy);
+	
+	va_end(list);
+	va_end(copy);
 
-    if (size < 0) {
-        free(pointer);
-        return -1;
-    }
+	if (size < 0) {
+		free(pointer);
+		return -1;
+	}
 
-    *buffer = pointer;
-    return(size);
+	*buffer = pointer;
+	return(size);
 }
 
 long strings_sprintf(char **buffer, char *string, ...)
 {
-    va_list args;
-    va_start(args, string);
-    long size   = strings_svprintf(buffer, string, args);
-    va_end(args);
-    return(size);
+	va_list args;
+	va_start(args, string);
+	long size   = strings_svprintf(buffer, string, args);
+	va_end(args);
+	return(size);
 }
 
 int strings_count_until(char *buffer, long length, char c)
 {
-    int count   = 0;
-    while(*(buffer+count) != c && count < length)
-        count++;
-    return(count);
+	int count   = 0;
+	while(*(buffer+count) != c && count < length)
+		count++;
+	return(count);
 }
 
 void strings_to_lowercase(void *memory, int length)
 {
-    for(int i=0; i<length; ++i) {
-        char c  = *(char*)(memory + i);
+	for(int i=0; i<length; ++i) {
+		char c  = *(char*)(memory + i);
 
-        *(char*)(memory + i) = c;
-        if(c >= 'A' && c <='Z') {
-            *(char*)(memory + i) |= 32;
-        }
-    }
+		*(char*)(memory + i) = c;
+		if(c >= 'A' && c <='Z') {
+			*(char*)(memory + i) |= 32;
+		}
+	}
 }

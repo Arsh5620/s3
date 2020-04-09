@@ -6,10 +6,10 @@
 #define LIST_INCREASE 128
 
 typedef struct array_list {
-    size_t count;	/* current count of the elements */
-    size_t size;	/* max number of elements allowed */
-    int block;	/* size of a single element in bytes */
-    char *address;	/* memory address for the list */
+	size_t count;	/* current count of the elements */
+	size_t size;	/* max number of elements allowed */
+	int block;	/* size of a single element in bytes */
+	char *address;	/* memory address for the list */
 } my_list_s;
 
 void my_list_free(my_list_s list) ;

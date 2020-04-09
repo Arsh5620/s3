@@ -32,10 +32,10 @@
 	"setting up network subsystem"
 #define PROTOCOL_MYSQL_LOGIN_INFO_SISS \
 	"attempting to connect to mysql server: \n" \
-    "host: \"%s\"\n" \
-    "port: \"%d\"\n" \
-    "username: \"%s\"\n" \
-    "database: \"%s\""
+	"host: \"%s\"\n" \
+	"port: \"%d\"\n" \
+	"username: \"%s\"\n" \
+	"database: \"%s\""
 #define PROTOCOL_MYSQL_FAILED_CONNECT \
 	"failed to connect to mysql, program will now exit"
 #define PROTOCOL_NETWORK_WAIT_CONNECT \

@@ -11,7 +11,7 @@ int filemgmt_file_exists(string_s *folder_name, string_s *file_name)
 	if(file_name == NULL || folder_name == NULL)
 		return(FILE_INPUT_ERROR);
 
-    database_table_bind_s bind_out = database_get_global_bind();
+	database_table_bind_s bind_out = database_get_global_bind();
 	
 	string_s strings[] = {
 		TABLE1_FI_COLUMN_FILE_NAME
@@ -34,7 +34,7 @@ int filemgmt_file_exists(string_s *folder_name, string_s *file_name)
 	database_bind_data_copy(bind_in.bind_params + folder_index
 		, *folder_name);
 
-    MYSQL_STMT *stmt    = database_table_query(
+	MYSQL_STMT *stmt    = database_table_query(
 		FILEMGMT_QUERY_FILEFOLDEREXISTS
 		, bind_in.bind_params
 		, bind_out.bind_params);
@@ -47,6 +47,6 @@ int filemgmt_file_exists(string_s *folder_name, string_s *file_name)
 			, recordexists);
 
 	database_bind_free(bind_in);
-    mysql_stmt_close(stmt);
-    return(recordexists > 0);
+	mysql_stmt_close(stmt);
+	return(recordexists > 0);
 }
