@@ -54,6 +54,14 @@ void config_copy_data(char *struct_memory, int offset
 			memcpy(memory, pair->value, pair->value_length);
 		}
 		break;
+	case CONFIG_TYPE_STRING_S:
+		{
+			string_s str	= {0};
+			str.address	= pair->value;
+			str.length	= pair->value_length;
+			memcpy((struct_memory + offset), &str, sizeof(string_s));
+		}
+		break;
 	case CONFIG_TYPE_INT:
 		{
 			*(int*)(struct_memory + offset) = 

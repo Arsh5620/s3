@@ -7,6 +7,13 @@
 #define FALSE               0x000000
 #define TRUE                0x000001
 
+#define INVALID_SOCKET	-1
+#define BIND_ERROR  	-1
+#define GENERAL_ERROR  	-1
+#define NULL_ZERO		0
+
+#define MB	*1024*1024
+
 #define REALLOC_FAILED				0x000002
 #define MALLOC_FAILED				0x000003
 #define SERVER_OUT_OF_MEMORY        0x000004
@@ -45,14 +52,8 @@
 #define SERVER_NETWORK_STATUS_NONVALID 0x000400
 #define SERVER_FLOW_OUT_OF_CONTEXT  0X000500
 
-
-#define MEGABYTES(x)    (x*1024*1024)
-
-#define MAX_ALLOWED_NETWORK_BUFFER  MEGABYTES(1)
-
-#define INVALID_SOCKET	-1
-#define BIND_ERROR  	-1
-#define GENERAL_ERROR  	-1
-#define NULL_ZERO		0
-
 typedef char boolean;
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+typedef unsigned long ulong;

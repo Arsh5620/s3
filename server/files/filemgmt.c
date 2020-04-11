@@ -40,7 +40,7 @@ int filemgmt_file_exists(string_s *folder_name, string_s *file_name)
 		, bind_out.bind_params);
 	int recordexists	= database_table_rowexists(stmt);
 
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 			, FILEMGMT_RECORD_STATUS
 			, folder_name->length, folder_name->address
 			, file_name->length, file_name->address

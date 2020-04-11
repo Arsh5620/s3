@@ -64,7 +64,7 @@ void memory_track_update(void * address, void *new_addr, long size
 	if(entry.is_occupied != TRUE) 
 	{
 		char *errorm	= MEMORY_ALLOCATION_NOENTRY;
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG,
+		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG,
 			MEMORY_ALLOCATION_ERROR
 			, address, new_addr
 			, memory_log_gettype(type), size
@@ -119,7 +119,8 @@ void memory_track_update(void * address, void *new_addr, long size
 
 long memory_get_allocation_size(malloc_node_s *node)
 {
-	malloc_update_s *update	= (linked_list_node_s*)(node->updates.last)->data;
+	malloc_update_s *update	= 
+		(malloc_update_s*)((linked_list_node_s*)(node->updates.last))->data;
 	return(update->size);
 }
 
@@ -167,8 +168,8 @@ char *memory_log_gettype(int i)
 void memory_log_handle(malloc_enum type
 	, malloc_node_s *node, malloc_update_s *update)
 {
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_DEBUG,
-		MEMORY_ALLOCATION_LOG
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
+		, MEMORY_ALLOCATION_LOG
 		, node->address, node->new_addr
 		, memory_log_gettype(update->type), update->size
 		, update->file_name, update->line_no);

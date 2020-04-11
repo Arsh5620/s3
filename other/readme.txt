@@ -64,3 +64,9 @@ downloaded the data that the client sent us we will then again call the function
 to the action that will handle the data for us, what ever the actions needs to be taken with 
 the data. The data that we will download will always be downloaded to a file in a temporary
 location to be saved for later use.
+
+*** How dbp_accept_connection_loop handles further delegation.
+When we receive a connection request, we will wait for to read the header via blocking request. 
+We will block to read the first 4 bytes of the header. 
+We will then read the actual header of the request, but at this time if there is an issue
+with the header request itself.
