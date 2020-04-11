@@ -33,7 +33,7 @@ typedef struct {
 	char is_valid;
 } key_value_pair_s;
 
-my_list_s parser_parse(char *buffer, int length);
+my_list_s parser_parse(lexer_status_s *status_r, char *buffer, int length);
 my_list_s parser_parse_file(FILE *file);
 void parser_release_list(my_list_s list);
 key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *err);

@@ -5,7 +5,7 @@
 #include "../files/file.h"
 #include "../memdbg/memory.h"
 
-my_list_s parser_parse(char *buffer, int length)
+my_list_s parser_parse(lexer_status_s *status_r, char *buffer, int length)
 {
 	lexer_s lex = lexer_init(buffer, length);
 	lexer_status_s status = {0};
@@ -21,7 +21,8 @@ my_list_s parser_parse(char *buffer, int length)
 		parser_print_status(lex, status);
 	} while (status.status != PARSER_STATUS_EOF 
 				&& status.errno == 0);
-
+				
+	*status_r	= status;
 	return(list);
 }
 
