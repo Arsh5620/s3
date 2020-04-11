@@ -5,9 +5,19 @@
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "../general/defines.h"
 
-#define APPLICATION_PORT    4096
-#define MAX_LISTEN_QUEQUE   8
+#define NETWORK_PORT			4096
+#define NETWORK_LISTEN_QUEQUE	8
+#define NETWORK_READ_BUFFER		(8 MB) /* 8 * 1024 * 1024 */
+
+enum network_errors_enum {
+	NETWORK_ERROR_READ_SUCCESS	= 0
+	, NETWORK_ERROR_READ_PARTIAL = 128
+	, NETWORK_ERROR_READ_CONNRESET
+	, NETWORK_ERROR_READ_ERRORALL
+};
+
 
 /**
  * server - server file pointer
@@ -15,35 +25,24 @@
  * server_socket -  socket struct sockaddr_in for the server
  * client_socket -  socket struct sockaddr_in for the client
  * error_code -     int to indicate the error code 
- * is_setup_complete -  boolean variable to indicate that the 
- *                      structure is available to use.
  */
-typedef struct network_connection_information
+typedef struct network_connection
 {
 	int server;
 	int client;
 	struct sockaddr_in server_socket;
 	struct sockaddr_in client_socket;
-	char is_setup_complete;
-	int error_code;
-} netconn_info_s;
+	uint error_code;
+} network_s;
 
- /*
-  * If the amount of data read is less than 8 bytes the data will be
-  * read into the "spare" variable, if memory needs to be allocated
-  * the caller should free the memory.
-  */
-typedef struct network_connection_data_read
+
+typedef struct network_connection_data
 {
-	char is_spare;
-	char is_malloc;
-	char is_file;
-	char is_error;
 	char *data_address;
-	size_t data_length;
-	int error_code;
-	char spare[8];
-} netconn_data_s;
+	ulong data_length;
+	ulong data_maxlen;
+	uint error_code;
+} network_data_s;
 
 /**
  * data_types_s: for network read less than 8 bytes, where
@@ -51,30 +50,28 @@ typedef struct network_connection_data_read
  * we will be able to do the converstion and use this struct.
  */
 typedef struct {
-	union
-	{
-		char _char;
-		short _short;
-		int _int;
-		long int _long;
-	} data_types_u;
-	char is_error;
-} data_types_s;
+	union {
+		char char_t;
+		short short_t;
+		int int_t;
+		long long_t;
+	} _u;
+	uint error_code;
+} network_data_atom_s;
 
-netconn_info_s network_connect_init_sync(int);
-int network_connect_accept_sync(netconn_info_s*);
-void network_data_free(netconn_data_s conn);
+network_s network_connect_init_sync(int port);
+int network_connect_accept_sync(network_s *connection);
+void network_data_free(network_data_s data);
 
-netconn_data_s network_data_readstream(netconn_info_s *conn, int size);
-int network_connection_write(netconn_info_s *conn, char *data, int length);
-char *network_data_address(netconn_data_s *data);
+network_data_s network_read_stream(network_s *connection, ulong size);
+int network_write(network_s *conn, char *data, int length);
 
-#define NETWORK_DATA_READ_TYPE_DECLARATION(data_type) \
-data_types_s network_data_read_##data_type(netconn_info_s *conn);
+#define NETWORK_READ_DECLARE(type) \
+network_data_atom_s network_read_##type(network_s *network);
 
-NETWORK_DATA_READ_TYPE_DECLARATION(char);
-NETWORK_DATA_READ_TYPE_DECLARATION(short);
-NETWORK_DATA_READ_TYPE_DECLARATION(int);
-NETWORK_DATA_READ_TYPE_DECLARATION(long);
+NETWORK_READ_DECLARE(char);
+NETWORK_READ_DECLARE(short);
+NETWORK_READ_DECLARE(int);
+NETWORK_READ_DECLARE(long);
 
 # endif

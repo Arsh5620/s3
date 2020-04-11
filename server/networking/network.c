@@ -23,18 +23,16 @@
  * it will then write the error for the last called function to both
  * standard error and log output.
  */
-int assert_connection(netconn_info_s *conn
-	, int compare1
-	, int compare2
-	, char *function_string
-	, int error_num)
+int assert_connection(int compare1, int compare2
+	, char *function_string, int error_num)
 {
 	if (compare1 == compare2) {
-		char *error_string  = strerror(errno);
-		error_handle(ERRORS_HANDLE_STDOLOG, LOGGER_CATASTROPHIC
-			, NETWORK_ASSERT_MESSAGE_SSI, function_string
-			, error_string, errno);
-		exit(SERVER_ERROR_REFER_TO_LOGS);
+		char *error  = strerror(errno);
+		error_handle(ERRORS_HANDLE_STDOLOG
+			, LOG_LEVEL_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
+			, SERVER_ERROR_REFER_TO_LOGS)
+			, NETWORK_ASSERT_MESSAGE, function_string
+			, error, errno);
 	}
 	return(SUCCESS);
 }
@@ -44,37 +42,31 @@ int assert_connection(netconn_info_s *conn
  * setup listening on the port, it will not accept a connection,
  * to accept connections call network_connect_accept_sync()
  */
-netconn_info_s network_connect_init_sync(int port)
+network_s network_connect_init_sync(int port)
 {
-	netconn_info_s connection = {0};
+	network_s connection = {0};
 
 	connection.server =  socket(AF_INET, SOCK_STREAM, 0);
-	if(assert_connection(&connection, connection.server, INVALID_SOCKET
-					, "socket", SERVER_SOCK_INIT_FAILED))
-		return connection;
+	assert_connection(connection.server, INVALID_SOCKET
+					, "socket", SERVER_SOCK_INIT_FAILED);
+
 	connection.server_socket.sin_addr.s_addr    = INADDR_ANY;
 	connection.server_socket.sin_family         = AF_INET;
 	connection.server_socket.sin_port           = htons(port);
 
 	int result = 0;
 	result = bind(connection.server
-						, (struct sockaddr*) &connection.server_socket
-						, sizeof(struct  sockaddr_in));
+		, (struct sockaddr*) &connection.server_socket
+		, sizeof(struct  sockaddr_in));
+	assert_connection(result, BIND_ERROR, "bind", SERVER_BIND_FAILED);
 
-	if(assert_connection(&connection, result, BIND_ERROR
-					, "bind", SERVER_BIND_FAILED))
-		return connection;
+	result = listen(connection.server, NETWORK_LISTEN_QUEQUE);
+	assert_connection(result, GENERAL_ERROR, "listen", SERVER_LISTEN_FAILED);
 
-	result = listen(connection.server, MAX_LISTEN_QUEQUE);
-	if(assert_connection(&connection, result, GENERAL_ERROR
-					, "listen", SERVER_LISTEN_FAILED))
-		return connection;
-
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_INFO
+	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, NETWORK_PORT_LISTENING
-		, port , MAX_LISTEN_QUEQUE);
+		, port , NETWORK_LISTEN_QUEQUE);
 
-	connection.is_setup_complete    = TRUE;
 	return connection;
 }
 
@@ -84,16 +76,15 @@ netconn_info_s network_connect_init_sync(int port)
  * by network_connect_init_sync. 
  * this function is sync and will block until a client connects.
  */
-int network_connect_accept_sync(netconn_info_s *connection)
+int network_connect_accept_sync(network_s *connection)
 {
-	socklen_t struct_len = sizeof(struct sockaddr_in);
+	socklen_t len = sizeof(struct sockaddr_in);
 
 	connection->client	= accept(connection->server
-							, (struct sockaddr*) &connection->client_socket
-							, &struct_len);
+		, (struct sockaddr*) &connection->client_socket, &len);
 	
 	// if assert fails as a side effect it will call exit()
-	assert_connection(connection, connection->client, GENERAL_ERROR
+	assert_connection(connection->client, GENERAL_ERROR
 							, "accept", SERVER_ACCEPT_FAILED);
 	
 	return(SUCCESS);
@@ -105,77 +96,71 @@ int network_connect_accept_sync(netconn_info_s *connection)
  * memory allocation, it is best to call network_data_free after 
  * the function to release any dynamic memory once it is no longer 
  * in use. 
- * ***
- * any read operations for less than 8 bytes does not require malloc. 
- * the is_spare variable is set to TRUE and you can read data from 
- * (char*)netconn_data_s.spare[8];
  */
-netconn_data_s network_data_readstream(netconn_info_s *conn, int size)
+network_data_s network_read_stream(network_s *connection, ulong size)
 {
-	netconn_data_s  data = {0};
+	network_data_s  data = {0};
 
 	char *memory = 0;
-
-	if(size <=8 && size >=0) {
-		memory  = (char*) data.spare;
-		data.is_spare   = TRUE;
-	}
-	else 
+	if (size > NETWORK_READ_BUFFER)
 	{
-		if (size > MAX_ALLOWED_NETWORK_BUFFER)
+		size	= NETWORK_READ_BUFFER;
+		data.error_code = SERVER_OUT_OF_MEMORY;
+	}
+	memory  = m_malloc(size, MEMORY_FILE_LINE);
+
+	size_t data_read = 0;
+	for (; data_read < size;)
+	{
+		ulong length  = read(connection->client
+			, memory + data_read, (size - data_read));
+
+		if (length == 0) 
 		{
-			size = MAX_ALLOWED_NETWORK_BUFFER;
-			data.error_code = SERVER_OUT_OF_MEMORY;
-		}
-		memory  = m_malloc(size, MEMORY_FILE_LINE);
-		data.is_malloc  = TRUE;
-	}
-
-	size_t i = 0;
-	for (; i < size;)
-	{
-		int length  = read(conn->client, memory + i, (size - i));
-
-		if (length == 0) {
-			if((i + length) != size){
-				data.is_error   = TRUE;
+			if (data_read != size)
+			{
+				data.error_code	= NETWORK_ERROR_READ_PARTIAL;
+			} 
+			else 
+			{
+				data.error_code	= NETWORK_ERROR_READ_SUCCESS;
 			}
 			break;
 		}
-		else if (length < 0) {
-			data.is_error   = TRUE;
+		else if (length < 0) 
+		{
+			switch (errno)
+			{
+			case ECONNRESET:
+				data.error_code	= NETWORK_ERROR_READ_CONNRESET;
+				break;
+			
+			default:
+				data.error_code	= NETWORK_ERROR_READ_ERRORALL;
+				break;
+			}
 			break;
 		}
-		else i  += length;
+		else
+		{
+			data_read	+= length;
+		}
 	}
 
-	data.data_address   = memory;
-	data.data_length    = i;
+	data.data_address	= memory;
+	data.data_length	= data_read;
 	return (data);
-}
-
-/*
- * return type: char*, address for the return data buffer.
- * helper method to find if netconn_data_s.spare or .data_address
- * should be used by checking the is_spare and is_malloc variables.
- */
-char *network_data_address(netconn_data_s *data)
-{
-	if(data->is_spare == TRUE)
-		return (char*)&data->spare;
-	else if(data->is_malloc == TRUE)
-		return (data->data_address);
-	else 
-		return (0);
 }
 
 /*
  * releases memory (if-any) allocated by network_data_readxbytes
  */
-void network_data_free(netconn_data_s data)
+void network_data_free(network_data_s data)
 {
-	if(data.is_malloc)
+	if (data.data_address)
+	{
 		m_free(data.data_address, MEMORY_FILE_LINE); 
+	}
 }
 
 /* 
@@ -183,10 +168,11 @@ void network_data_free(netconn_data_s data)
  * this function basically performs network write to the client connected. 
  * the write will be a application layer RAW write over TCP/IP.
  */
-int network_connection_write(netconn_info_s *conn, char *data, int length)
+int network_write(network_s *conn, char *data, int length)
 {
 	int data_written = 0;
-	while (data_written < length) {
+	while (data_written < length)
+	{
 		int written = write(conn->client, data + data_written
 								, length - data_written);
 		
@@ -198,38 +184,38 @@ int network_connection_write(netconn_info_s *conn, char *data, int length)
 	return(SUCCESS);
 }
 
-#define NETWORK_DATA_READ_TYPE(data_type) \
-data_types_s network_data_read_##data_type(netconn_info_s *conn) \
+#define NETWORK_READ(type) \
+network_data_atom_s network_read_##type(network_s *network) \
 { \
-	data_types_s type_s = {0}; \
-	netconn_data_s data = (network_data_readstream(conn\
-		, sizeof(data_type))); \
-	if (data.is_spare == TRUE) { \
-		type_s.data_types_u._##data_type = *(data_type*)&data.spare; \
+	network_data_s	d0	= network_read_stream(network, sizeof(type));\
+	network_data_atom_s d1	= {0}; \
+	if (d0.error_code == NETWORK_ERROR_READ_SUCCESS) \
+	{ \
+		d1._u.type##_t = *(type*) d0.data_address; \
 	} \
-	else { \
-		type_s.is_error = TRUE; \
-	} \
-	return type_s; \
+	d1.error_code	= d0.error_code; \
+	network_data_free(d0); \
+	return d1; \
 }
 
 // basically instead of copy pasting the same code 4 times
 // we have compiler copy paste the code, so we can change once and done.
 
-NETWORK_DATA_READ_TYPE(char);
-NETWORK_DATA_READ_TYPE(short);
-NETWORK_DATA_READ_TYPE(int);
-NETWORK_DATA_READ_TYPE(long);
+NETWORK_READ(char);
+NETWORK_READ(short);
+NETWORK_READ(int);
+NETWORK_READ(long);
 
 /* example:
-data_types_s network_data_read_char(netconn_info_s *conn) 
+network_data_atom_s network_read_int(network_s *network) 
 { 
-	data_types_s type_s = {0}; 
-	netconn_data_s data = (network_data_readxbytes(conn, sizeof(char)));
-	if (data.is_spare == TRUE) { 
-		type_s.data_types_u._char = *(char*)&data.spare; 
-	} else { 
-		type_s.is_error = TRUE; 
-	} 
-	return type_s; 
-}*/
+	network_data_s d0 = network_read_stream(network, sizeof(int));
+	network_data_atom_s d1 = {0};
+	if (d0.error_code) 
+	{ 
+		d1._u.int_t = *(int*) d0.data_address; 
+	}
+	d1.error_code = d0.error_code;
+	return d1; 
+}
+*/
