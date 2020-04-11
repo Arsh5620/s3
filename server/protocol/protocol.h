@@ -15,55 +15,47 @@
 #include "../databases/database.h"
 #include "../config/config.h"
 
-#define DBP_FILE_TEMP_DIR "temp"
+#define DBP_PROTOCOL_MAGIC		0xD0
+#define DBP_TEMP_FORMAT			"%s/download-fn(%ld).tmp"
+#define DBP_TEMP_DIR			"temp"
+#define DBP_CONFIG_FILENAME		"config.a"
 
-#define DBP_ACTION_NOID  -1
-#define DBP_ATTRIBS_ERR_NAMETOOLONG 0x0003
-#define DBP_ATTRIBS_ERR_CRC32NOTFOUND   0x0004
-#define DBP_PROTOCOL_MAGIC 0xd0
-#define DBP_TEMP_FILE_FORMAT "%s/download-fn(%ld).tmp"
-#define DBP_CONFIG_FILENAME "config.a"
+enum dbp_errors_enum {
+	DBP_CONNECTION_NOERROR	= 0
+	, DBP_CONNECTION_WARN
+	, DBP_CONNECTION_ERROR_ENV_FAILED = 128
+};
 
-#define DBP_CONNEND_FLOW    1
-#define DBP_CONNEND_CORRUPT 2
-#define DBP_CONN_EMPTYPACKET    3
-#define DBP_CONN_INVALID_ACTION 4
-#define DBP_CONN_INSUFFICENT_ATTRIB 5
-#define DBP_CONN_SETUP_ENV_FAILED   6
-#define DBP_CONN_NOTIFICATION_SIZE  7
-
-enum dbp_response_enum {
-	DBP_RESPONSE_NONE
-	, DBP_RESPONSE_ACK
+enum dbp_warns_enum {
+	DBP_CONNECTION_WARN_CORRUPTION = 128
+	, DBP_CONNECTION_WARN_READERROR
+	, DBP_CONNECTION_WARN_PARSEERROR
+	, DBP_CONNECTION_WARN_EMPTY
+	, DBP_CONNECTION_WARN_ACTION_INVALID
+	, DBP_CONNECTION_WARN_NO_ATTRIBS
+	, DBP_CONNECTION_WARN_THIN_ATTRIBS
 };
 
 // one-to-one mapping to the actions_supported
-enum actions_supported_enum {
-	ACTION_CREATE = 0
-	, ACTION_NOTIFICATION
-	, ACTION_REQUEST
-	, ACTION_UPDATE
+enum dbp_actions_enum {
+	DBP_ACTION_CREATE = 128
+	, DBP_ACTION_NOTIFICATION
+	, DBP_ACTION_REQUEST
+	, DBP_ACTION_UPDATE
+	, DBP_ACTION_NOTVALID	= -1
 };
 
-enum attrib_supported_enum {
-	ATTRIB_ACTION = 128
-	, ATTRIB_FILENAME
-	, ATTRIB_FOLDER
-	, ATTRIB_CRC
+enum dbp_attribs_enum {
+	DBP_ATTRIB_ACTION = 128
+	, DBP_ATTRIB_FILENAME
+	, DBP_ATTRIB_FOLDER
+	, DBP_ATTRIB_CRC
 };
 
-typedef struct {
-	netconn_info_s connection;
-	logger_s logs;
-	char is_init;
-} dbp_s; // device backup protocol
-
-typedef struct dbp_common_attribs {
-	string_s filename;
-	string_s folder_name;
-	unsigned int crc32;
-	int error;
-} dbp_common_attribs_s;
+enum dbp_shutdown_enum {
+	DBP_CONNECTION_SHUTDOWN_FLOW
+	, DBP_CONNECTION_SHUTDOWN_CORRUPTION
+};
 
 typedef struct {
 	size_t data_length;
@@ -72,55 +64,127 @@ typedef struct {
 } dbp_header_s;
 
 typedef struct {
-	enum dbp_response_enum dbp_response;
+	char *string;
+	ulong strlen;
+	enum dbp_attribs_enum attrib_code;
+} dbp_header_keys_s;
+
+typedef struct {
+	string_s file_name;
+	string_s folder_name;
+	uint crc32;
+} dbp_protocol_attribs_s;
+
+#define DBP_STRINGKEY(str, code) \
+	(dbp_header_keys_s) { \
+		.string = str \
+		, .strlen = sizeof(str) - 1 \
+		, .attrib_code = code \
+	}
+
+typedef struct {
+	/*
+	 * action is the type of action that the client has requested to perform
+	 * this can include but is not limited to "notification", "request"
+	 * , and "update" etc. 
+	 */
+	enum dbp_actions_enum action;
+
+	/*
+	 * the difference between error and warn is that in case of an error
+	 * the entire connection will be terminated, and in case of warn we
+	 * can still continue the connection for more requests 
+	 */
+	enum dbp_errors_enum error;
+	enum dbp_warns_enum warn;
+
+	/*
+	 * header_* will have all the information related to the entire header
+	 * header_info is the information about the size of the header table, 
+	 * and the size of the expected data. 
+	 * header_list is the key value pairs of the header that we received. 
+	 * header_list is the same key value pairs in a hash table for quick access
+	 */
+	my_list_s header_list;
+	dbp_header_s header_info;
+	hash_table_s header_table;
+
+	dbp_protocol_attribs_s attribs;
+
+	/*
+	 * temp_file will contain all the information such as name, size, 
+	 * for the temporary file written to the temp folder
+	 */
+	file_write_s temp_file;
+
+	/*
+	 * instance is a pointer to the dbp_protocol_s that will have 
+	 * information in regards of the current network and its status
+	 */
+	char *instance;
+} dbp_request_s;
+
+typedef struct {
+	my_list_s header_list;
+	dbp_header_s header_info;
+
+	/*
+	 * response_code is the response indicator, which idicates success or
+	 * failure after a call to the requested action. 
+	 */
+	int response_code;
+	char *instance;
 } dbp_response_s;
 
 typedef struct {
-	dbp_header_s header;
-	my_list_s header_list;
-	hash_table_s header_table;
-	file_write_s data_written;
-	int action;
-	int error;
-	dbp_s *dbp;
-	dbp_common_attribs_s attribs;
-	dbp_response_s response;
-} packet_info_s;
+	char init_complete;
 
-enum connection_shutdown_type {
-	DBP_CONNECT_SHUTDOWN_FLOW
-	, DBP_CONNECT_SHUTDOWN_CORRUPTION
-};
+	network_s connection;
+	logger_s logs;
 
-int dbp_next(dbp_s *protocol);
-dbp_s dbp_init(unsigned short port);
-void dbp_cleanup(dbp_s protocol_handle);
-void dbp_accept_connection_loop(dbp_s *protocol);
+	dbp_request_s *current_request;
+	dbp_response_s *current_response;
+} dbp_protocol_s;
+
+// typedef struct dbp_common_attribs {
+// 	string_s filename;
+// 	string_s folder_name;
+// 	unsigned int crc32;
+// 	int error;
+// } dbp_common_attribs_s;
+
+void dbp_cleanup(dbp_protocol_s protocol);
+ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol);
+dbp_protocol_s dbp_connection_initialize_sync(unsigned short port);
+void dbp_accept_connection_loop(dbp_protocol_s *protocol);
 
 // internal functions -- should not be used outside. 
 
-void dbp_shutdown_connection(dbp_s protocol 
-	, enum connection_shutdown_type reason);
-int dbp_response_write(packet_info_s *info);
-int dbp_action_prehook(packet_info_s *info);
-packet_info_s dbp_read_headers(dbp_s *protocol);
+void dbp_shutdown_connection(dbp_protocol_s protocol
+	, enum dbp_shutdown_enum type);
+int dbp_response_write(dbp_response_s *response);
+ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request);
 
-int dbp_notification_posthook(packet_info_s *info);
-int dbp_notification_prehook(packet_info_s *info);
-int dbp_create_prehook(packet_info_s *protocol);
+int dbp_posthook_notification(dbp_request_s *request, dbp_response_s *response);
 
-int dbp_assert_list(my_list_s list, 
-	enum attrib_supported_enum *match, int match_length);
-hash_table_s dbp_attribs_hash_table(packet_info_s info);
-dbp_common_attribs_s dbp_attribs_parse_all(packet_info_s info);
-file_write_s create_download_file(packet_info_s *info);
+int dbp_prehook_notification(dbp_request_s *request);
+int dbp_prehook_create(dbp_request_s *request);
+int dbp_prehook_action(dbp_request_s *request);
+
+int dbp_list_assert(hash_table_s table, 
+	enum dbp_attribs_enum *match, int count);
+hash_table_s dbp_headers_make_table(my_list_s list);
+file_write_s dbp_download_file(dbp_request_s *request);
 int create_setup_environment();
 
 short dbp_header_length(size_t magic);
 char dbp_header_magic(size_t magic);
 size_t dbp_data_length(size_t magic);
 
-int dbp_setup_download_env();
-int dbp_action_posthook(packet_info_s *info);
-
+int dbp_setup_environment();
+int dbp_action_prehook(dbp_request_s *request);
+int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response);
+void dbp_request_cleanup();
+int dbp_handle_warns(enum dbp_errors_enum warn);
+int dbp_handle_errors(enum dbp_errors_enum error, int *shutdown);
 #endif //PROTOCOL_INCLUDE_GAURD
