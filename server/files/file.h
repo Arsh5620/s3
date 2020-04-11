@@ -52,9 +52,8 @@ int file_dir_mkine(char *dir_name);
 int file_delete(char *filename);
 FILE *file_open(char *name, int length, char *mode);
 int file_download(FILE *file
-					, netconn_info_s *network
-					, file_write_s *info);
-
+	, network_s *network
+	, file_write_s *info);
 struct stat file_read_stat(FILE *file);
 file_reader_s file_init_reader(FILE *file);
 void file_close_reader(file_reader_s *reader);

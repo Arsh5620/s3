@@ -47,8 +47,8 @@ int file_delete(char *filename)
 }
 
 int file_download(FILE *file
-					, netconn_info_s *network
-					, file_write_s *info)
+	, network_s *network
+	, file_write_s *info)
 {
 	int read_required = 0;
 	do{
@@ -57,17 +57,17 @@ int file_download(FILE *file
 			read_required = FILE_UPLOAD_BUFFER;
 	
 		if(read_required == 0) break;
-		netconn_data_s data_read = 
-			network_data_readstream(network, read_required);
+		network_data_s data_read = 
+			network_read_stream(network, read_required);
 	
-		void *data_address  = network_data_address(&data_read);
-		if(data_read.is_error) {
+		if (data_read.error_code) 
+		{
 			network_data_free(data_read);
 			return(FILE_UPLOAD_ERR);
 		}
 	
 		int bytes_written   = 
-			fwrite(data_address, 1, data_read.data_length, file);
+			fwrite(data_read.data_address, 1, data_read.data_length, file);
 		fflush(file);
 	
 		if(bytes_written != data_read.data_length){

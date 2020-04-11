@@ -127,7 +127,7 @@ size_t logs_write(enum logger_level level
 	free(dateformat);
 
 	char *log_level;
-	if (level >= LOGGER_INFO && level <= LOGGER_CATASTROPHIC)
+	if (level >= LOGGER_LEVEL_INFO && level <= LOGGER_LEVEL_CATASTROPHIC)
 	{	
 		log_level	= log_levels[level];
 	} else 

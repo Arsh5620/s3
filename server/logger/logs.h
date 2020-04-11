@@ -21,12 +21,16 @@ typedef struct logger
 } logger_s;
 
 enum logger_level {
-	LOGGER_INFO
-	, LOGGER_DEBUG
-	, LOGGER_WARN
-	, LOGGER_ERROR 
-	, LOGGER_CATASTROPHIC // program WILL exit. 
+	LOGGER_LEVEL_INFO = 0
+	, LOGGER_LEVEL_DEBUG
+	, LOGGER_LEVEL_WARN
+	, LOGGER_LEVEL_ERROR 
+	, LOGGER_LEVEL_CATASTROPHIC // program WILL exit. 
 };
+
+#define LOG_LEVEL(x) (x & 0xFF)
+#define LOG_LEVEL_EXIT_GET(x) (x >> 8)
+#define LOG_LEVEL_EXIT_SET(x, y) (x | (y << 8))
 
 logger_s logs_open();
 void logs_close();
