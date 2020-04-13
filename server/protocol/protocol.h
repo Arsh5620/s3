@@ -194,6 +194,7 @@ int dbp_posthook_notification(dbp_request_s *request, dbp_response_s *response);
 int dbp_prehook_notification(dbp_request_s *request);
 int dbp_prehook_create(dbp_request_s *request);
 int dbp_prehook_action(dbp_request_s *request);
+int dbp_read_action(dbp_request_s *request);
 
 int dbp_list_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);
