@@ -123,7 +123,7 @@ network_data_s network_read_stream(network_s *connection, ulong size)
 			} 
 			else 
 			{
-				data.error_code	= NETWORK_ERROR_READ_SUCCESS;
+				data.error_code	= NETWORK_ERROR_SUCCESS;
 			}
 			break;
 		}
@@ -136,7 +136,7 @@ network_data_s network_read_stream(network_s *connection, ulong size)
 				break;
 			
 			default:
-				data.error_code	= NETWORK_ERROR_READ_ERRORALL;
+				data.error_code	= NETWORK_ERROR_READ_ERROR;
 				break;
 			}
 			break;
@@ -152,6 +152,38 @@ network_data_s network_read_stream(network_s *connection, ulong size)
 	return (data);
 }
 
+int network_write_stream(network_s *network, char *buffer, ulong buffer_length)
+{
+	ulong bytes_written	= 0;
+	for (ulong length = 0;bytes_written < buffer_length;)
+	{
+		length = write(network->client, buffer, buffer_length);
+		if (length > 0)
+		{
+			bytes_written += length;
+		}
+	}
+	
+	if (bytes_written != buffer_length)
+	{
+		switch (errno)
+		{
+		case ECONNRESET:
+			{
+				return(NETWORK_ERROR_READ_CONNRESET);
+			}
+		break;
+
+		default:
+			{
+				return(NETWORK_ERROR_READ_ERROR);
+			}
+		break;
+		}
+	}
+	return(NETWORK_ERROR_SUCCESS);
+}
+
 /*
  * releases memory (if-any) allocated by network_data_readxbytes
  */
@@ -163,33 +195,12 @@ void network_data_free(network_data_s data)
 	}
 }
 
-/* 
- * return value: 0 for success, any other value for error.
- * this function basically performs network write to the client connected. 
- * the write will be a application layer RAW write over TCP/IP.
- */
-int network_write(network_s *conn, char *data, int length)
-{
-	int data_written = 0;
-	while (data_written < length)
-	{
-		int written = write(conn->client, data + data_written
-								, length - data_written);
-		
-		if (written < 1)
-			return(FAILED);
-		else 
-			data_written += written;
-	}
-	return(SUCCESS);
-}
-
 #define NETWORK_READ(type) \
 network_data_atom_s network_read_##type(network_s *network) \
 { \
 	network_data_s	d0	= network_read_stream(network, sizeof(type));\
 	network_data_atom_s d1	= {0}; \
-	if (d0.error_code == NETWORK_ERROR_READ_SUCCESS) \
+	if (d0.error_code == NETWORK_ERROR_SUCCESS) \
 	{ \
 		d1._u.type##_t = *(type*) d0.data_address; \
 	} \

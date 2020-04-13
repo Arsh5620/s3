@@ -12,10 +12,10 @@
 #define NETWORK_READ_BUFFER		(8 MB) /* 8 * 1024 * 1024 */
 
 enum network_errors_enum {
-	NETWORK_ERROR_READ_SUCCESS	= 0
+	NETWORK_ERROR_SUCCESS	= 0
 	, NETWORK_ERROR_READ_PARTIAL = 128
 	, NETWORK_ERROR_READ_CONNRESET
-	, NETWORK_ERROR_READ_ERRORALL
+	, NETWORK_ERROR_READ_ERROR
 };
 
 
@@ -64,7 +64,7 @@ int network_connect_accept_sync(network_s *connection);
 void network_data_free(network_data_s data);
 
 network_data_s network_read_stream(network_s *connection, ulong size);
-int network_write(network_s *conn, char *data, int length);
+int network_write_stream(network_s *network, char *buffer, ulong buffer_length);
 
 #define NETWORK_READ_DECLARE(type) \
 network_data_atom_s network_read_##type(network_s *network);
