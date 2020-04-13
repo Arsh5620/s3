@@ -51,22 +51,68 @@ class PacketResponseReader:
 		return(self.return_data)
 
 while(1):
-	magic = 0xD008000000000000
+	magic0	= 0xD008000000000000
+	magic1	= 0xD0D1000000000000
+	magic_invalid0	= 0x0008000000000000
+	magic_invalid1	= 0x00D1000000000000
 
-	print("Press enter to send the packet: ")
+	key_value_pairs	= ("action=create\n"
+		"filename=\"filename\"\n"
+		"folder=\".\"\n"
+		"crc=00565423\n")
+	key_value_pair_nonparseable	= ("action.==create\n"
+		"filename~\"filename\"\n"
+		"folder\n"
+		"crc=jkhkjhkk\n")
+
+	key_value_pair_thin		= ("action=create\n")
+	key_value_pair_invalidaction	= ("action=whatever\n")
+	key_value_pair_empty	= ("\n")
+
+	print("Please select of the options to continue: ")
+	print("1. Send corrupted packet with incorrect magic\n"
+		"2. Send corrupted data packet with incorrect magic\n"
+		"3. Send non-parse-able headers key/value pairs\n"
+		"4. Send empty header key/value pairs\n"
+		"5. Send invalid action key value pair\n"
+		"6. Send thin attribs for the action\n"
+		"7. Send correct/valid packet\n")
+
 	data_entered	= input() # wait for the client to press enter before sending the packet
+
+	magic_packet	= magic0
+	magic_data		= magic1
+	header_pairs	= key_value_pairs
+	if (data_entered == "1"):
+		magic_packet	= magic_invalid0
+	elif (data_entered == "2"):
+		magic_data		= magic_invalid1
+	elif (data_entered == "3"):
+		header_pairs	= key_value_pair_nonparseable
+	elif (data_entered == "4"):
+		header_pairs	= key_value_pair_empty
+	elif (data_entered == "5"):
+		header_pairs	= key_value_pair_invalidaction
+	elif (data_entered == "6"):
+		header_pairs	= key_value_pair_thin
+	elif (data_entered == "7"):
+		# do nothing, this is the default
+		header_pairs	= key_value_pairs
+	else:
+		print("Incorrect option selected, program will now exit")
+		exit()
 
 	fin = open('one.pdf', 'rb') # open file one.pdf to send 
 
 	file_data = fin.read()
 	file_len = len(file_data)
 
-	magic += file_len
+	magic_packet += file_len
 
-	header_keys = "action=create\nfilename=\"filename\"\nfolder=\".\"\ncrc=00565423\n"
+	header_keys = header_pairs
 	header_keys += ' ' * (128 - len(header_keys))
 
-	sock.send(magic.to_bytes(8, byteorder = "little"))
+	sock.send(magic_packet.to_bytes(8, byteorder = "little"))
 	sock.send(header_keys.encode())
 
 	# now we have send the request to the server, and must wait for the server response
@@ -76,9 +122,8 @@ while(1):
 	print("Server response said : " + packet_response.getData())
 	print("Server response code is : " + response_data_code)
 	if (response_data_code == "1"):
-		length = 0xD0D1000000000000
-		length += file_len
-		sock.send(length.to_bytes(8, byteorder = "little"))
+		magic_data += file_len
+		sock.send(magic_data.to_bytes(8, byteorder = "little"))
 		sock.send(file_data)
 		print("Server data sent")
 		packet_response2	= PacketResponseReader()
