@@ -161,6 +161,22 @@
 #define DBP_CONNECTION_SHUTDOWN_CLEANUP \
 	"closing sockets / closing logging subsystem"
 
+#define DBP_RESPONSE_STRING_INVALID_ACTION \
+	"the packet received does not contain a valid action type"
+
+#define DBP_RESPONSE_STRING_EMPTY \
+	"the packet received was empty, and has been discarded"
+
+#define DBP_RESPONSE_STRING_PARSER_ERROR \
+	"the packet received does not follow the correct header key format"
+
+#define DBP_RESPONSE_STRING_NOT_ENOUGH_ATTRIBS \
+	"the packet received does not contain the " \
+	"required attributes for the requested action"
+
+#define DBP_RESPONSE_STRING_EXPECTING_DATA \
+	"send data"
+
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
 #define ERRORS_HANDLE_STDOLOG	0b0011

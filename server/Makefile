@@ -48,8 +48,8 @@ SOURCEFILES= \
 	./logger/logs.c \
 	./threading/threads.c \
 	./errors/errorhandler.c \
-	./data-structures/linked_list.c
-
+	./data-structures/linked_list.c \
+	./protocol/response.c
 
 
 OBJFILES=${SOURCEFILES:c=o}
