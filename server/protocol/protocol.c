@@ -228,6 +228,12 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 	request->instance	= (char*)protocol;
 	request->header_table   = dbp_headers_make_table(request->header_list);
 
+	result	= dbp_read_action(request);
+	if (result != DBP_CONNECTION_NOERROR)
+	{
+		return(result);
+	}
+
 	enum dbp_attribs_enum *asserts = dbp_call_asserts[request->action];
 	boolean assert	= dbp_list_assert(request->header_table, asserts
 		, DBP_ACTIONS_COUNT);

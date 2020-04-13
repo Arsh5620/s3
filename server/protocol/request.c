@@ -60,7 +60,7 @@ ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
 	return(DBP_CONNECTION_NOERROR);
 }
 
-enum dbp_actions_enum dbp_read_action(dbp_request_s *request)
+int dbp_read_action(dbp_request_s *request)
 {
 	key_value_pair_s pair   = {0};
 	my_list_s list	= request->header_list;
@@ -75,7 +75,8 @@ enum dbp_actions_enum dbp_read_action(dbp_request_s *request)
 
 	dbp_header_keys_s action	= attribs[0];
 	int actionval	= DBP_ACTION_NOTVALID;
-	if (memcmp(pair.key, action.string, pair.key_length) == 0) 
+	if (action.strlen == pair.key_length
+		&& memcmp(pair.key, action.string, action.strlen) == 0) 
 	{
 		// now here to check the action that the client is requesting.
 		actionval	= binary_search(actions
@@ -89,7 +90,8 @@ enum dbp_actions_enum dbp_read_action(dbp_request_s *request)
 	{
 		return(DBP_CONNECTION_WARN_ACTION_INVALID);
 	}
-	return(actionval);
+	request->action	= actionval;
+	return(DBP_CONNECTION_NOERROR);
 }
 
 
