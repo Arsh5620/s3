@@ -2,6 +2,7 @@
 #define PROTOCOL_INCLUDE_GAURD
 
 #include <stdio.h>
+#include <assert.h>
 #include "../networking/network.h"
 #include "../errors/errorhandler.h"
 #include "../files/file.h"
@@ -19,20 +20,21 @@
 #define DBP_TEMP_FORMAT			"%s/download-fn(%ld).tmp"
 #define DBP_TEMP_DIR			"temp"
 #define DBP_CONFIG_FILENAME		"config.a"
+#define DBP_RESPONSE_FORMAT		"response=%3d\r\n"
 
 enum dbp_errors_enum {
 	DBP_CONNECTION_NOERROR	= 0
 	, DBP_CONNECTION_WARN
-	, DBP_CONNECTION_ERROR_ENV_FAILED = 128
+	, DBP_CONNECTION_ERROR_READ
+	, DBP_CONNECTION_ERROR_ENV_FAILED
+	, DBP_CONNECTION_ERROR_CORRUPTION 
 };
 
 enum dbp_warns_enum {
-	DBP_CONNECTION_WARN_CORRUPTION = 128
-	, DBP_CONNECTION_WARN_READERROR
+	DBP_CONNECTION_NOWARN	= 4096
 	, DBP_CONNECTION_WARN_PARSEERROR
 	, DBP_CONNECTION_WARN_EMPTY
 	, DBP_CONNECTION_WARN_ACTION_INVALID
-	, DBP_CONNECTION_WARN_NO_ATTRIBS
 	, DBP_CONNECTION_WARN_THIN_ATTRIBS
 };
 
@@ -55,6 +57,15 @@ enum dbp_attribs_enum {
 enum dbp_shutdown_enum {
 	DBP_CONNECTION_SHUTDOWN_FLOW
 	, DBP_CONNECTION_SHUTDOWN_CORRUPTION
+};
+
+enum dbp_response_code {
+	DBP_RESPONSE_DONE	= 1
+	, DBP_RESPONSE_NOT_AN_ACTION = 32
+	, DBP_RESPONSE_CORRUPTED_PACKET
+	, DBP_RESPONSE_EMPTY_PACKET
+	, DBP_RESPONSE_PARSER_ERROR
+	, DBP_RESPONSE_NOT_ENOUGH_ATTRIBS
 };
 
 typedef struct {
@@ -96,7 +107,6 @@ typedef struct {
 	 * can still continue the connection for more requests 
 	 */
 	enum dbp_errors_enum error;
-	enum dbp_warns_enum warn;
 
 	/*
 	 * header_* will have all the information related to the entire header
@@ -133,6 +143,7 @@ typedef struct {
 	 * failure after a call to the requested action. 
 	 */
 	int response_code;
+	string_s data_string;
 	char *instance;
 } dbp_response_s;
 
@@ -162,7 +173,6 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol);
 
 void dbp_shutdown_connection(dbp_protocol_s protocol
 	, enum dbp_shutdown_enum type);
-int dbp_response_write(dbp_response_s *response);
 ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request);
 
 int dbp_posthook_notification(dbp_request_s *request, dbp_response_s *response);
@@ -185,6 +195,10 @@ int dbp_setup_environment();
 int dbp_action_prehook(dbp_request_s *request);
 int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response);
 void dbp_request_cleanup();
-int dbp_handle_warns(enum dbp_errors_enum warn);
+int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn);
 int dbp_handle_errors(enum dbp_errors_enum error, int *shutdown);
+
+int dbp_response_write(dbp_response_s *response);
+string_s dbp_response_make_header(dbp_response_s *response);
+ulong dbp_response_make_magic(dbp_response_s *response);
 #endif //PROTOCOL_INCLUDE_GAURD

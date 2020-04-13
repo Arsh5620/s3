@@ -1,6 +1,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <assert.h>
 #include "protocol.h"
 
 // the function will attempt to find the most common attributes
@@ -113,12 +114,22 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol)
 
 		int shutdown	= DBP_CONNECTION_SHUTDOWN_FLOW;
 
-		for(enum dbp_errors_enum error = 0; error == DBP_CONNECTION_NOERROR;)
+		for(enum dbp_errors_enum error = 0;
+			error == DBP_CONNECTION_NOERROR || error == DBP_CONNECTION_WARN;)
 		{
+			dbp_response_s response	= {0};
+			dbp_request_s request	= {0};
+			protocol->current_response	= &response;
+			protocol->current_request	= &request;
+			response.instance	= (char*)protocol;
+			request.instance	= (char*)protocol;
+
 			error	= dbp_protocol_nextrequest(protocol);
+
 			printf("dbp_next returned value: %d\n", error);
-			// dbp_handle_errors(error, &shutdown);
-			// dbp_handle_warns(protocol->current_request->warn);
+
+			dbp_handle_errors(error, &shutdown);
+			error	= dbp_handle_warns(protocol, error);
 		}
 
 		dbp_shutdown_connection(*protocol, shutdown);
@@ -134,13 +145,77 @@ int dbp_handle_errors(enum dbp_errors_enum error, int *shutdown)
 	return(0);
 }
 
-int dbp_handle_warns(enum dbp_errors_enum warn)
+int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
 {
-	if(warn == DBP_CONNECTION_WARN)
+	dbp_response_s *response 	= protocol->current_response;
+	/* Here we will try to recover the connection after a possible crash */
+	switch (warn)
 	{
-		printf("error message.");
+	/**
+	 * read all the data from the socket, and tell the 
+	 * client that action is not supported 
+	 * */
+	case DBP_CONNECTION_WARN_ACTION_INVALID:
+	{
+		response->response_code	= DBP_RESPONSE_NOT_AN_ACTION;
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_INVALID_ACTION);
 	}
-	return(0);
+	break;
+
+	/**
+	 * connection header is empty and does not contain key value pairs. 
+	 * reply to the client with connection empty error
+	 */
+	case DBP_CONNECTION_WARN_EMPTY:
+	{
+		response->response_code	= DBP_RESPONSE_EMPTY_PACKET;
+		response->data_string	= STRING_S(DBP_RESPONSE_STRING_EMPTY);
+	}
+	break;
+
+	/**
+	 * There was an error parsing the header, read all the data and clear
+	 * the connection for further use. 
+	 */
+	case DBP_CONNECTION_WARN_PARSEERROR:
+	{
+		response->response_code	= DBP_RESPONSE_PARSER_ERROR;
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_PARSER_ERROR);
+	}
+	break;
+
+	/**
+	 * header is missing some of the required attributes for the action
+	 * send the client response with all "required" attributes. 
+	 */
+	case DBP_CONNECTION_WARN_THIN_ATTRIBS:
+	{
+		response->response_code	= DBP_RESPONSE_NOT_ENOUGH_ATTRIBS;
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_NOT_ENOUGH_ATTRIBS);
+	}	
+	break;
+	
+	/**
+	 * headers are correct, we can start accepting data now. 
+	 * Until now, the client should not have started sending data
+	 */
+	case DBP_CONNECTION_NOWARN:
+	{
+		response->response_code	= DBP_RESPONSE_DONE;
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_EXPECTING_DATA);
+	}
+	break;
+	default:
+		// other warnings must be treated as error, and program will exit
+		return(warn);
+	}
+
+	dbp_response_write(response);
+	return(DBP_CONNECTION_WARN);
 }
 
 void dbp_shutdown_connection(dbp_protocol_s protocol
@@ -192,8 +267,7 @@ ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_ABORTED_CORRUPTION
 			, header_1.magic);
-		request->warn	= DBP_CONNECTION_WARN_CORRUPTION;
-		return(DBP_CONNECTION_WARN);
+		return(DBP_CONNECTION_ERROR_CORRUPTION);
 	}
 
 	network_data_s header_raw	= 
@@ -203,8 +277,7 @@ ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
 	{
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_READ_HEADERS_FAILED);
-		request->warn	= DBP_CONNECTION_WARN_READERROR;
-		return(DBP_CONNECTION_WARN);
+		return(DBP_CONNECTION_ERROR_READ);
 	}
 
 	lexer_status_s status	= {0};
@@ -214,8 +287,7 @@ ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
 	if (status.errno != 0) 
 	{
 		/* this means that an error occured while processing the input */
-		request->warn	= DBP_CONNECTION_WARN_PARSEERROR;
-		return(DBP_CONNECTION_WARN);
+		return(DBP_CONNECTION_WARN_PARSEERROR);
 	}
 	request->header_list	= header_list;
 	return(DBP_CONNECTION_NOERROR);
@@ -231,8 +303,7 @@ enum dbp_actions_enum dbp_read_action(dbp_request_s *request)
 	} 
 	else 
 	{
-		request->warn  = DBP_CONNECTION_WARN_EMPTY;
-		return(DBP_ACTION_NOTVALID);
+		return(DBP_CONNECTION_WARN_EMPTY);
 	}
 
 	dbp_header_keys_s action	= attribs[0];
@@ -249,7 +320,7 @@ enum dbp_actions_enum dbp_read_action(dbp_request_s *request)
 
 	if (actionval  == DBP_ACTION_NOTVALID)
 	{
-		request->warn	= DBP_CONNECTION_WARN_ACTION_INVALID;
+		return(DBP_CONNECTION_WARN_ACTION_INVALID);
 	}
 	return(actionval);
 }
@@ -257,19 +328,6 @@ enum dbp_actions_enum dbp_read_action(dbp_request_s *request)
 void dbp_request_cleanup()
 {
 	/* TODO:: */
-}
-
-ulong dbp_request_error(ulong result)
-{
-	if (result == DBP_CONNECTION_WARN)
-	{
-		dbp_request_cleanup();
-		return(DBP_CONNECTION_NOERROR);
-	}
-	else 
-	{
-		return(result);
-	}
 }
 
 // this function should be called before dispatching the request
@@ -295,25 +353,25 @@ int dbp_list_assert(hash_table_s table,
 // returns 0 for no-error, any other number for error or conn close request
 ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 {
-	dbp_request_s request	= {0};
-	dbp_response_s response	= {0};
+	dbp_request_s *request	= protocol->current_request;
+	dbp_response_s *response	= protocol->current_response;
 
-	int result	= dbp_request_readheaders(*protocol, &request);
+	int result	= dbp_request_readheaders(*protocol, request);
 	if (result != DBP_CONNECTION_NOERROR)
 	{
-		return(dbp_request_error(result));
+		return(result);
 	}
 	
-	request.instance	= (char*)protocol;
-	request.header_table   = dbp_headers_make_table(request.header_list);
+	request->instance	= (char*)protocol;
+	request->header_table   = dbp_headers_make_table(request->header_list);
 
-	enum dbp_attribs_enum *asserts = dbp_call_asserts[request.action];
-	boolean assert	= dbp_list_assert(request.header_table, asserts
+	enum dbp_attribs_enum *asserts = dbp_call_asserts[request->action];
+	boolean assert	= dbp_list_assert(request->header_table, asserts
 		, sizeof(dbp_call_asserts) / sizeof(dbp_call_asserts[0]));
 
 	if (assert == FALSE)
 	{
-		return(dbp_request_error(DBP_CONNECTION_WARN_THIN_ATTRIBS));
+		return(DBP_CONNECTION_WARN_THIN_ATTRIBS);
 	}
 	
 	//right after we have confirmed that all the required attribs
@@ -322,23 +380,23 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 	
 	dbp_protocol_attribs_s dbp_parsed_attribs	= {0};
 
-	config_read_all(request.header_list
+	config_read_all(request->header_list
 		, attribs_parse
 		, sizeof(attribs_parse) / sizeof(struct config_parse)
 		, (char*)&dbp_parsed_attribs);
 
-	result = dbp_action_prehook(&request);
+	result = dbp_action_prehook(request);
 
 	if (result != DBP_CONNECTION_NOERROR)
 	{
-		return(dbp_request_error(result));
+		return(result);
 	}
 
-	if (request.header_info.data_length) 
+	if (request->header_info.data_length) 
 	{
 		if (dbp_setup_environment() == SUCCESS) 
 		{
-			request.temp_file	= dbp_download_file(&request);
+			request->temp_file	= dbp_download_file(request);
 		} 
 		else 
 		{
@@ -347,29 +405,22 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 		}
 	}
 
-	result	= dbp_action_posthook(&request, &response);
+	result	= dbp_action_posthook(request, response);
 	
 	if (result != DBP_CONNECTION_NOERROR)
 	{
-		return(dbp_request_error(result));
+		return(result);
 	}
 	
-	result	= dbp_response_write(&response);
+	result	= dbp_response_write(response);
 	
 	if (result != DBP_CONNECTION_NOERROR)
 	{
-		return(dbp_request_error(result));
+		return(result);
 	}
 
-	m_free(request.temp_file.filename.address, MEMORY_FILE_LINE);
-
+	m_free(request->temp_file.filename.address, MEMORY_FILE_LINE);
 	return(DBP_CONNECTION_NOERROR);
-}
-
-int dbp_response_write(dbp_response_s *response)
-{
-	// TODO: response write. 
-	return(0);
 }
 
 file_write_s dbp_download_file(dbp_request_s *request)
