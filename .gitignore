@@ -5,7 +5,8 @@ server/logs/*
 server/temp/*
 build
 tests
-client
 unit-testing
 /uml/*
 !/uml/chat.vpp
+client/*
+!client/client.py

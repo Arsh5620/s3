@@ -20,6 +20,8 @@ int dbp_response_write(dbp_response_s *response)
 	network_write_stream(connection
 		, response->data_string.address
 		, response->data_string.length);
+
+	return(SUCCESS);
 }
 
 string_s dbp_response_make_header(dbp_response_s *response)
