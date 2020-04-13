@@ -68,8 +68,8 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol)
 
 			printf("dbp_next returned value: %d\n", error);
 
-			dbp_handle_errors(error, &shutdown);
 			error	= dbp_handle_warns(protocol, error);
+			dbp_handle_errors(error, &shutdown);
 		}
 
 		dbp_shutdown_connection(*protocol, shutdown);
@@ -78,11 +78,10 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol)
 		, PROTOCOL_SERVER_SHUTDOWN);
 }
 
-int dbp_handle_errors(enum dbp_errors_enum error, int *shutdown)
+void dbp_handle_errors(enum dbp_errors_enum error, int *shutdown)
 {
-	if(error != DBP_CONNECTION_NOERROR)
+	if(error != DBP_CONNECTION_NOERROR && error!= DBP_CONNECTION_WARN)
 		*shutdown	= DBP_CONNECTION_SHUTDOWN_CORRUPTION;
-	return(0);
 }
 
 int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
@@ -144,9 +143,8 @@ int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
 	 */
 	case DBP_CONNECTION_NOWARN:
 	{
-		response->response_code	= DBP_RESPONSE_DONE;
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_EXPECTING_DATA);
+	 	// IGNORE.
+		return(DBP_CONNECTION_WARN);
 	}
 	break;
 	default:
@@ -156,6 +154,31 @@ int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
 
 	dbp_response_write(response);
 	return(DBP_CONNECTION_WARN);
+}
+
+int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
+{
+	switch (code)
+	{
+	case DBP_RESPONSE_DATA_SEND:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_SEND_DATA);
+	}
+	break;
+	
+	case DBP_RESPONSE_PACKET_OK:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_PACKET_OK);
+	}
+	break;
+	default:
+		break;
+	}
+
+	response->response_code	= code;
+	return(dbp_response_write(response));
 }
 
 void dbp_shutdown_connection(dbp_protocol_s protocol
@@ -232,11 +255,20 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 		return(result);
 	}
 
+	if (dbp_handle_response(response, DBP_RESPONSE_DATA_SEND) != SUCCESS)
+	{
+		return(DBP_CONNECTION_ERROR_WRITEFAILED);
+	}
+
 	if (request->header_info.data_length) 
 	{
 		if (dbp_setup_environment() == SUCCESS) 
 		{
-			request->temp_file	= dbp_download_file(request);
+			result	= dbp_request_data(protocol, request);
+			if (result != DBP_CONNECTION_NOERROR)
+			{
+				return(result);
+			}
 		} 
 		else 
 		{
@@ -252,11 +284,16 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 		return(result);
 	}
 	
-	result	= dbp_response_write(response);
+	// result	= dbp_response_write(response);
 	
-	if (result != DBP_CONNECTION_NOERROR)
+	// if (result != DBP_CONNECTION_NOERROR)
+	// {
+	// 	return(result);
+	// }
+
+	if (dbp_handle_response(response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
 	{
-		return(result);
+		return(DBP_CONNECTION_ERROR_WRITEFAILED);
 	}
 
 	m_free(request->temp_file.filename.address, MEMORY_FILE_LINE);

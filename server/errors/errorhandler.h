@@ -174,8 +174,11 @@
 	"the packet received does not contain the " \
 	"required attributes for the requested action"
 
-#define DBP_RESPONSE_STRING_EXPECTING_DATA \
+#define DBP_RESPONSE_STRING_SEND_DATA \
 	"send data"
+
+#define DBP_RESPONSE_STRING_PACKET_OK \
+	"packet ok"
 
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
