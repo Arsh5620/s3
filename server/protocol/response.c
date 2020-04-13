@@ -73,7 +73,7 @@ ulong dbp_response_make_magic(dbp_response_s *response)
 	ulong i	= ((ulong)DBP_PROTOCOL_MAGIC << (7*8));
 	
 	// second then we divide header_length by 16 and right shift by 6 bytes
-	i |= (response->header_info.header_length >> 4) << (6*8);
+	i |= ((ulong)response->header_info.header_length >> 4) << (6*8);
 
 	i |= (response->header_info.data_length & 0x0000FFFFFFFFFF);
 	return(i);

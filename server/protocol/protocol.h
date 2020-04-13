@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include "../networking/network.h"
 #include "../errors/errorhandler.h"
 #include "../files/file.h"
@@ -21,7 +24,7 @@
 #define DBP_TEMP_DIR			"temp"
 #define DBP_CONFIG_FILENAME		"config.a"
 #define DBP_RESPONSE_FORMAT		"response=%3d\r\n"
-
+ 
 enum dbp_errors_enum {
 	DBP_CONNECTION_NOERROR	= 0
 	, DBP_CONNECTION_WARN
@@ -85,6 +88,14 @@ typedef struct {
 	string_s folder_name;
 	uint crc32;
 } dbp_protocol_attribs_s;
+
+#define DBP_ACTIONS_COUNT	4
+#define DBP_ATTRIBS_COUNT	4
+
+extern dbp_header_keys_s attribs[];
+extern dbp_header_keys_s actions[];
+extern enum dbp_attribs_enum dbp_call_asserts[][DBP_ATTRIBS_COUNT];
+extern struct config_parse attribs_parse[];
 
 #define DBP_STRINGKEY(str, code) \
 	(dbp_header_keys_s) { \

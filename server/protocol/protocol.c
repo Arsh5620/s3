@@ -1,65 +1,5 @@
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <assert.h>
 #include "protocol.h"
 
-// the function will attempt to find the most common attributes
-// that are mostly used by all the "actions", attributes that 
-// are specific (one-to-one) to an "action" is not handled here. 
-
-static dbp_header_keys_s attribs[] = 
-{
-	DBP_STRINGKEY("action", DBP_ATTRIB_ACTION)
-	, DBP_STRINGKEY("crc", DBP_ATTRIB_CRC)
-	, DBP_STRINGKEY("filename", DBP_ATTRIB_FILENAME)
-	, DBP_STRINGKEY("folder", DBP_ATTRIB_FOLDER)
-};
-
-static dbp_header_keys_s actions[] = 
-{
-	DBP_STRINGKEY("create", DBP_ACTION_CREATE)
-	, DBP_STRINGKEY("notification", DBP_ACTION_NOTIFICATION)
-	, DBP_STRINGKEY("request", DBP_ACTION_REQUEST)
-	, DBP_STRINGKEY("update", DBP_ACTION_UPDATE)
-};
-
-static enum dbp_attribs_enum dbp_call_asserts[]
-[sizeof(attribs) / sizeof(enum dbp_attribs_enum)] = {
-	// ACTION_CREATE
-	{DBP_ATTRIB_ACTION, DBP_ATTRIB_CRC, DBP_ATTRIB_FILENAME, DBP_ATTRIB_FOLDER}
-	, {DBP_ATTRIB_ACTION, 0, 0} // ACTION_NOTIFICATION
-	, {DBP_ATTRIB_ACTION, 0, 0} // ACTION_REQUEST
-	, {DBP_ATTRIB_ACTION, 0, 0} // ACTION_UPDATE
-};
-
-struct config_parse attribs_parse[] = {
-	STRUCT_CONFIG_PARSE("action", DBP_ATTRIB_ACTION
-		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
-	, STRUCT_CONFIG_PARSE("crc", DBP_ATTRIB_CRC
-		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
-	, STRUCT_CONFIG_PARSE("filename", DBP_ATTRIB_FILENAME
-		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
-	, STRUCT_CONFIG_PARSE("folder", DBP_ATTRIB_FOLDER
-		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
-};
-
-size_t dbp_header_code_compare(void *memory, char *str, size_t strlen)
-{
-	dbp_header_keys_s *s    = (dbp_header_keys_s*) memory;
-
-	int cmp = memcmp(str, s->string, strlen); // order does matter it is a - b
-
-	if (cmp == 0 && s->strlen > strlen)
-	{
-		cmp--;
-	}
-	else if (cmp == 0 && s->strlen < strlen)
-	{
-		cmp++;
-	}
-	return(cmp);
-}
 
 /** 
  * This function will initialize the connection and everything
@@ -250,106 +190,6 @@ void dbp_cleanup(dbp_protocol_s protocol)
 	logs_close();
 }
 
-ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
-{
-	network_data_atom_s header_read	= network_read_long(&protocol.connection);
-	dbp_header_s header_1 = {0};
-
-	long magic	= header_read._u.long_t;
-	header_1.data_length	= dbp_data_length(magic);
-	header_1.header_length	= dbp_header_length(magic);
-	header_1.magic	= dbp_header_magic(magic);
-
-	request->header_info = header_1;
-	
-	if (header_1.magic != DBP_PROTOCOL_MAGIC)
-	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
-			, PROTOCOL_ABORTED_CORRUPTION
-			, header_1.magic);
-		return(DBP_CONNECTION_ERROR_CORRUPTION);
-	}
-
-	network_data_s header_raw	= 
-		network_read_stream(&protocol.connection, header_1.header_length);
-	
-	if (header_raw.error_code)
-	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
-			, PROTOCOL_READ_HEADERS_FAILED);
-		return(DBP_CONNECTION_ERROR_READ);
-	}
-
-	lexer_status_s status	= {0};
-	my_list_s header_list	= 
-		parser_parse(&status, header_raw.data_address, header_raw.data_length);
-	
-	if (status.errno != 0) 
-	{
-		/* this means that an error occured while processing the input */
-		return(DBP_CONNECTION_WARN_PARSEERROR);
-	}
-	request->header_list	= header_list;
-	return(DBP_CONNECTION_NOERROR);
-}
-
-enum dbp_actions_enum dbp_read_action(dbp_request_s *request)
-{
-	key_value_pair_s pair   = {0};
-	my_list_s list	= request->header_list;
-	if (list.count > 0)
-	{
-		pair	= *(key_value_pair_s*) my_list_get(list, 0);
-	} 
-	else 
-	{
-		return(DBP_CONNECTION_WARN_EMPTY);
-	}
-
-	dbp_header_keys_s action	= attribs[0];
-	int actionval	= DBP_ACTION_NOTVALID;
-	if (memcmp(pair.key, action.string, pair.key_length) == 0) 
-	{
-		// now here to check the action that the client is requesting.
-		actionval	= binary_search(actions
-			, sizeof(dbp_header_keys_s)
-			, sizeof(actions) / sizeof(dbp_header_keys_s)
-			, pair.value , pair.value_length
-			, dbp_header_code_compare);
-	}
-
-	if (actionval  == DBP_ACTION_NOTVALID)
-	{
-		return(DBP_CONNECTION_WARN_ACTION_INVALID);
-	}
-	return(actionval);
-}
-
-void dbp_request_cleanup()
-{
-	/* TODO:: */
-}
-
-// this function should be called before dispatching the request
-// to make sure that the header contains all the required key:value 
-// pairs needed by the called function.
-int dbp_list_assert(hash_table_s table, 
-	enum dbp_attribs_enum *match, int count)
-{
-	for (long i=0; i<count; i++)
-	{
-		enum dbp_attribs_enum attrib	= match[i];
-		hash_input_u key	= {.number = attrib};
-		hash_table_bucket_s bucket	= hash_table_get(table, key, NULL_ZERO);
-		if (bucket.is_occupied == 0)
-		{
-			return(FALSE);
-		}
-	}
-	return(TRUE);
-}
-
-
 // returns 0 for no-error, any other number for error or conn close request
 ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 {
@@ -367,7 +207,7 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 
 	enum dbp_attribs_enum *asserts = dbp_call_asserts[request->action];
 	boolean assert	= dbp_list_assert(request->header_table, asserts
-		, sizeof(dbp_call_asserts) / sizeof(dbp_call_asserts[0]));
+		, DBP_ACTIONS_COUNT);
 
 	if (assert == FALSE)
 	{
@@ -382,7 +222,7 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 
 	config_read_all(request->header_list
 		, attribs_parse
-		, sizeof(attribs_parse) / sizeof(struct config_parse)
+		, DBP_ATTRIBS_COUNT
 		, (char*)&dbp_parsed_attribs);
 
 	result = dbp_action_prehook(request);
@@ -423,70 +263,6 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 	return(DBP_CONNECTION_NOERROR);
 }
 
-file_write_s dbp_download_file(dbp_request_s *request)
-{
-	static int counter = 0;
-
-	char *temp_file;
-	file_write_s fileinfo  =  {0};
-	fileinfo.size = request->header_info.data_length;
-
-	long length  = strings_sprintf(&temp_file, DBP_TEMP_FORMAT
-		, DBP_TEMP_DIR
-		, ++counter);
-	
-	FILE *temp  = fopen(temp_file, FILE_MODE_WRITEONLY);
-
-	if (temp == NULL || length <= 0) 
-	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
-			, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
-		fileinfo.size   = -1;
-		return(fileinfo);
-	}
-	fileinfo.filename.address   = temp_file;
-	fileinfo.filename.length    = length;
-
-	clock_t starttime = clock();
-
-	dbp_protocol_s *protocol	= (dbp_protocol_s*)request->instance;
-	int download_status   = 
-		file_download(temp, &protocol->connection, &fileinfo);
-
-	clock_t endtime = clock();
-
-	double time_elapsed = 
-		(((double)(endtime - starttime)) / CLOCKS_PER_SEC) * 1000;
-
-	// file download size in bits/second
-	double speed = (((double)fileinfo.size / 1024 / 128) 
-		* (1000 / time_elapsed));
-
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
-		, PROTOCOL_DOWNLOAD_COMPLETE
-		, request->attribs.file_name.length 
-		, request->attribs.file_name.address 
-		, fileinfo.size , download_status
-		, time_elapsed , speed);
-
-	fclose(temp);
-	return(fileinfo);
-}
-
-int dbp_setup_environment()
-{
-	// first make sure the temporary file directory exists. 
-	int result  = file_dir_mkine(DBP_TEMP_DIR);
-	if(result != FILE_DIR_EXISTS)
-	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
-			, PROTOCOL_SETUP_ENV_DIR_PERMISSIONS
-			, DBP_TEMP_DIR);
-		return(FAILED);
-	}
-	return(SUCCESS);
-}
-
 int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response)
 {
 	int result = 0;
@@ -515,69 +291,4 @@ int dbp_action_prehook(dbp_request_s *request)
 			break;
 	}
 	return(result);
-}
-
-/*
- * this function will go through the list of the key:value pairs
- * and add those key value pairs to a hash table, while making
- * sure that there are not duplicates, if duplicates are found
- * the key:value pair found later is ignored.
- */
-hash_table_s dbp_headers_make_table(my_list_s list)
-{
-	int count	= list.count;
-	hash_table_s table  = hash_table_init(10, 0);
-
-	for (long i=0; i<count; ++i) 
-	{
-		key_value_pair_s pair	=
-			*(key_value_pair_s*) my_list_get(list, i);
-		
-		int index	= binary_search((void*)attribs
-			, sizeof(dbp_header_keys_s)
-			, sizeof(attribs) / sizeof(dbp_header_keys_s)
-			, pair.key, pair.key_length
-			, dbp_header_code_compare);
-
-		// will be -1 if an attribute is not supported (YET!)
-		// which is also ignored. 
-		if (index != -1) 
-		{  
-			dbp_header_keys_s attr  = attribs[index];
-
-			hash_table_bucket_s b   = hash_table_get(table
-				, (hash_input_u) { .address = attr.string }
-				, attr.strlen);
-
-			if (b.is_occupied)
-			{
-				continue;
-			}
-
-			hash_table_bucket_s bucket  = {0};
-			bucket.key.number	= attr.attrib_code;
-			bucket.value.number	= index;
-
-			hash_table_add(&table, bucket);
-		}
-	}
-	return(table);
-}
-
-inline short dbp_header_length(size_t magic)
-{
-	/* shr by 6 bytes, and multiply by 16 to get header size */
-	return(((magic & 0x00FF000000000000) >> (6*8)) * 16);
-}
-
-inline char dbp_header_magic(size_t magic)
-{
-	/* shr by 7 to get the magic byte */
-	return((magic & 0xFF00000000000000) >> (7*8));
-}
-
-inline size_t dbp_data_length(size_t magic)
-{
-	/* the last 6 bytes are used to store the size of the data */
-	return(magic & 0x0000FFFFFFFFFFFF);
 }

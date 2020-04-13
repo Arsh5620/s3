@@ -49,7 +49,10 @@ SOURCEFILES= \
 	./threading/threads.c \
 	./errors/errorhandler.c \
 	./data-structures/linked_list.c \
-	./protocol/response.c
+	./protocol/response.c \
+	./protocol/download.c \
+	./protocol/constants.c \
+	./protocol/request.c
 
 
 OBJFILES=${SOURCEFILES:c=o}
