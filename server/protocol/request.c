@@ -84,6 +84,7 @@ int dbp_read_action(dbp_request_s *request)
 			, DBP_ACTIONS_COUNT
 			, pair.value , pair.value_length
 			, dbp_header_code_compare);
+		actionval	= actions[actionval].attrib_code;
 	}
 
 	if (actionval  == DBP_ACTION_NOTVALID)

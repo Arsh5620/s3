@@ -119,8 +119,8 @@ while(1):
 
 	packet_response	= PacketResponseReader()
 	response_data_code	= packet_response.getDictionary()["response"]
-	print("Server response said : " + packet_response.getData())
 	print("Server response code is : " + response_data_code)
+	print("Server response said : " + packet_response.getData())
 	if (response_data_code == "1"):
 		magic_data += file_len
 		sock.send(magic_data.to_bytes(8, byteorder = "little"))
@@ -132,7 +132,7 @@ while(1):
 		data_response_code	= packet_response2.getDictionary()["response"]
 		print("Response code for data sent : " + data_response_code)
 		print("Response data for data sent : " + packet_response2.getData())
-		if (packet_response2 == "2"):
+		if (data_response_code == "2"):
 			print("Server accepted the data that was sent")
 		else:
 			print("Server rejected the data that was sent")

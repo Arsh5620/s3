@@ -1,6 +1,5 @@
 #include "protocol.h"
 
-
 /** 
  * This function will initialize the connection and everything
  * It will however exit for any error that is not recoverable.
@@ -69,7 +68,7 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol)
 			printf("dbp_next returned value: %d\n", error);
 
 			error	= dbp_handle_warns(protocol, error);
-			dbp_handle_errors(error, &shutdown);
+			dbp_handle_errors(&response, error, &shutdown);
 		}
 
 		dbp_shutdown_connection(*protocol, shutdown);
@@ -78,10 +77,44 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol)
 		, PROTOCOL_SERVER_SHUTDOWN);
 }
 
-void dbp_handle_errors(enum dbp_errors_enum error, int *shutdown)
+void dbp_handle_errors(dbp_response_s *response, 
+	enum dbp_errors_enum error, int *shutdown)
 {
-	if(error != DBP_CONNECTION_NOERROR && error!= DBP_CONNECTION_WARN)
+	if (error != DBP_CONNECTION_NOERROR && error!= DBP_CONNECTION_WARN)
+	{
+		switch (error)
+		{
+		case DBP_CONNECTION_ERROR_CORRUPTION:
+		{
+			response->response_code	= DBP_RESPONSE_CORRUPTED_PACKET;
+			response->data_string	=
+				STRING_S(DBP_RESPONSE_STRING_HEADER_CORRUPTED);
+		}
+		break;
+
+		case DBP_CONNECTION_ERROR_DATAHEADERS:
+		{
+			response->response_code	= 
+				DBP_RESPONSE_CORRUPTED_DATAHEADERS;
+			response->data_string	=
+				STRING_S(DBP_RESPONSE_STRING_DATA_HEADER_CORRUPTED);
+		}
+		break;
+		
+		case DBP_CONNECTION_ERROR_ENV_FAILED:
+		{
+			response->response_code	= DBP_RESPONSE_SETTING_UP_ENV_FAILED;
+			response->data_string	=
+				STRING_S(DBP_RESPONSE_STRING_ENV_FAILED);
+		}
+		break;
+		default:
+			break;
+		}
+
+		dbp_response_write(response);
 		*shutdown	= DBP_CONNECTION_SHUTDOWN_CORRUPTION;
+	}
 }
 
 int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
@@ -184,7 +217,7 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 void dbp_shutdown_connection(dbp_protocol_s protocol
 	, enum dbp_shutdown_enum type)
 {
-	if(close(protocol.connection.client) == 0)
+	if(shutdown(protocol.connection.client, SHUT_RDWR) == 0)
 	{
 		char *reason;
 		switch (type) 
@@ -234,7 +267,8 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 		return(result);
 	}
 
-	enum dbp_attribs_enum *asserts = dbp_call_asserts[request->action];
+	enum dbp_attribs_enum *asserts = 
+		dbp_call_asserts[request->action - DBP_ATTRIB_ACTION];
 	boolean assert	= dbp_list_assert(request->header_table, asserts
 		, DBP_ACTIONS_COUNT);
 

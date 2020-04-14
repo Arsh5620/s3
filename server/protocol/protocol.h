@@ -67,11 +67,15 @@ enum dbp_shutdown_enum {
 enum dbp_response_code {
 	DBP_RESPONSE_DATA_SEND	= 1
 	, DBP_RESPONSE_PACKET_OK
+	/* warnings but we can continue the connection */
 	, DBP_RESPONSE_NOT_AN_ACTION = 32
-	, DBP_RESPONSE_CORRUPTED_PACKET
 	, DBP_RESPONSE_EMPTY_PACKET
 	, DBP_RESPONSE_PARSER_ERROR
 	, DBP_RESPONSE_NOT_ENOUGH_ATTRIBS
+	/* errors and the connection will need to be closed */
+	, DBP_RESPONSE_CORRUPTED_PACKET = 128
+	, DBP_RESPONSE_CORRUPTED_DATAHEADERS
+	, DBP_RESPONSE_SETTING_UP_ENV_FAILED
 };
 
 typedef struct {
@@ -211,12 +215,14 @@ int dbp_action_prehook(dbp_request_s *request);
 int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response);
 void dbp_request_cleanup();
 int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn);
-void dbp_handle_errors(enum dbp_errors_enum error, int *shutdown);
-
+void dbp_handle_errors(dbp_response_s *response, 
+	enum dbp_errors_enum error, int *shutdown);
+	
 int dbp_response_write(dbp_response_s *response);
 string_s dbp_response_make_header(dbp_response_s *response);
 ulong dbp_response_make_magic(dbp_response_s *response);
 
 int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request);
 int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request);
+int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code);
 #endif //PROTOCOL_INCLUDE_GAURD
