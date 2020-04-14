@@ -180,6 +180,15 @@
 #define DBP_RESPONSE_STRING_PACKET_OK \
 	"packet ok"
 
+#define DBP_RESPONSE_STRING_HEADER_CORRUPTED \
+	"packet header corrupted, connection rejected"
+
+#define DBP_RESPONSE_STRING_DATA_HEADER_CORRUPTED \
+	"data header corrupted, connection rejected"
+
+#define DBP_RESPONSE_STRING_ENV_FAILED \
+	"setting up environment failed, connection rejected"
+
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
 #define ERRORS_HANDLE_STDOLOG	0b0011

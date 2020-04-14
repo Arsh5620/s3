@@ -21,14 +21,16 @@ size_t config_search_compare(void *memory, char *str, size_t strlen)
 void config_read_all(my_list_s list, struct config_parse *configs
 	, int config_count, char *struct_memory)
 {
-	for (int i=0; i<list.count; ++i) {
+	for (int i=0; i<list.count; ++i) 
+	{
 		key_value_pair_s *pair = (key_value_pair_s*) my_list_get(list, i);
 		int code  = binary_search(configs
 			, sizeof(struct config_parse)
 			, config_count
 			, pair->key, pair->key_length
 			, config_search_compare);
-		if (code >= 0) {
+		if (code >= 0) 
+		{
 			struct config_parse config	= configs[code];
 			config_copy_data(struct_memory
 				, config.offset, config.size, pair, config.type);
