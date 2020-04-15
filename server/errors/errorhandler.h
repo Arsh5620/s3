@@ -161,34 +161,39 @@
 #define DBP_CONNECTION_SHUTDOWN_CLEANUP \
 	"closing sockets / closing logging subsystem"
 
-#define DBP_RESPONSE_STRING_INVALID_ACTION \
+// RESPONSE STRINGS
+
+#define DBP_RESPONSE_STRING_ACTION_INVALID \
 	"the packet received does not contain a valid action type"
 
-#define DBP_RESPONSE_STRING_EMPTY \
+#define DBP_RESPONSE_STRING_HEADER_EMPTY \
 	"the packet received was empty, and has been discarded"
 
-#define DBP_RESPONSE_STRING_PARSER_ERROR \
+#define DBP_RESPONSE_STRING_PARSE_ERROR \
 	"the packet received does not follow the correct header key format"
 
-#define DBP_RESPONSE_STRING_NOT_ENOUGH_ATTRIBS \
+#define DBP_RESPONSE_STRING_THIN_ATTRIBS \
 	"the packet received does not contain the " \
 	"required attributes for the requested action"
 
-#define DBP_RESPONSE_STRING_SEND_DATA \
+#define DBP_RESPONSE_STRING_DATA_SEND \
 	"send data"
 
 #define DBP_RESPONSE_STRING_PACKET_OK \
 	"packet ok"
 
-#define DBP_RESPONSE_STRING_HEADER_CORRUPTED \
+#define DBP_RESPONSE_STRING_CORRUPTED_PACKET \
 	"packet header corrupted, connection rejected"
 
-#define DBP_RESPONSE_STRING_DATA_HEADER_CORRUPTED \
+#define DBP_RESPONSE_STRING_CORRUPTED_DATAH \
 	"data header corrupted, connection rejected"
 
-#define DBP_RESPONSE_STRING_ENV_FAILED \
+#define DBP_RESPONSE_STRING_SETUP_ENV_FAILED \
 	"setting up environment failed, connection rejected"
 
+#define DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID \
+	"values passed to the packet as headers are rejected, try again"
+	
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
 #define ERRORS_HANDLE_STDOLOG	0b0011

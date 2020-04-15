@@ -8,6 +8,11 @@ int dbp_prehook_create(dbp_request_s *request)
 {
 	dbp_protocol_attribs_s attribs = request->attribs;
 	
+	if(STRINGS_EMPTY(attribs.file_name) 
+		|| STRINGS_EMPTY(attribs.folder_name))
+	{
+		return(DBP_CONNECTION_WARN_ATTRIB_VALUE_INVALID);
+	}
 	// if(attribs.filename.address == 0 || attribs.filename.length <= 0
 	// 	|| attribs.folder_name.address	== 0 || attribs.folder_name.length	<= 0)
 	// 	return(FAILED);
