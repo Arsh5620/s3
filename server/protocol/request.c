@@ -34,7 +34,7 @@ ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_ABORTED_CORRUPTION
 			, header_1.magic);
-		return(DBP_CONNECTION_ERROR_CORRUPTION);
+		return(DBP_CONNECTION_ERROR_CORRUPTED_PACKET);
 	}
 
 	network_data_s header_raw	= 
@@ -54,7 +54,7 @@ ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
 	if (status.errno != 0) 
 	{
 		/* this means that an error occured while processing the input */
-		return(DBP_CONNECTION_WARN_PARSEERROR);
+		return(DBP_CONNECTION_WARN_PARSE_ERROR);
 	}
 	request->header_list	= header_list;
 	return(DBP_CONNECTION_NOERROR);
@@ -70,7 +70,7 @@ int dbp_read_action(dbp_request_s *request)
 	} 
 	else 
 	{
-		return(DBP_CONNECTION_WARN_EMPTY);
+		return(DBP_CONNECTION_WARN_HEADER_EMPTY);
 	}
 
 	dbp_header_keys_s action	= attribs[0];
