@@ -137,3 +137,24 @@ int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size)
 	return(FILE_READER_SUCCESS);
 }
 
+string_s file_path_concat(string_s dir1, string_s dir2, string_s file_name)
+{
+	ulong length	= dir1.length + dir2.length + file_name.length + 1;
+	string_s path	= {0, .length = length};
+	path.address	= m_calloc(length, MEMORY_FILE_LINE);
+	strncpy(path.address, dir1.address, dir1.length);
+	strncpy(path.address + dir1.length, dir2.address, dir2.length);
+	strncpy(path.address + dir1.length + dir2.length
+		, file_name.address, file_name.length);
+	return(path);
+}
+
+int file_rename(string_s dest, string_s src)
+{
+	int result	= rename(src.address, dest.address);
+	if (result == -1)
+	{
+		perror("rename");
+	}
+	return (result == 0 ? SUCCESS : FAILED);
+}

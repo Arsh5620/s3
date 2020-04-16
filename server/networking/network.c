@@ -54,6 +54,16 @@ network_s network_connect_init_sync(int port)
 	connection.server_socket.sin_family         = AF_INET;
 	connection.server_socket.sin_port           = htons(port);
 
+#ifndef RELEASE_BUILD
+	int enable	= 1;
+	if (setsockopt(connection.server, SOL_SOCKET
+		, SO_REUSEADDR, &enable, sizeof(int)))
+	{
+		printf("Setting sock address reuse failed.");
+		exit(EXIT_FAILURE);
+	}
+#endif
+
 	int result = 0;
 	result = bind(connection.server
 		, (struct sockaddr*) &connection.server_socket

@@ -8,7 +8,7 @@ int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request)
 	} 
 	else
 	{
-		return(DBP_CONNECTION_ERROR_DATAHEADERS);
+		return(DBP_CONNECTION_ERROR_CORRUPTED_DATAH);
 	}
 	return(DBP_CONNECTION_NOERROR);
 }
