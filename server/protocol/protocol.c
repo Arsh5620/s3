@@ -192,6 +192,21 @@ int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
 			STRING_S(DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
 	}
 	break;
+
+	case DBP_CONNECTION_WARN_FILE_NOT_FOUND:
+	{
+		response->response_code	= DBP_RESPONSE_FILE_NOT_FOUND;
+		response->data_string	= STRING_S(DBP_RESPONSE_STRING_FILE_NOT_FOUND);
+	}
+	break;
+
+	case DBP_CONNECTION_WARN_FILE_UPDATE_OUTOFBOUNDS:
+	{
+		response->response_code	= DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS;
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
+	}
+	break;
 	/**
 	 * headers are correct, we can start accepting data now. 
 	 * Until now, the client should not have started sending data
@@ -208,7 +223,7 @@ int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
 	}
 
 	dbp_response_write(response);
-	return(DBP_CONNECTION_WARN);
+	return(DBP_CONNECTION_NOERROR);
 }
 
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
@@ -375,6 +390,9 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response)
 		case DBP_ACTION_CREATE:
 			result	= dbp_posthook_create(request, response);
 			break;
+		case DBP_ACTION_UPDATE:
+			result	= dbp_posthook_update(request, response);
+			break;
 	}
 	return(result);
 }
@@ -389,6 +407,9 @@ int dbp_action_prehook(dbp_request_s *request)
 			break;
 		case DBP_ACTION_CREATE:
 			result = dbp_prehook_create(request);
+			break;
+		case DBP_ACTION_UPDATE:
+			result	= dbp_prehook_update(request);
 			break;
 	}
 	return(result);

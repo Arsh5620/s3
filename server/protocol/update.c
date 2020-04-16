@@ -11,18 +11,33 @@ int dbp_prehook_update(dbp_request_s *request)
 		return(DBP_CONNECTION_WARN_ATTRIB_VALUE_INVALID);
 	}
 
-	if (!filemgmt_file_exists(&attribs.folder_name, &attribs.file_name))
+	string_s file = file_path_concat(STRING_S(FILEMGMT_FOLDER_NAME)
+		, attribs.folder_name, attribs.file_name);
+
+	FILE *file_f	= fopen(file.address, FILE_MODE_READONLY);
+	struct stat file_stats	= file_read_stat(file_f);
+	fclose(file_f);
+
+	if (!(filemgmt_file_exists(&attribs.folder_name, &attribs.file_name)
+		&& file_f != NULL))
 	{
 		return(DBP_CONNECTION_WARN_FILE_NOT_FOUND);
 	}
 
-	string_s file = file_path_concat(STRING_S(FILEMGMT_FOLDER_NAME)
-		, attribs.folder_name, attribs.file_name);
-	struct stat file_stats	= file_read_stat(file.address);
 	
+	
+	if (attribs.update_at > -1 && attribs.update_at <= file_stats.st_size)
+	{
+		// then everything is good, we can update the file. 
+		return(SUCCESS);
+	}
+	else 
+	{
+		return(DBP_CONNECTION_WARN_FILE_UPDATE_OUTOFBOUNDS);
+	}
 }
 
 int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response)
 {
-	
+	return(SUCCESS);
 }

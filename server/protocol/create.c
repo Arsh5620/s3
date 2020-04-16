@@ -38,5 +38,5 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response)
 	{
 		return (DBP_CONNECTION_GENERAL_SERVER_ERROR);
 	}
-	return (DBP_CONNECTION_NOWARN);
+	return (SUCCESS);
 }

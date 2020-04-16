@@ -68,6 +68,10 @@ while(1):
 		"filename=\"\"\n"
 		"folder=\"\"\n"
 		"crc=1234\n")
+	key_value_pair_update	= ("action=update\n"
+		"filename=\"filename\"\n"
+		"folder=\".\"\n"
+		"updateat=327\n")
 
 	key_value_pair_thin		= ("action=create\n")
 	key_value_pair_invalidaction	= ("action=whatever\n")
@@ -81,7 +85,8 @@ while(1):
 		"5. Send invalid action key value pair\n"
 		"6. Send thin attribs for the action\n"
 		"7. Send correct/valid packet\n"
-		"8. Send packet with keys only, and no values\n")
+		"8. Send packet with keys only, and no values\n"
+		"9. Send file update packet.\n")
 
 	data_entered	= input() # wait for the client to press enter before sending the packet
 
@@ -105,6 +110,8 @@ while(1):
 		header_pairs	= key_value_pairs
 	elif (data_entered == "8"):
 		header_pairs	= key_value_pair_onlykeys
+	elif (data_entered == "9"):
+		header_pairs	= key_value_pair_update
 	else:
 		print("Incorrect option selected, kill "
 			"program with Ctrl + C if does not exit")
