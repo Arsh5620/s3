@@ -373,7 +373,7 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response)
 			result  = dbp_posthook_notification(request, response);
 			break;
 		case DBP_ACTION_CREATE:
-			return(SUCCESS);
+			result	= dbp_posthook_create(request, response);
 			break;
 	}
 	return(result);
