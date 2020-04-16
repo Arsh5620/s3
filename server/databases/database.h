@@ -145,7 +145,6 @@ hash_table_s database_bind_maketable(database_table_bind_s *bind_table);
 database_bind_field_flags_s database_bind_set_flags(size_t flags);
 database_bind_fields_s database_bind_field(MYSQL_FIELD *field
 	, database_bind_fields_s *src);
-database_bind_fields_s database_bind_field_copy(database_bind_fields_s src);
 database_table_bind_s database_bind_select_copy(
 	database_table_bind_s bind_table, string_s *columns, int count);
 void database_bind_free(database_table_bind_s bind);
@@ -153,7 +152,6 @@ int database_bind_add_data(database_table_bind_s bind_table
 	, string_s column_name, string_s data);
 size_t database_bind_column_index(database_table_bind_s bind_table
 	, string_s column_name);
-string_s database_bind_buffer_set(long length, unsigned int flags);
 void database_bind_clean(database_table_bind_s bind_table);
 void database_bind_link_fields(database_table_bind_s *table);
 
