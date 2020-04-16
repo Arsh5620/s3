@@ -28,12 +28,10 @@ enum dbp_attribs_enum dbp_call_asserts[][DBP_ATTRIBS_COUNT] = {
 };
 
 struct config_parse attribs_parse[] = {
-	STRUCT_CONFIG_PARSE("action", DBP_ATTRIB_ACTION
-		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
-	, STRUCT_CONFIG_PARSE("crc", DBP_ATTRIB_CRC
-		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
+	STRUCT_CONFIG_PARSE("crc", DBP_ATTRIB_CRC
+		, dbp_protocol_attribs_s, crc32, CONFIG_TYPE_INT)
 	, STRUCT_CONFIG_PARSE("filename", DBP_ATTRIB_FILENAME
 		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
 	, STRUCT_CONFIG_PARSE("folder", DBP_ATTRIB_FOLDER
-		, dbp_protocol_attribs_s, file_name, CONFIG_TYPE_STRING_S)
+		, dbp_protocol_attribs_s, folder_name, CONFIG_TYPE_STRING_S)
 };

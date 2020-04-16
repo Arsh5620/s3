@@ -9,7 +9,7 @@ int dbp_prehook_notification(dbp_request_s *request)
 	} 
 	else
 	{
-		return(DBP_CONNECTION_WARN_EMPTY);
+		return(DBP_CONNECTION_WARN_HEADER_EMPTY);
 	} 
 }
 

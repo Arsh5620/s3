@@ -10,6 +10,7 @@ typedef struct string_struct {
 } string_s;
 
 #define STRINGS_BUFFER_SVNPRINTF 256
+#define STRINGS_EMPTY(x) (x.address == NULL || x.length < 1)
 
 /*
  * calloc is _length + 1 for NULL byte

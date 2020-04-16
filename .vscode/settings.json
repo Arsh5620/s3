@@ -52,6 +52,7 @@
 		"stdio.h": "c",
 		"stddef.h": "c",
 		"hash_table.h": "c",
-		"stdarg.h": "c"
+		"stdarg.h": "c",
+		"filemgmt.h": "c"
 	}
 }
