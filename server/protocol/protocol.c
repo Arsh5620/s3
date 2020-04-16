@@ -32,7 +32,7 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	return(protocol);
 }
 
-void dbp_accept_connection_loop(dbp_protocol_s *protocol)
+void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 {
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_NETWORK_WAIT_CONNECT);
@@ -63,7 +63,7 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol)
 			response.instance	= (char*)protocol;
 			request.instance	= (char*)protocol;
 
-			error	= dbp_protocol_nextrequest(protocol);
+			error	= dbp_next_request(protocol);
 
 			printf("dbp_next returned value: %d\n", error);
 
@@ -71,7 +71,7 @@ void dbp_accept_connection_loop(dbp_protocol_s *protocol)
 			dbp_handle_errors(&response, error, &shutdown);
 		}
 
-		dbp_shutdown_connection(*protocol, shutdown);
+		dbp_connection_shutdown(*protocol, shutdown);
 	}
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_SERVER_SHUTDOWN);
@@ -236,7 +236,7 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 	return(dbp_response_write(response));
 }
 
-void dbp_shutdown_connection(dbp_protocol_s protocol
+void dbp_connection_shutdown(dbp_protocol_s protocol
 	, enum dbp_shutdown_enum type)
 {
 	if(shutdown(protocol.connection.client, SHUT_RDWR) == 0)
@@ -259,7 +259,7 @@ void dbp_shutdown_connection(dbp_protocol_s protocol
 	}
 }
 
-void dbp_cleanup(dbp_protocol_s protocol)
+void dbp_close(dbp_protocol_s protocol)
 {
 	close(protocol.connection.client);
 	close(protocol.connection.server);
@@ -269,21 +269,21 @@ void dbp_cleanup(dbp_protocol_s protocol)
 }
 
 // returns 0 for no-error, any other number for error or conn close request
-ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
+ulong dbp_next_request(dbp_protocol_s *protocol)
 {
 	dbp_request_s *request	= protocol->current_request;
 	dbp_response_s *response	= protocol->current_response;
 
-	int result	= dbp_request_readheaders(*protocol, request);
+	int result	= dbp_request_read_headers(*protocol, request);
 	if (result != DBP_CONNECTION_NOERROR)
 	{
 		return(result);
 	}
 	
 	request->instance	= (char*)protocol;
-	request->header_table   = dbp_headers_make_table(request->header_list);
+	request->header_table   = dbp_header_hash(request->header_list);
 
-	result	= dbp_read_action(request);
+	result	= dbp_request_read_action(request);
 	if (result != DBP_CONNECTION_NOERROR)
 	{
 		return(result);
@@ -291,7 +291,7 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 
 	enum dbp_attribs_enum *asserts = 
 		dbp_call_asserts[request->action - DBP_ATTRIB_ACTION];
-	boolean assert	= dbp_list_assert(request->header_table, asserts
+	boolean assert	= dbp_attribs_assert(request->header_table, asserts
 		, DBP_ACTIONS_COUNT);
 
 	if (assert == FALSE)
@@ -326,7 +326,7 @@ ulong dbp_protocol_nextrequest(dbp_protocol_s *protocol)
 
 	if (request->header_info.data_length) 
 	{
-		if (dbp_setup_environment() == SUCCESS) 
+		if (dbp_file_setup_environment() == SUCCESS) 
 		{
 			result	= dbp_request_data(protocol, request);
 			if (result != DBP_CONNECTION_NOERROR)
