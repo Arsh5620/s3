@@ -200,6 +200,9 @@
 #define DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR \
 	"server fault!, server cannot process your request at this time"
 
+#define DBP_RESPONSE_STRING_FILE_NOT_FOUND \
+	"requested file does not exists"
+
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
 #define ERRORS_HANDLE_STDOLOG	0b0011

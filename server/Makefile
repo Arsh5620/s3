@@ -52,7 +52,8 @@ SOURCEFILES= \
 	./protocol/response.c \
 	./protocol/download.c \
 	./protocol/constants.c \
-	./protocol/request.c
+	./protocol/request.c \
+	./protocol/update.c
 
 
 OBJFILES=${SOURCEFILES:c=o}
