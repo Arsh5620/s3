@@ -203,6 +203,10 @@
 #define DBP_RESPONSE_STRING_FILE_NOT_FOUND \
 	"requested file does not exists"
 
+#define DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS \
+	"update index is out of file bounds, \"update at\" index " \
+	"either bigger than file or less than zero"
+	
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
 #define ERRORS_HANDLE_STDOLOG	0b0011

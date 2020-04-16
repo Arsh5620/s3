@@ -45,6 +45,7 @@ enum dbp_warns_enum {
 	, DBP_CONNECTION_WARN_ATTRIB_VALUE_INVALID
 	, DBP_CONNECTION_WARN_FILE_EXISTS_ALREADY
 	, DBP_CONNECTION_WARN_FILE_NOT_FOUND
+	, DBP_CONNECTION_WARN_FILE_UPDATE_OUTOFBOUNDS
 };
 
 // one-to-one mapping to the actions_supported
@@ -61,6 +62,7 @@ enum dbp_attribs_enum {
 	, DBP_ATTRIB_FILENAME
 	, DBP_ATTRIB_FOLDER
 	, DBP_ATTRIB_CRC
+	, DBP_ATTRIB_UPDATEAT
 };
 
 enum dbp_shutdown_enum {
@@ -79,6 +81,7 @@ enum dbp_response_code {
 	, DBP_RESPONSE_ATTIB_VALUE_INVALID
 	, DBP_RESPONSE_FILE_EXISTS_ALREADY
 	, DBP_RESPONSE_FILE_NOT_FOUND
+	, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
 	/* errors and the connection will need to be closed */
 	, DBP_RESPONSE_CORRUPTED_PACKET = 128
 	, DBP_RESPONSE_CORRUPTED_DATAH
@@ -102,11 +105,12 @@ typedef struct {
 	string_s file_name;
 	string_s folder_name;
 	uint crc32;
+	long update_at;
 } dbp_protocol_attribs_s;
 
 #define DBP_ACTIONS_COUNT	4
-#define DBP_ATTRIBS_COUNT	4
-#define DBP_ATTRIBS_STRUCT_COUNT	3
+#define DBP_ATTRIBS_COUNT	5
+#define DBP_ATTRIBS_STRUCT_COUNT	4
 
 extern dbp_header_keys_s attribs[];
 extern dbp_header_keys_s actions[];
@@ -205,10 +209,12 @@ int dbp_request_read_action(dbp_request_s *request);
 int dbp_posthook_notification(dbp_request_s *request
 	, dbp_response_s *response);
 int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response);
+int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response);
 
 int dbp_prehook_notification(dbp_request_s *request);
 int dbp_prehook_create(dbp_request_s *request);
 int dbp_prehook_action(dbp_request_s *request);
+int dbp_prehook_update(dbp_request_s *request);
 
 int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);
