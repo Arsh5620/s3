@@ -233,8 +233,8 @@ int database_table_insert(int (*database_function)(MYSQL_STMT *)
 		return(MYSQL_ERROR);
 	}
 	
-	result	= mysql_affected_rows(sql_connection);
-	if (result > 0)
+	result	= mysql_affected_rows(sql_connection) > 0 ? TRUE: FALSE;
+	if (result == TRUE)
 	{
 		mysql_stmt_close(stmt);
 		return (MYSQL_ERROR);

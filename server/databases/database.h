@@ -130,8 +130,15 @@ int database_create_tables();
 
 MYSQL *database_get_handle();
 database_table_bind_s database_get_global_bind();
+
+/*
+ * database_function is the function that will be called
+ * after the statement is executed and before the statement is closed. 
+ * you can leave it NULL, if you don't intend to call any functions
+ */
 int database_table_insert(int (*database_function)(MYSQL_STMT *)
 	, string_s query , MYSQL_BIND *bind, size_t count);
+
 int database_table_query(int (*database_function)(MYSQL_STMT *)
 	, string_s query, MYSQL_BIND *bind_in, uint bind_in_count
 	, MYSQL_BIND *bind_out);
