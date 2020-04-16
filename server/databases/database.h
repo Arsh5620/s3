@@ -130,12 +130,12 @@ int database_create_tables();
 
 MYSQL *database_get_handle();
 database_table_bind_s database_get_global_bind();
-
-int database_table_insertrow(char *query, MYSQL_BIND *bind, size_t count);
-MYSQL_STMT *database_table_query(char *query
-	, MYSQL_BIND *bind_in 
+int database_table_insert(int (*database_function)(MYSQL_STMT *)
+	, string_s query , MYSQL_BIND *bind, size_t count);
+int database_table_query(int (*database_function)(MYSQL_STMT *)
+	, string_s query, MYSQL_BIND *bind_in, uint bind_in_count
 	, MYSQL_BIND *bind_out);
-char database_table_rowexists(MYSQL_STMT *stmt);
+int database_table_row_exists(MYSQL_STMT *stmt);
 /* functions to help with variable binding in mysql*/
 
 void database_bind_init_global();
@@ -143,14 +143,18 @@ database_table_bind_s database_bind_setup(MYSQL *mysql, char *select_query);
 void database_bind_allocate(database_table_bind_s *bind, size_t columns);
 hash_table_s database_bind_maketable(database_table_bind_s *bind_table);
 database_bind_field_flags_s database_bind_set_flags(size_t flags);
-database_bind_fields_s database_bind_field(MYSQL_FIELD field);
-void database_bind_linkfields(database_table_bind_s *table);
+database_bind_fields_s database_bind_field(MYSQL_FIELD *field
+	, database_bind_fields_s *src);
 database_bind_fields_s database_bind_field_copy(database_bind_fields_s src);
 database_table_bind_s database_bind_select_copy(
 	database_table_bind_s bind_table, string_s *columns, int count);
 void database_bind_free(database_table_bind_s bind);
-void database_bind_data_copy(MYSQL_BIND *bind, string_s string);
+int database_bind_add_data(database_table_bind_s bind_table
+	, string_s column_name, string_s data);
 size_t database_bind_column_index(database_table_bind_s bind_table
 	, string_s column_name);
 string_s database_bind_buffer_set(long length, unsigned int flags);
+void database_bind_clean(database_table_bind_s bind_table);
+void database_bind_link_fields(database_table_bind_s *table);
+
 #endif
