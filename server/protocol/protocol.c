@@ -108,6 +108,14 @@ void dbp_handle_errors(dbp_response_s *response,
 				STRING_S(DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
 		}
 		break;
+
+		case DBP_CONNECTION_GENERAL_SERVER_ERROR:
+		{
+			response->response_code	= DBP_RESPONSE_GENERAL_SERVER_ERROR;
+			response->data_string	=
+				STRING_S(DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
+		}
+		break;
 		default:
 			break;
 		}
@@ -146,6 +154,13 @@ int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
 	}
 	break;
 
+	case DBP_CONNECTION_WARN_FILE_EXISTS_ALREADY:
+	{
+		response->response_code	= DBP_RESPONSE_FILE_EXISTS_ALREADY;
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
+	}
+	break;
 	/**
 	 * There was an error parsing the header, read all the data and clear
 	 * the connection for further use. 
