@@ -13,12 +13,15 @@ int dbp_prehook_create(dbp_request_s *request)
 	{
 		return(DBP_CONNECTION_WARN_ATTRIB_VALUE_INVALID);
 	}
-	// if(attribs.filename.address == 0 || attribs.filename.length <= 0
-	// 	|| attribs.folder_name.address	== 0 || attribs.folder_name.length	<= 0)
-	// 	return(FAILED);
 
-	// if(filemgmt_file_exists(&attribs.folder_name, &attribs.filename))
-	// 	info->response.dbp_response	= DBP_RESPONSE_ACK;
+	if (filemgmt_file_exists(&attribs.folder_name, &attribs.file_name))
+	{
+		return(DBP_CONNECTION_WARN_FILE_EXISTS_ALREADY);
+	}
 	
+	if (filemgmt_file_add(&attribs.folder_name, &attribs.file_name) == SUCCESS)
+	{
+		return(DBP_CONNECTION_GENERAL_SERVER_ERROR);
+	}
 	return(SUCCESS);
 }
