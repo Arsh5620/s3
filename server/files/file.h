@@ -50,13 +50,12 @@ typedef struct {
 
 int file_dir_mkine(char *dir_name);
 int file_delete(char *filename);
-FILE *file_open(char *name, int length, char *mode);
-int file_download(FILE *file
-	, network_s *network
-	, file_write_s *info);
 struct stat file_read_stat(FILE *file);
 file_reader_s file_init_reader(FILE *file);
+int file_rename(string_s dest, string_s src);
 void file_close_reader(file_reader_s *reader);
+FILE *file_open(char *name, int length, char *mode);
+int file_download(FILE *file, network_s *network, file_write_s *info);
 int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size);
 string_s file_path_concat(string_s dir1, string_s dir2, string_s file_name);
 

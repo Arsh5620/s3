@@ -12,8 +12,9 @@
 	"SELECT * FROM " DATABASE_TABLE_FI_NAME \
 	" WHERE file_name = ? and folder_name = ?"
 
-#define FILEMGMT_FOLDER_NAME	"backup"
+#define FILEMGMT_FOLDER_NAME	"backup/"
 
 int filemgmt_file_exists(string_s *folder_name, string_s *file_name);
 int filemgmt_file_add(string_s *folder_name, string_s *file_name);
+int filemgmt_rename_file(string_s dest, string_s src);
 #endif

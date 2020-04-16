@@ -148,3 +148,13 @@ string_s file_path_concat(string_s dir1, string_s dir2, string_s file_name)
 		, file_name.address, file_name.length);
 	return(path);
 }
+
+int file_rename(string_s dest, string_s src)
+{
+	int result	= rename(src.address, dest.address);
+	if (result == -1)
+	{
+		perror("rename");
+	}
+	return (result == 0 ? SUCCESS : FAILED);
+}
