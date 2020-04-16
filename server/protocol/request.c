@@ -17,28 +17,21 @@ size_t dbp_header_code_compare(void *memory, char *str, size_t strlen)
 	return(cmp);
 }
 
-ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
+ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 {
 	network_data_atom_s header_read	= network_read_long(&protocol.connection);
-	dbp_header_s header_1 = {0};
-
-	long magic	= header_read._u.long_t;
-	header_1.data_length	= dbp_data_length(magic);
-	header_1.header_length	= dbp_header_length(magic);
-	header_1.magic	= dbp_header_magic(magic);
-
-	request->header_info = header_1;
+	request->header_info = dbp_header_parse8(header_read._u.long_t);
 	
-	if (header_1.magic != DBP_PROTOCOL_MAGIC)
+	if (request->header_info.magic != DBP_PROTOCOL_MAGIC)
 	{
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_ABORTED_CORRUPTION
-			, header_1.magic);
+			, request->header_info.magic);
 		return(DBP_CONNECTION_ERROR_CORRUPTED_PACKET);
 	}
 
-	network_data_s header_raw	= 
-		network_read_stream(&protocol.connection, header_1.header_length);
+	network_data_s header_raw	= network_read_stream(&protocol.connection
+		, request->header_info.header_length);
 	
 	if (header_raw.error_code)
 	{
@@ -60,7 +53,7 @@ ulong dbp_request_readheaders(dbp_protocol_s protocol, dbp_request_s *request)
 	return(DBP_CONNECTION_NOERROR);
 }
 
-int dbp_read_action(dbp_request_s *request)
+int dbp_request_read_action(dbp_request_s *request)
 {
 	key_value_pair_s pair   = {0};
 	my_list_s list	= request->header_list;
@@ -99,7 +92,7 @@ int dbp_read_action(dbp_request_s *request)
 // this function should be called before dispatching the request
 // to make sure that the header contains all the required key:value 
 // pairs needed by the called function.
-int dbp_list_assert(hash_table_s table, 
+int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count)
 {
 	for (long i=0; i<count; i++)
@@ -122,7 +115,7 @@ int dbp_list_assert(hash_table_s table,
  * sure that there are not duplicates, if duplicates are found
  * the key:value pair found later is ignored.
  */
-hash_table_s dbp_headers_make_table(my_list_s list)
+hash_table_s dbp_header_hash(my_list_s list)
 {
 	int count	= list.count;
 	hash_table_s table  = hash_table_init(10, 0);
@@ -163,20 +156,14 @@ hash_table_s dbp_headers_make_table(my_list_s list)
 	return(table);
 }
 
-inline short dbp_header_length(size_t magic)
+dbp_header_s inline dbp_header_parse8(size_t magic)
 {
 	/* shr by 6 bytes, and multiply by 16 to get header size */
-	return(((magic & 0x00FF000000000000) >> (6*8)) * 16);
-}
+	dbp_header_s header	= {
+		.header_length	= (((magic & 0x00FF000000000000) >> (6*8)) * 16)
+		, .data_length	= (magic & 0x0000FFFFFFFFFFFF)
+		, .magic	= ((magic & 0xFF00000000000000) >> (7*8))
+	};
 
-inline char dbp_header_magic(size_t magic)
-{
-	/* shr by 7 to get the magic byte */
-	return((magic & 0xFF00000000000000) >> (7*8));
-}
-
-inline size_t dbp_data_length(size_t magic)
-{
-	/* the last 6 bytes are used to store the size of the data */
-	return(magic & 0x0000FFFFFFFFFFFF);
+	return (header);
 }

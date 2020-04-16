@@ -4,7 +4,7 @@ int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request)
 {
 	if (dbp_request_data_headers(protocol, request) == SUCCESS)
 	{
-		request->temp_file	= dbp_download_file(request);
+		request->temp_file	= dbp_file_download(request);
 	} 
 	else
 	{
@@ -31,7 +31,7 @@ int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request)
 	return(SUCCESS);
 }
 
-file_write_s dbp_download_file(dbp_request_s *request)
+file_write_s dbp_file_download(dbp_request_s *request)
 {
 	static int counter = 0;
 
@@ -81,7 +81,7 @@ file_write_s dbp_download_file(dbp_request_s *request)
 	return(fileinfo);
 }
 
-int dbp_setup_environment()
+int dbp_file_setup_environment()
 {
 	// first make sure the temporary file directory exists. 
 	int result  = file_dir_mkine(DBP_TEMP_DIR);
