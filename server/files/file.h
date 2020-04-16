@@ -58,5 +58,6 @@ struct stat file_read_stat(FILE *file);
 file_reader_s file_init_reader(FILE *file);
 void file_close_reader(file_reader_s *reader);
 int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size);
+string_s file_path_concat(string_s dir1, string_s dir2, string_s file_name);
 
 # endif
