@@ -194,6 +194,12 @@
 #define DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID \
 	"values passed to the packet as headers are rejected, try again"
 	
+#define DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY \
+	"file already exists"
+
+#define DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR \
+	"server fault!, server cannot process your request at this time"
+
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
 #define ERRORS_HANDLE_STDOLOG	0b0011
