@@ -27,7 +27,7 @@ ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_ABORTED_CORRUPTION
 			, request->header_info.magic);
-		return(DBP_CONNECTION_ERROR_CORRUPTED_PACKET);
+		return(DBP_RESPONSE_CORRUPTED_PACKET);
 	}
 
 	network_data_s header_raw	= network_read_stream(&protocol.connection
@@ -37,7 +37,7 @@ ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 	{
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_READ_HEADERS_FAILED);
-		return(DBP_CONNECTION_ERROR_READ);
+		return(DBP_RESPONSE_ERROR_READ);
 	}
 
 	lexer_status_s status	= {0};
@@ -47,10 +47,10 @@ ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 	if (status.errno != 0) 
 	{
 		/* this means that an error occured while processing the input */
-		return(DBP_CONNECTION_WARN_PARSE_ERROR);
+		return(DBP_RESPONSE_PARSE_ERROR);
 	}
 	request->header_list	= header_list;
-	return(DBP_CONNECTION_NOERROR);
+	return(DBP_RESPONSE_SUCCESS);
 }
 
 int dbp_request_read_action(dbp_request_s *request)
@@ -63,7 +63,7 @@ int dbp_request_read_action(dbp_request_s *request)
 	} 
 	else 
 	{
-		return(DBP_CONNECTION_WARN_HEADER_EMPTY);
+		return(DBP_RESPONSE_HEADER_EMPTY);
 	}
 
 	dbp_header_keys_s action	= attribs[0];
@@ -77,15 +77,14 @@ int dbp_request_read_action(dbp_request_s *request)
 			, DBP_ACTIONS_COUNT
 			, pair.value , pair.value_length
 			, dbp_header_code_compare);
-		actionval	= actions[actionval].attrib_code;
 	}
 
 	if (actionval  == DBP_ACTION_NOTVALID)
 	{
-		return(DBP_CONNECTION_WARN_ACTION_INVALID);
+		return(DBP_RESPONSE_ACTION_INVALID);
 	}
-	request->action	= actionval;
-	return(DBP_CONNECTION_NOERROR);
+	request->action	= actions[actionval].attrib_code;
+	return(DBP_RESPONSE_SUCCESS);
 }
 
 
