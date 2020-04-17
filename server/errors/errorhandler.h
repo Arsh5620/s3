@@ -185,7 +185,7 @@
 #define DBP_RESPONSE_STRING_CORRUPTED_PACKET \
 	"packet header corrupted, connection rejected"
 
-#define DBP_RESPONSE_STRING_CORRUPTED_DATAH \
+#define DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS \
 	"data header corrupted, connection rejected"
 
 #define DBP_RESPONSE_STRING_SETUP_ENV_FAILED \
