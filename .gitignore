@@ -11,3 +11,4 @@ unit-testing
 client/*
 !client/client.py
 server/backup
+server/profiler

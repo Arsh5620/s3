@@ -23,8 +23,6 @@ int dbp_prehook_update(dbp_request_s *request)
 	{
 		return(DBP_RESPONSE_FILE_NOT_FOUND);
 	}
-
-	
 	
 	if (attribs.update_at > -1 && attribs.update_at <= file_stats.st_size)
 	{

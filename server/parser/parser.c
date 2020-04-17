@@ -157,8 +157,8 @@ void parser_print_lineinfo(lexer_s lexer,
 		, st
 		, rest, lexer.buffer + status.base_index + stat);
 
-	char *c = 0;
-	printf("%*.*s^\n", stat, 0, c);
+	char c = 0;
+	printf("%*.*s^\n", stat, 0, &c);
 }
 
 void parser_print_err(lexer_s lexer, lexer_status_s status) 

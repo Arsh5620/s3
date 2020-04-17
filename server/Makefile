@@ -1,10 +1,13 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
+COMMONFLAGS=-Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+MEMDBG=-DDEBUG_MEMORY
+LOGNOOUTPUT=-DLOG_NO_OUTPUT
 ifeq ($(RELEASE), 1)
-	CFLAGS =-O3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+	CFLAGS =-pg $(COMMONFLAGS) $(LOGNOOUTPUT)
 else
-	CFLAGS =-ggdb3 -Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+	CFLAGS =-ggdb3 $(COMMONFLAGS) $(MEMDBG)
 endif
 LINKFLAGS=-lmysqlclient
 
@@ -62,10 +65,10 @@ EXECUTABLE=main
 all: build-file clean-logs
 
 $(OBJFILES): %.o: %.c $(HEADERFILES)
-	@$(CC) -c $< $(CFLAGS) -o $@
+	$(CC) -c $< $(CFLAGS) -o $@
 
 build-file: $(OBJFILES)
-	$(CC) -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
+	$(CC) -pg -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
 
 clean: 
 	git clean -xid
