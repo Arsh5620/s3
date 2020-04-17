@@ -32,6 +32,8 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	return(protocol);
 }
 
+ulong request_counter	= 0;
+
 void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 {
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
@@ -55,6 +57,13 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 
 		for(int error = 0; error == SUCCESS;)
 		{
+			request_counter++;
+
+			if (request_counter > 100000)
+			{
+				exit(1111);
+			}
+
 			dbp_response_s response	= {0};
 			dbp_request_s request	= {0};
 			protocol->current_response	= &response;
@@ -63,7 +72,7 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 			request.instance	= (char*)protocol;
 
 			error	= dbp_next_request(protocol);
-			printf("dbp_next returned value: %d, ", error);
+			// printf("dbp_next returned value: %d, ", error);
 
 			error	= dbp_handle_response(&response, error);
 			if (error != SUCCESS)
@@ -71,7 +80,7 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 				shutdown	= DBP_CONNECTION_SHUTDOWN_CORRUPTION;
 			}
 			
-			printf("dbp_handle_response value: %d\n", error);
+			// printf("dbp_handle_response value: %d\n", error);
 		}
 
 		dbp_connection_shutdown(*protocol, shutdown);

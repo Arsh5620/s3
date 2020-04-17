@@ -51,9 +51,12 @@ string_s dbp_response_make_header(dbp_response_s *response)
 		: 0;
 	header.length = header_length;
 
-	snprintf(header.address, dbp_response_attrib_len + 1
-		, DBP_RESPONSE_FORMAT, response->response_code);
-
+	if (header.address)
+	{
+		snprintf(header.address, dbp_response_attrib_len + 1
+			, DBP_RESPONSE_FORMAT, response->response_code);
+	}
+	
 	ulong index = dbp_response_attrib_len - 1;
 	for (size_t i = 0; i < header_list.count; i++)
 	{

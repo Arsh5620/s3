@@ -169,6 +169,7 @@ typedef struct {
 // 	unsigned int crc32;
 // 	int error;
 // } dbp_common_attribs_s;
+void dbp_print_counter();
 
 void dbp_close(dbp_protocol_s protocol);
 ulong dbp_next_request(dbp_protocol_s *protocol);

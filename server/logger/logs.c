@@ -72,8 +72,7 @@ int logs_open_file(logger_s *log)
 	log->file_p	= fopen(log->filename, "w+");
 
 	if(log->file_p == NULL) {
-		fprintf(stderr, "Could not initialize the logging subsystem,"
-				" program will now exit.\n");
+		fprintf(stderr, "Could not initialize the logging subsystem");
 		return(FAILED);
 	}
 	return(SUCCESS);

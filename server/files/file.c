@@ -158,3 +158,8 @@ int file_rename(string_s dest, string_s src)
 	}
 	return (result == 0 ? SUCCESS : FAILED);
 }
+
+int file_update_copy(FILE *dest, FILE *src, ulong index)
+{
+	
+}

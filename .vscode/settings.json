@@ -53,6 +53,8 @@
 		"stddef.h": "c",
 		"hash_table.h": "c",
 		"stdarg.h": "c",
-		"filemgmt.h": "c"
+		"filemgmt.h": "c",
+		"signal.h": "c",
+		"sigaction.h": "c"
 	}
 }

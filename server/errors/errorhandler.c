@@ -6,6 +6,7 @@
 void error_handle(long handle_type
 	, enum logger_level log_level, char *format, ...)
 {
+#ifndef LOG_NO_OUTPUT
 	va_list list;
 	va_start(list, format);
 
@@ -32,4 +33,5 @@ void error_handle(long handle_type
 			exit(LOG_LEVEL_EXIT_GET(log_level));
 		}
 	}
+#endif // LOG_NO_OUTPUT
 }
