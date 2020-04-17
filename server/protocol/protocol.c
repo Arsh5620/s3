@@ -53,8 +53,7 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 
 		int shutdown	= DBP_CONNECTION_SHUTDOWN_FLOW;
 
-		for(enum dbp_errors_enum error = 0;
-			error == DBP_CONNECTION_NOERROR || error == DBP_CONNECTION_WARN;)
+		for(int error = 0; error == SUCCESS;)
 		{
 			dbp_response_s response	= {0};
 			dbp_request_s request	= {0};
@@ -64,11 +63,15 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 			request.instance	= (char*)protocol;
 
 			error	= dbp_next_request(protocol);
+			printf("dbp_next returned value: %d, ", error);
 
-			printf("dbp_next returned value: %d\n", error);
-
-			error	= dbp_handle_warns(protocol, error);
-			dbp_handle_errors(&response, error, &shutdown);
+			error	= dbp_handle_response(&response, error);
+			if (error != SUCCESS)
+			{
+				shutdown	= DBP_CONNECTION_SHUTDOWN_CORRUPTION;
+			}
+			
+			printf("dbp_handle_response value: %d\n", error);
 		}
 
 		dbp_connection_shutdown(*protocol, shutdown);
@@ -77,159 +80,14 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 		, PROTOCOL_SERVER_SHUTDOWN);
 }
 
-void dbp_handle_errors(dbp_response_s *response, 
-	enum dbp_errors_enum error, int *shutdown)
-{
-	if (error != DBP_CONNECTION_NOERROR && error!= DBP_CONNECTION_WARN)
-	{
-		switch (error)
-		{
-		case DBP_CONNECTION_ERROR_CORRUPTED_PACKET:
-		{
-			response->response_code	= DBP_RESPONSE_CORRUPTED_PACKET;
-			response->data_string	=
-				STRING_S(DBP_RESPONSE_STRING_CORRUPTED_PACKET);
-		}
-		break;
-
-		case DBP_CONNECTION_ERROR_CORRUPTED_DATAH:
-		{
-			response->response_code	= 
-				DBP_RESPONSE_CORRUPTED_DATAH;
-			response->data_string	=
-				STRING_S(DBP_RESPONSE_STRING_CORRUPTED_DATAH);
-		}
-		break;
-		
-		case DBP_CONNECTION_ERROR_SETUP_ENV_FAILED:
-		{
-			response->response_code	= DBP_RESPONSE_SETUP_ENV_FAILED;
-			response->data_string	=
-				STRING_S(DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
-		}
-		break;
-
-		case DBP_CONNECTION_GENERAL_SERVER_ERROR:
-		{
-			response->response_code	= DBP_RESPONSE_GENERAL_SERVER_ERROR;
-			response->data_string	=
-				STRING_S(DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
-		}
-		break;
-		default:
-			break;
-		}
-
-		dbp_response_write(response);
-		*shutdown	= DBP_CONNECTION_SHUTDOWN_CORRUPTION;
-	}
-}
-
-int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn)
-{
-	dbp_response_s *response 	= protocol->current_response;
-	/* Here we will try to recover the connection after a possible crash */
-	switch (warn)
-	{
-	/**
-	 * read all the data from the socket, and tell the 
-	 * client that action is not supported 
-	 * */
-	case DBP_CONNECTION_WARN_ACTION_INVALID:
-	{
-		response->response_code	= DBP_RESPONSE_ACTION_INVALID;
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_ACTION_INVALID);
-	}
-	break;
-
-	/**
-	 * connection header is empty and does not contain key value pairs. 
-	 * reply to the client with connection empty error
-	 */
-	case DBP_CONNECTION_WARN_HEADER_EMPTY:
-	{
-		response->response_code	= DBP_RESPONSE_HEADER_EMPTY;
-		response->data_string	= STRING_S(DBP_RESPONSE_STRING_HEADER_EMPTY);
-	}
-	break;
-
-	case DBP_CONNECTION_WARN_FILE_EXISTS_ALREADY:
-	{
-		response->response_code	= DBP_RESPONSE_FILE_EXISTS_ALREADY;
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
-	}
-	break;
-	/**
-	 * There was an error parsing the header, read all the data and clear
-	 * the connection for further use. 
-	 */
-	case DBP_CONNECTION_WARN_PARSE_ERROR:
-	{
-		response->response_code	= DBP_RESPONSE_PARSE_ERROR;
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_PARSE_ERROR);
-	}
-	break;
-
-	/**
-	 * header is missing some of the required attributes for the action
-	 * send the client response with all "required" attributes. 
-	 */
-	case DBP_CONNECTION_WARN_THIN_ATTRIBS:
-	{
-		response->response_code	= DBP_RESPONSE_THIN_ATTRIBS;
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_THIN_ATTRIBS);
-	}	
-	break;
-	
-	case DBP_CONNECTION_WARN_ATTRIB_VALUE_INVALID:
-	{
-		response->response_code	= DBP_RESPONSE_ATTIB_VALUE_INVALID;
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
-	}
-	break;
-
-	case DBP_CONNECTION_WARN_FILE_NOT_FOUND:
-	{
-		response->response_code	= DBP_RESPONSE_FILE_NOT_FOUND;
-		response->data_string	= STRING_S(DBP_RESPONSE_STRING_FILE_NOT_FOUND);
-	}
-	break;
-
-	case DBP_CONNECTION_WARN_FILE_UPDATE_OUTOFBOUNDS:
-	{
-		response->response_code	= DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS;
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
-	}
-	break;
-	/**
-	 * headers are correct, we can start accepting data now. 
-	 * Until now, the client should not have started sending data
-	 */
-	case DBP_CONNECTION_NOWARN:
-	{
-	 	// IGNORE.
-		return(DBP_CONNECTION_WARN);
-	}
-	break;
-	default:
-		// other warnings must be treated as error, and program will exit
-		return(warn);
-	}
-
-	dbp_response_write(response);
-	return(DBP_CONNECTION_NOERROR);
-}
-
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 {
 	switch (code)
 	{
+	case DBP_RESPONSE_SUCCESS: // alias to SUCCESS
+	{
+		return(SUCCESS);
+	}
 	case DBP_RESPONSE_DATA_SEND:
 	{
 		response->data_string	= 
@@ -243,12 +101,107 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 			STRING_S(DBP_RESPONSE_STRING_PACKET_OK);
 	}
 	break;
-	default:
-		break;
+
+	case DBP_RESPONSE_ACTION_INVALID:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_ACTION_INVALID);
+	}
+	break;
+
+	case DBP_RESPONSE_HEADER_EMPTY:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_HEADER_EMPTY);
+	}
+	break;
+
+	case DBP_RESPONSE_PARSE_ERROR:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_PARSE_ERROR);
+	}
+	break;
+
+	case DBP_RESPONSE_THIN_ATTRIBS:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_THIN_ATTRIBS);
+	}
+	break;
+
+	case DBP_RESPONSE_ATTRIB_VALUE_INVALID:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
+	}
+	break;
+
+	case DBP_RESPONSE_FILE_EXISTS_ALREADY:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
+	}
+	break;
+
+	case DBP_RESPONSE_FILE_NOT_FOUND:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_FILE_NOT_FOUND);
+	}
+	break;
+
+	case DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
+	}
+	break;
+
+	case DBP_RESPONSE_CORRUPTED_PACKET:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_CORRUPTED_PACKET);
+	}
+	break;
+
+	case DBP_RESPONSE_CORRUPTED_DATA_HEADERS:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
+	}
+	break;
+
+	case DBP_RESPONSE_SETUP_ENV_FAILED:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
+	}
+	break;
+
+	case DBP_RESPONSE_GENERAL_SERVER_ERROR:
+	{
+		response->data_string	= 
+			STRING_S(DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
+	}
+	break;
 	}
 
 	response->response_code	= code;
-	return(dbp_response_write(response));
+
+	if (dbp_response_write(response) != SUCCESS)
+	{
+		return(DBP_RESPONSE_ERROR_WRITE);
+	}
+	
+	if (response->response_code > DBP_RESPONSE_ERRORS)
+	{
+		return(response->response_code);
+	}
+	else
+	{	
+		return(SUCCESS);
+	}
 }
 
 void dbp_connection_shutdown(dbp_protocol_s protocol
@@ -290,7 +243,7 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 	dbp_response_s *response	= protocol->current_response;
 
 	int result	= dbp_request_read_headers(*protocol, request);
-	if (result != DBP_CONNECTION_NOERROR)
+	if (result != DBP_RESPONSE_SUCCESS)
 	{
 		return(result);
 	}
@@ -299,7 +252,7 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 	request->header_table   = dbp_header_hash(request->header_list);
 
 	result	= dbp_request_read_action(request);
-	if (result != DBP_CONNECTION_NOERROR)
+	if (result != DBP_RESPONSE_SUCCESS)
 	{
 		return(result);
 	}
@@ -311,7 +264,7 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 
 	if (assert == FALSE)
 	{
-		return(DBP_CONNECTION_WARN_THIN_ATTRIBS);
+		return(DBP_RESPONSE_THIN_ATTRIBS);
 	}
 	
 	//right after we have confirmed that all the required attribs
@@ -329,14 +282,14 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 
 	result = dbp_action_prehook(request);
 
-	if (result != DBP_CONNECTION_NOERROR)
+	if (result != DBP_RESPONSE_SUCCESS)
 	{
 		return(result);
 	}
 
 	if (dbp_handle_response(response, DBP_RESPONSE_DATA_SEND) != SUCCESS)
 	{
-		return(DBP_CONNECTION_ERROR_WRITEFAILED);
+		return(DBP_RESPONSE_ERROR_WRITE);
 	}
 
 	if (request->header_info.data_length) 
@@ -344,7 +297,7 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		if (dbp_file_setup_environment() == SUCCESS) 
 		{
 			result	= dbp_request_data(protocol, request);
-			if (result != DBP_CONNECTION_NOERROR)
+			if (result != DBP_RESPONSE_SUCCESS)
 			{
 				return(result);
 			}
@@ -352,13 +305,13 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		else 
 		{
 			printf("setting up env failed. ");
-			return(DBP_CONNECTION_ERROR_SETUP_ENV_FAILED);
+			return(DBP_RESPONSE_SETUP_ENV_FAILED);
 		}
 	}
 
 	result	= dbp_action_posthook(request, response);
 	
-	if (result != DBP_CONNECTION_NOERROR)
+	if (result != DBP_RESPONSE_SUCCESS)
 	{
 		return(result);
 	}
@@ -372,11 +325,11 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 
 	if (dbp_handle_response(response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
 	{
-		return(DBP_CONNECTION_ERROR_WRITEFAILED);
+		return(DBP_RESPONSE_ERROR_WRITE);
 	}
 
 	m_free(request->temp_file.filename.address, MEMORY_FILE_LINE);
-	return(DBP_CONNECTION_NOERROR);
+	return(DBP_RESPONSE_SUCCESS);
 }
 
 int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response)

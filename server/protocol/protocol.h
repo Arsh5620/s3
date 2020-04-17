@@ -24,29 +24,6 @@
 #define DBP_TEMP_DIR			"temp"
 #define DBP_CONFIG_FILENAME		"config.a"
 #define DBP_RESPONSE_FORMAT		"response=%3d\r\n"
- 
-enum dbp_errors_enum {
-	DBP_CONNECTION_NOERROR	= 0
-	, DBP_CONNECTION_WARN
-	, DBP_CONNECTION_ERROR_READ
-	, DBP_CONNECTION_ERROR_SETUP_ENV_FAILED
-	, DBP_CONNECTION_ERROR_CORRUPTED_PACKET
-	, DBP_CONNECTION_ERROR_CORRUPTED_DATAH
-	, DBP_CONNECTION_ERROR_WRITEFAILED
-	, DBP_CONNECTION_GENERAL_SERVER_ERROR
-};
-
-enum dbp_warns_enum {
-	DBP_CONNECTION_NOWARN	= 4096
-	, DBP_CONNECTION_WARN_PARSE_ERROR
-	, DBP_CONNECTION_WARN_HEADER_EMPTY
-	, DBP_CONNECTION_WARN_ACTION_INVALID
-	, DBP_CONNECTION_WARN_THIN_ATTRIBS
-	, DBP_CONNECTION_WARN_ATTRIB_VALUE_INVALID
-	, DBP_CONNECTION_WARN_FILE_EXISTS_ALREADY
-	, DBP_CONNECTION_WARN_FILE_NOT_FOUND
-	, DBP_CONNECTION_WARN_FILE_UPDATE_OUTOFBOUNDS
-};
 
 // one-to-one mapping to the actions_supported
 enum dbp_actions_enum {
@@ -71,22 +48,27 @@ enum dbp_shutdown_enum {
 };
 
 enum dbp_response_code {
-	DBP_RESPONSE_DATA_SEND	= 1
+	DBP_RESPONSE_SUCCESS
+	, DBP_RESPONSE_DATA_SEND	= 1
 	, DBP_RESPONSE_PACKET_OK
 	/* warnings but we can continue the connection */
-	, DBP_RESPONSE_ACTION_INVALID = 32
+	, DBP_RESPONSE_WARNINGS	 = 32
+	, DBP_RESPONSE_ACTION_INVALID
 	, DBP_RESPONSE_HEADER_EMPTY
 	, DBP_RESPONSE_PARSE_ERROR
 	, DBP_RESPONSE_THIN_ATTRIBS
-	, DBP_RESPONSE_ATTIB_VALUE_INVALID
+	, DBP_RESPONSE_ATTRIB_VALUE_INVALID
 	, DBP_RESPONSE_FILE_EXISTS_ALREADY
 	, DBP_RESPONSE_FILE_NOT_FOUND
 	, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
 	/* errors and the connection will need to be closed */
-	, DBP_RESPONSE_CORRUPTED_PACKET = 128
-	, DBP_RESPONSE_CORRUPTED_DATAH
+	, DBP_RESPONSE_ERRORS	= 128
+	, DBP_RESPONSE_CORRUPTED_PACKET
+	, DBP_RESPONSE_CORRUPTED_DATA_HEADERS
 	, DBP_RESPONSE_SETUP_ENV_FAILED
 	, DBP_RESPONSE_GENERAL_SERVER_ERROR
+	, DBP_RESPONSE_ERROR_WRITE
+	, DBP_RESPONSE_ERROR_READ
 };
 
 typedef struct {
@@ -131,13 +113,6 @@ typedef struct {
 	 * , and "update" etc. 
 	 */
 	enum dbp_actions_enum action;
-
-	/*
-	 * the difference between error and warn is that in case of an error
-	 * the entire connection will be terminated, and in case of warn we
-	 * can still continue the connection for more requests 
-	 */
-	enum dbp_errors_enum error;
 
 	/*
 	 * header_* will have all the information related to the entire header
@@ -227,9 +202,6 @@ dbp_header_s dbp_header_parse8(size_t magic);
 int dbp_action_prehook(dbp_request_s *request);
 int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response);
 
-int dbp_handle_warns(dbp_protocol_s *protocol, enum dbp_warns_enum warn);
-void dbp_handle_errors(dbp_response_s *response, 
-	enum dbp_errors_enum error, int *shutdown);
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code);
 
 int dbp_response_write(dbp_response_s *response);

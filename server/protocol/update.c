@@ -8,7 +8,7 @@ int dbp_prehook_update(dbp_request_s *request)
 	if(STRINGS_EMPTY(attribs.file_name) 
 		|| STRINGS_EMPTY(attribs.folder_name))
 	{
-		return(DBP_CONNECTION_WARN_ATTRIB_VALUE_INVALID);
+		return(DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 	}
 
 	string_s file = file_path_concat(STRING_S(FILEMGMT_FOLDER_NAME)
@@ -21,7 +21,7 @@ int dbp_prehook_update(dbp_request_s *request)
 	if (!(filemgmt_file_exists(&attribs.folder_name, &attribs.file_name)
 		&& file_f != NULL))
 	{
-		return(DBP_CONNECTION_WARN_FILE_NOT_FOUND);
+		return(DBP_RESPONSE_FILE_NOT_FOUND);
 	}
 
 	
@@ -33,7 +33,7 @@ int dbp_prehook_update(dbp_request_s *request)
 	}
 	else 
 	{
-		return(DBP_CONNECTION_WARN_FILE_UPDATE_OUTOFBOUNDS);
+		return(DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS);
 	}
 }
 
