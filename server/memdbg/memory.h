@@ -8,7 +8,7 @@
 
 #define MEMORY_FILE_LINE __BASE_FILE__, __LINE__
 
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG
 
 #define MEMORY_TABLE_SIZE   2048
 
@@ -46,6 +46,7 @@ void memory_log_handle(malloc_enum type
 	, malloc_node_s *node, malloc_update_s *update);
 long memory_get_allocation_size(malloc_node_s *node);
 #endif
+
 void m_free(void *address, char *file_name, long line_no);
 void *m_malloc(size_t size, char *file_name, long line_no);
 void *m_calloc(size_t size, char *file_name, long line_no);

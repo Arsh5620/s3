@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <netinet/tcp.h>
 
 #include "network.h"
 #include "../general/defines.h"
@@ -58,6 +59,14 @@ network_s network_connect_init_sync(int port)
 	int enable	= 1;
 	if (setsockopt(connection.server, SOL_SOCKET
 		, SO_REUSEADDR, &enable, sizeof(int)))
+	{
+		printf("Setting sock address reuse failed.");
+		exit(EXIT_FAILURE);
+	}
+
+	int r1 = setsockopt(connection.server, IPPROTO_TCP
+		, TCP_NODELAY, (char *) &enable, sizeof(int)); 
+	if (r1 < 0 )
 	{
 		printf("Setting sock address reuse failed.");
 		exit(EXIT_FAILURE);

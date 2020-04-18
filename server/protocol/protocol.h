@@ -122,6 +122,7 @@ typedef struct {
 	 * header_list is the same key value pairs in a hash table for quick access
 	 */
 	my_list_s header_list;
+	network_data_s header_raw;
 	dbp_header_s header_info;
 	hash_table_s header_table;
 
@@ -172,6 +173,7 @@ typedef struct {
 void dbp_print_counter();
 
 void dbp_close(dbp_protocol_s protocol);
+void dbp_handle_close(dbp_request_s *request, dbp_response_s *response);
 ulong dbp_next_request(dbp_protocol_s *protocol);
 dbp_protocol_s dbp_connection_initialize_sync(unsigned short port);
 void dbp_connection_accept_loop(dbp_protocol_s *protocol);
@@ -206,8 +208,10 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response);
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code);
 
 int dbp_response_write(dbp_response_s *response);
-string_s dbp_response_make_header(dbp_response_s *response);
+string_s dbp_response_make_header(dbp_response_s *response
+	, char *buffer, ulong header_length);
 ulong dbp_response_make_magic(dbp_response_s *response);
+ulong dbp_response_header_length(dbp_response_s *response);
 
 int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request);
 int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request);

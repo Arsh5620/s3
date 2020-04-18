@@ -112,9 +112,6 @@ void file_close_reader(file_reader_s *reader)
 {
 	if(reader->buffer)
 		free(reader->buffer);
-
-	if(reader->file)
-		fclose(reader->file);
 }
 
 // file_reader_fill will fill the buffer with file data 

@@ -83,6 +83,8 @@ int database_init(char *config_file)
 	}
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_MYSQL_CONNECTED);
+	
+	config_free_all(config_property, CONFIG_COUNT, (char*)&connect);
 
 	if (database_verify_integrity() != MYSQL_SUCCESS)
 	{
@@ -532,7 +534,7 @@ database_bind_fields_s database_bind_field(MYSQL_FIELD *field
 	char *name_address	= 0;
 	if (src != NULL)
 	{
-		memcpy(&column, &src, sizeof(database_bind_fields_s));
+		memcpy(&column, src, sizeof(database_bind_fields_s));
 		buffer_length	= src->buffer.length;
 		name_length	= src->name.length;
 		name_address	= src->name.address;
@@ -551,15 +553,15 @@ database_bind_fields_s database_bind_field(MYSQL_FIELD *field
 	}
 
 	ulong total_allocation	= buffer_length + name_length;
+	char *address	= m_calloc(total_allocation, MEMORY_FILE_LINE);
+
 	string_s buffer	= {
-		.address	= 
-			m_calloc(total_allocation, MEMORY_FILE_LINE)
+		.address	= address			
 		, .length		= buffer_length
 	};
 	column.buffer	= buffer;
-
 	string_s name = {
-		.address	= buffer.address + buffer.length
+		.address	= buffer.address + buffer_length
 		, .length	= name_length
 	};
 	column.name	= name;

@@ -8,7 +8,7 @@
 #include "../general/defines.h"
 #include "../errors/errorhandler.h"
 
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG
 
 static malloc_s allocations	= {0};
 
@@ -209,4 +209,4 @@ void inline *m_calloc(size_t size, char *file_name, long line_no)
 	return calloc(size, 1);
 }
 
-#endif //DEBUG_MEMORY == 1
+#endif // DEBUG

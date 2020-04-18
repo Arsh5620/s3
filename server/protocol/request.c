@@ -33,6 +33,7 @@ ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 	network_data_s header_raw	= network_read_stream(&protocol.connection
 		, request->header_info.header_length);
 	
+	request->header_raw	= header_raw;
 	if (header_raw.error_code)
 	{
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR

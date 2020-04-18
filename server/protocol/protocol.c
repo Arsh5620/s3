@@ -32,7 +32,11 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	return(protocol);
 }
 
+#ifdef PROFILE
+
 ulong request_counter	= 0;
+
+#endif
 
 void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 {
@@ -57,13 +61,14 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 
 		for(int error = 0; error == SUCCESS;)
 		{
+#ifdef PROFILE
 			request_counter++;
 
-			if (request_counter > 100000)
+			if (request_counter > 1000000)
 			{
 				exit(1111);
 			}
-
+#endif
 			dbp_response_s response	= {0};
 			dbp_request_s request	= {0};
 			protocol->current_response	= &response;
@@ -80,6 +85,7 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 				shutdown	= DBP_CONNECTION_SHUTDOWN_CORRUPTION;
 			}
 			
+			dbp_handle_close(&request, &response);
 			// printf("dbp_handle_response value: %d\n", error);
 		}
 
@@ -87,6 +93,20 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 	}
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_SERVER_SHUTDOWN);
+}
+
+void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
+{
+	config_free_all(attribs_parse, DBP_ATTRIBS_STRUCT_COUNT
+		, (char*)&request->attribs);
+	my_list_free(request->header_list);
+	hash_table_free(request->header_table);
+	m_free(request->header_raw.data_address, MEMORY_FILE_LINE);
+	if (request->temp_file.filename.address != NULL)
+	{
+		m_free(request->temp_file.filename.address, MEMORY_FILE_LINE);
+	}
+	my_list_free(response->header_list);
 }
 
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
