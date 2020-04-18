@@ -9,20 +9,19 @@ int dbp_response_write(dbp_response_s *response)
 
 	response->header_info.data_length	= response->data_string.length;
 	response->header_info.magic	= DBP_PROTOCOL_MAGIC;
-	
 	// we have to go with the next multiple of 16
 	response->header_info.header_length	= header_len;
 		
 	ulong i	= dbp_response_make_magic(response);
 
-	char *memory	= m_malloc(size, MEMORY_FILE_LINE);
-	memcpy(memory, (char*)&i, sizeof(ulong));
-	dbp_response_make_header(response, memory + sizeof(ulong), header_len);
-	memcpy(memory + header_len + sizeof(ulong)
+	char *address	= m_calloc(size, MEMORY_FILE_LINE);
+	memcpy(address, (char*)&i, sizeof(ulong));
+	dbp_response_make_header(response, address + sizeof(ulong), header_len);
+	memcpy(address + header_len + sizeof(ulong)
 		, response->data_string.address
 		, response->data_string.length);
-	network_write_stream(connection, memory, size);
-	m_free(memory, MEMORY_FILE_LINE);
+	network_write_stream(connection, address, size);
+	m_free(address, MEMORY_FILE_LINE);
 	return(SUCCESS);
 }
 
@@ -48,7 +47,7 @@ ulong dbp_response_header_length(dbp_response_s *response)
 	return(header_length);
 }
 
-string_s dbp_response_make_header(dbp_response_s *response
+void dbp_response_make_header(dbp_response_s *response
 	, char *buffer, ulong header_length)
 {
 	ulong dbp_response_len	= sizeof(DBP_RESPONSE_FORMAT);

@@ -23,6 +23,7 @@ void error_handle(long handle_type
 		vfprintf(stdout, format, args);
 		fprintf(stdout, LOG_FILE_NEWLINE);
 		va_end(args);
+		puts("");
 	}
 	if (logs_print) 
 	{

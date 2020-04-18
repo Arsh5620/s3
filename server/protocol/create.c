@@ -15,11 +15,6 @@ int dbp_prehook_create(dbp_request_s *request)
 	{
 		return(DBP_RESPONSE_FILE_EXISTS_ALREADY);
 	}
-	
-	if (filemgmt_file_add(&attribs.folder_name, &attribs.file_name) == FAILED)
-	{
-		return(DBP_RESPONSE_GENERAL_SERVER_ERROR);
-	}
 	return(SUCCESS);
 }
 
@@ -34,9 +29,10 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response)
 		, attribs.folder_name, attribs.file_name);
 	string_s source	= request->temp_file.filename;
 
-	if (filemgmt_rename_file(destination, source) != SUCCESS) 
+	if (filemgmt_rename_file(destination, source)
+		|| filemgmt_file_add(&attribs.folder_name, &attribs.file_name))
 	{
-		return (DBP_RESPONSE_GENERAL_SERVER_ERROR);
+		return(DBP_RESPONSE_GENERAL_SERVER_ERROR);
 	}
 	return (SUCCESS);
 }
