@@ -1,6 +1,6 @@
 #ifndef LEXER_INCLUDE_GAURD
 #define LEXER_INCLUDE_GAURD
-
+#include "../general/defines.h"
 // please read file configformat.2 for more information on how this lexer
 // produces tokens. 
 
@@ -21,7 +21,8 @@ typedef struct{
 } lexer_status_s;
 
 enum lexer_tokens {
-	TOKEN_EOF = 0
+	TOKEN_NONE	= 0
+	, TOKEN_EOF = 1
 	// , TOKEN_KEY_NAME = 128
 	, TOKEN_ASSIGNMENT = 128
 	, TOKEN_VALUE_RAW
