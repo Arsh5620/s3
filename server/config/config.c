@@ -59,7 +59,11 @@ void config_copy_data(char *struct_memory, int offset
 	case CONFIG_TYPE_STRING_S:
 		{
 			string_s str	= {0};
-			str.address	= pair->value;
+			char *memory	= 
+				m_calloc(pair->value_length + 1, MEMORY_FILE_LINE);
+			memcpy(memory, pair->value, pair->value_length);
+
+			str.address	= memory;
 			str.length	= pair->value_length;
 			memcpy((struct_memory + offset), &str, sizeof(string_s));
 		}
@@ -78,8 +82,8 @@ void config_copy_data(char *struct_memory, int offset
 		break;
 	case CONFIG_TYPE_SHORT:
 		{
-			*(short*)(struct_memory + offset) = (
-					short) strtol(pair->value, NULL, 10);
+			*(short*)(struct_memory + offset) = 
+				(short) strtol(pair->value, NULL, 10);
 		}
 		break;
 	case CONFIG_TYPE_ENUM:
@@ -113,4 +117,38 @@ void config_parse_files(char *filename, struct config_parse *configs
 	config_read_all(parsed, configs, config_count, struct_memory);
 	fclose(config);
 	parser_release_list(parsed);
+}
+
+void config_free_all(struct config_parse *configs
+	, int config_count, char *structs)
+{
+	for (uint i = 0; i < config_count; ++i)
+	{
+		struct config_parse config	= configs[i];
+		switch (config.code)
+		{
+		case CONFIG_TYPE_STRING:
+		{
+			char *address	 = *(char**)(structs + config.offset);
+			if (address != NULL)
+			{
+				m_free(address, MEMORY_FILE_LINE);
+			}
+		}
+		break;
+		
+		case CONFIG_TYPE_STRING_S:
+		{
+			string_s string	 = *(string_s*)(structs + config.offset);
+			if (string.address != NULL)
+			{
+				m_free(string.address, MEMORY_FILE_LINE);
+			}
+		}
+		break;
+		default:
+			// Other types are primitive and does not require free
+			break;
+		}
+	}
 }
