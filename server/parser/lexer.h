@@ -22,7 +22,6 @@ typedef struct{
 
 enum lexer_tokens {
 	TOKEN_NONE	= 0
-	, TOKEN_EOF = 1
 	// , TOKEN_KEY_NAME = 128
 	, TOKEN_ASSIGNMENT = 128
 	, TOKEN_VALUE_RAW
