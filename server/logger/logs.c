@@ -87,12 +87,12 @@ logger_s logs_open()
 	if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
 	{ 
 		printf("could not open directory for writing logs, "
-				"logging subsystem unavailable.");
+				"logging subsystem unavailable.\n");
 		return log;
 	}
 	if(logs_open_file(&log) == FAILED) {
 		printf("could not open the file for writing logs, "
-				"logging subsystem unavailable");
+				"logging subsystem unavailable\n");
 		return log;
 	}
 

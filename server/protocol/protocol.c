@@ -102,10 +102,6 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 	my_list_free(request->header_list);
 	hash_table_free(request->header_table);
 	m_free(request->header_raw.data_address, MEMORY_FILE_LINE);
-	if (request->temp_file.filename.address != NULL)
-	{
-		m_free(request->temp_file.filename.address, MEMORY_FILE_LINE);
-	}
 	my_list_free(response->header_list);
 }
 
@@ -117,6 +113,7 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 	{
 		return(SUCCESS);
 	}
+	
 	case DBP_RESPONSE_DATA_SEND:
 	{
 		response->data_string	= 

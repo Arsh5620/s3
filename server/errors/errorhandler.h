@@ -207,6 +207,9 @@
 	"update index is out of file bounds, \"update at\" index " \
 	"either bigger than file or less than zero"
 	
+#define PARSER_STDOUT_ERROR_STRING \
+	"status code: %ld, line no: %ld, index no: %ld, line length: %d\n"
+
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010
 #define ERRORS_HANDLE_STDOLOG	0b0011

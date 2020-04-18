@@ -55,6 +55,7 @@
 		"stdarg.h": "c",
 		"filemgmt.h": "c",
 		"signal.h": "c",
-		"sigaction.h": "c"
+		"sigaction.h": "c",
+		"lexer.h": "c"
 	}
 }

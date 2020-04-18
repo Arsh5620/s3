@@ -208,7 +208,7 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response);
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code);
 
 int dbp_response_write(dbp_response_s *response);
-string_s dbp_response_make_header(dbp_response_s *response
+void dbp_response_make_header(dbp_response_s *response
 	, char *buffer, ulong header_length);
 ulong dbp_response_make_magic(dbp_response_s *response);
 ulong dbp_response_header_length(dbp_response_s *response);
