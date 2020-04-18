@@ -5,23 +5,30 @@
 #include "lexer.h"
 #include "../data-structures/list.h"
 
-#define PARSER_STATUS_WAIT_KEY  0
-#define PARSER_STATUS_WAIT_ASSIGN   1
-#define PARSER_STATUS_WAIT_VALUE    2
-#define PARSER_STATUS_WAIT_NONE 3
-#define PARSER_STATUS_WAIT_END  4
+enum parser_wait_enum {
+	PARSER_WAIT_KEY
+	, PARSER_WAIT_ASSIGN
+	, PARSER_WAIT_VALUE
+	, PARSER_WAIT_NONE
+	, PARSER_WAIT_END
+};
 
-#define PARSER_STATUS_NOERROR   0
-#define PARSER_STATUS_EOF   1
-#define PARSER_WARNINGS 2
-#define PARSER_STATUS_WARNTRIM_STRING 3
-#define PARSER_ERRORS 256
-#define PARSER_STATUS_ERRUNEXPECTED_NEWLINE    257
-#define PARSER_STATUS_ERRUNEXPECTED_COMMENT    258
-#define PARSER_STATUS_ERRUNEXPECTED_ASSIGN 259
-#define PARSER_STATUS_ERRUNEXPECTED_STRING 260
-#define PARSER_STATUS_ERRUNEXPECTED_ILLEGAL 261
-#define PARSER_STATUS_ERRUNEXPECTED_TOOLONG 262
+enum parser_status_enum {
+	PARSER_NOERROR	= 0
+	, PARSER_EOF
+	, PARSER_WARNINGS 
+	, PARSER_WARNING_TRIM_STRING 
+	, PARSER_ERRORS	= 256
+	, PARSER_ERROR_UNEXPECTED_NEWLINE
+	, PARSER_ERROR_UNEXPECTED_COMMENT
+	, PARSER_ERROR_UNEXPECTED_ASSIGN
+	, PARSER_ERROR_UNEXPECTED_STRING
+	, PARSER_ERROR_UNEXPECTED_ILLEGAL
+	, PARSER_ERROR_UNEXPECTED_TOOLONG
+};
+
+#define PARSER_OUT_LINE_INFO	"\n%.*s%.*s\n%*.*s^ -- %s"
+#define PARSER_EMPTY_STRING	""
 
 typedef struct {
 	char *key;
@@ -41,7 +48,7 @@ void parser_push_copy(my_list_s *list, key_value_pair_s pair);
 void parser_print_status(lexer_s lexer, lexer_status_s status);
 void parser_print_warn(lexer_s lexer, lexer_status_s status);
 void parser_print_err(lexer_s lexer, lexer_status_s status);
-void parser_print_lineinfo(lexer_s lexer,
-	lexer_status_s status, char is_err);
+void parser_print_lineinfo(lexer_s lexer, 
+	lexer_status_s status, char error, char *message);
 
 #endif // PARSER_INCLUDE_GAURD
