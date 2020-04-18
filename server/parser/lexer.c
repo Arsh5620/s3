@@ -38,23 +38,27 @@ lexer_token_s lexer_next_token(lexer_s *lexer)
 	char is_string  = 0;
 
 	unsigned long index = lexer->index;
-	while (lexer->index < lexer->size && token.token_type == 0) {
-		char c  = lexer->buffer[lexer->index];
+	while (lexer->index < lexer->size && token.token_type == 0) 
+	{
+		char c  = *(lexer->buffer + lexer->index);
 		switch (c)
 		{
 		case '#':
-			if (is_escape == 0) {
+			if (is_escape == 0) 
+			{
 				token.token_type    = TOKEN_COMMENT_ONELINE;
 			}
 			break;
 		case '=':
-			if (is_escape == 0) {
+			if (is_escape == 0) 
+			{
 				token.token_type    = TOKEN_ASSIGNMENT;
 			}
 			break;
 		case '\t':
 		case ' ': 
-			if (is_escape == 0) {
+			if (is_escape == 0) 
+			{
 				token.token_type    = TOKEN_SKIP_SPCTAB;
 			}
 			break;
@@ -65,11 +69,14 @@ lexer_token_s lexer_next_token(lexer_s *lexer)
 			token.token_type    = TOKEN_NEWLINE;
 			break;
 		case '\"':
-			if(is_string && is_escape == 0) {
+			if(is_string && is_escape == 0) 
+			{
 				token.token_type    = TOKEN_ILLEGAL;
 				break;
 			}
-			if(is_escape == 1) {
+			
+			if(is_escape == 1) 
+			{
 				token.token_type    = TOKEN_VALUE_QUOTEDSTRING;
 
 				token.token_info.buffer = lexer->buffer;
@@ -83,8 +90,10 @@ lexer_token_s lexer_next_token(lexer_s *lexer)
 			is_escape   = !is_escape;
 			break;
 		default:
-			if(is_escape == 0){
-				while (lexer->index < lexer->size) {
+			if(is_escape == 0)
+			{
+				while (lexer->index < lexer->size) 
+				{
 					c  = lexer->buffer[lexer->index];
 					if(((c >= 'A' && c <= 'Z')
 						|| (c >='a' && c <= 'z')
@@ -92,7 +101,8 @@ lexer_token_s lexer_next_token(lexer_s *lexer)
 						lexer->index++;
 					else break;
 				}
-				if(lexer->index == index){
+				if(lexer->index == index)
+				{
 					token.token_type    = TOKEN_ILLEGAL;
 					break;
 				}

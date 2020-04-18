@@ -33,6 +33,7 @@ void parser_release_list(my_list_s list)
 		if(pair.key)
 			m_free(pair.key, MEMORY_FILE_LINE);
 	}
+	my_list_free(list);
 }
 
 void parser_push_copy(my_list_s *list, key_value_pair_s pair)
@@ -41,9 +42,11 @@ void parser_push_copy(my_list_s *list, key_value_pair_s pair)
 		return;
 
 	key_value_pair_s node = {0};
-	node.key    = 
-		m_malloc(pair.key_length + pair.value_length
-			, MEMORY_FILE_LINE);
+	ulong alloc	= pair.key_length + pair.value_length;
+
+	// + 1 is for null terminator
+	node.key    = m_malloc(alloc + 1, MEMORY_FILE_LINE);
+	*(node.key + alloc)	= 0;
 	
 	node.key_length = pair.key_length;
 	node.value  = node.key + node.key_length;
@@ -118,6 +121,7 @@ my_list_s parser_parse_file(FILE *file)
 	if(status.status == PARSER_STATUS_EOF && pair.is_valid)
 		parser_push_copy(&list, pair);
 		
+	file_close_reader(&reader);
 	return(list);
 }
 
