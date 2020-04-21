@@ -7,32 +7,32 @@
 #include "../networking/network.h"
 #include "../general/strings.h"
 
-#define FILE_DIR_EXISTS 0x00
-#define FILE_DIR_CREATE_FAILED  0x02
-#define FILE_DIR_ERR_OPEN 0x03
+enum file_errors_enum {
+	FILE_SUCCESS
+	, FILE_ERROR
+	, FILE_DIR_EXISTS
+	, FILE_DIR_CREATE_FAILED
+	, FILE_DIR_ERROR_OPEN
+	, FILE_ERROR_OPEN
+	, FILE_NETWORK_ERROR
+	, FILE_WRITE_ERROR
+	, FILE_READ_ERROR
+};
 
 #define FILE_MODE_READONLY  "r"
 #define FILE_MODE_WRITEONLY "w"
 #define FILE_MODE_APPENDONLY    "a"
 
-#define FILE_MODE_READWRITE "r+"
+#define FILE_MODE_READWRITE 	"r+"
 #define FILE_MODE_READOVERWRITE "w+"
 #define FILE_MODE_READAPPEND    "a+"
 
-#define FILE_NAME_MAXLENGTH     256
-#define FILE_UPLOAD_BUFFER    1048576
-
-#define FILE_UPLOAD_ERR 0x02
-#define FILE_UPLOAD_COMPLETE  0x00
-
-#define FILE_READER_SUCCESS 0x00
-#define FILE_READER_UNSUCCESSFUL    0x01
-
-#define FILE_READER_BUFFERLENGTH    0x400
+#define FILE_NAME_LENGTH     256
+#define FILE_BUFFER_LENGTH   (1 MB)
 
 typedef struct file_write_helper
 {
-	size_t current;
+	size_t index;
 	size_t size;
 	string_s filename;
 } file_write_s;
@@ -48,6 +48,7 @@ typedef struct {
 	char is_eof;
 } file_reader_s;
 
+int file_append(char *dest, char *src, ulong size);
 int file_dir_mkine(char *dir_name);
 int file_delete(char *filename);
 struct stat file_read_stat(FILE *file);
