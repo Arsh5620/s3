@@ -57,6 +57,7 @@
 		"signal.h": "c",
 		"sigaction.h": "c",
 		"lexer.h": "c",
-		"assert.h": "c"
+		"assert.h": "c",
+		"paths.h": "c"
 	}
 }
