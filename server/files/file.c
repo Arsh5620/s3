@@ -196,7 +196,6 @@ int file_append(char *dest, char *src, ulong size)
 		
 		if (read_len == -1 || read_len != read_required)
 		{
-			perror("fread");
 			return (FILE_READ_ERROR);
 		}
 
@@ -204,7 +203,6 @@ int file_append(char *dest, char *src, ulong size)
 
 		if (write_len == -1 || write_len != read_len)
 		{
-			perror("fwrite");
 			return (FILE_WRITE_ERROR);
 		}
 

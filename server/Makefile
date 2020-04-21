@@ -20,6 +20,7 @@ HEADERFILES= \
 	./data-structures/hash_table.h \
 	./data-structures/list.h \
 	./files/file.h \
+	./files/paths.h \
 	./files/filemgmt.h \
 	./memdbg/memory.h \
 	./databases/database.h \
@@ -40,6 +41,7 @@ SOURCEFILES= \
 	./data-structures/list.c \
 	./files/filemgmt.c \
 	./files/file.c \
+	./files/paths.c \
 	./memdbg/memory.c \
 	./main.c \
 	./databases/database.c \
