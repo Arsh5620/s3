@@ -3,13 +3,13 @@
 int dbp_prehook_notification(dbp_request_s *request)
 {
 	if (request->header_info.data_length > 0 
-		&& request->header_info.data_length < FILE_READER_BUFFERLENGTH)
+		&& request->header_info.data_length < FILE_BUFFER_LENGTH)
 	{
 		return(SUCCESS);
 	} 
 	else
 	{
-		return(DBP_RESPONSE_HEADER_EMPTY);
+		return(DBP_RESPONSE_NOTIFY_TOOBIG);
 	} 
 }
 

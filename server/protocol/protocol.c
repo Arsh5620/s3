@@ -101,6 +101,7 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 		, (char*)&request->attribs);
 	my_list_free(request->header_list);
 	hash_table_free(request->header_table);
+	hash_table_free(request->additional_data);
 	m_free(request->header_raw.data_address, MEMORY_FILE_LINE);
 	my_list_free(response->header_list);
 }
@@ -114,105 +115,49 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 		return(SUCCESS);
 	}
 	
-	case DBP_RESPONSE_DATA_SEND:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_DATA_SEND);
-	}
-	break;
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_DATA_SEND, DBP_RESPONSE_STRING_DATA_SEND);
 	
-	case DBP_RESPONSE_PACKET_OK:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_PACKET_OK);
-	}
-	break;
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_PACKET_OK, DBP_RESPONSE_STRING_PACKET_OK);
 
-	case DBP_RESPONSE_ACTION_INVALID:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_ACTION_INVALID);
-	}
-	break;
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_ACTION_INVALID, DBP_RESPONSE_STRING_ACTION_INVALID);
 
-	case DBP_RESPONSE_HEADER_EMPTY:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_HEADER_EMPTY);
-	}
-	break;
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_HEADER_EMPTY, DBP_RESPONSE_STRING_HEADER_EMPTY);
 
-	case DBP_RESPONSE_PARSE_ERROR:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_PARSE_ERROR);
-	}
-	break;
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_PARSE_ERROR, DBP_RESPONSE_STRING_PARSE_ERROR);
+	
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_THIN_ATTRIBS, DBP_RESPONSE_STRING_THIN_ATTRIBS);
+		
+	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_ATTRIB_VALUE_INVALID
+		, DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
 
-	case DBP_RESPONSE_THIN_ATTRIBS:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_THIN_ATTRIBS);
+	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_FILE_EXISTS_ALREADY
+		, DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
+		
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_FILE_NOT_FOUND, DBP_RESPONSE_STRING_FILE_NOT_FOUND);
+		
+	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
+		, DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
+	
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_CORRUPTED_PACKET, DBP_RESPONSE_STRING_CORRUPTED_PACKET);
+	
+	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_CORRUPTED_DATA_HEADERS
+		, DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
+	
+	DBP_CASE_LINK_CODE(response
+		, DBP_RESPONSE_SETUP_ENV_FAILED,  DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
+	
+	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_GENERAL_SERVER_ERROR
+		, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
 	}
-	break;
-
-	case DBP_RESPONSE_ATTRIB_VALUE_INVALID:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
-	}
-	break;
-
-	case DBP_RESPONSE_FILE_EXISTS_ALREADY:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
-	}
-	break;
-
-	case DBP_RESPONSE_FILE_NOT_FOUND:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_FILE_NOT_FOUND);
-	}
-	break;
-
-	case DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
-	}
-	break;
-
-	case DBP_RESPONSE_CORRUPTED_PACKET:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_CORRUPTED_PACKET);
-	}
-	break;
-
-	case DBP_RESPONSE_CORRUPTED_DATA_HEADERS:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
-	}
-	break;
-
-	case DBP_RESPONSE_SETUP_ENV_FAILED:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
-	}
-	break;
-
-	case DBP_RESPONSE_GENERAL_SERVER_ERROR:
-	{
-		response->data_string	= 
-			STRING_S(DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
-	}
-	break;
-	}
-
+	
 	response->response_code	= code;
 
 	if (dbp_response_write(response) != SUCCESS)
@@ -305,6 +250,7 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		, (char*)&dbp_parsed_attribs);
 	
 	request->attribs	= dbp_parsed_attribs;
+	request->additional_data	= hash_table_init(10, TRUE);
 
 	result = dbp_action_prehook(request);
 

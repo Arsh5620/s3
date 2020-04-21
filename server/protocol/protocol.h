@@ -61,6 +61,7 @@ enum dbp_response_code {
 	, DBP_RESPONSE_FILE_EXISTS_ALREADY
 	, DBP_RESPONSE_FILE_NOT_FOUND
 	, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
+	, DBP_RESPONSE_NOTIFY_TOOBIG
 	/* errors and the connection will need to be closed */
 	, DBP_RESPONSE_ERRORS	= 128
 	, DBP_RESPONSE_CORRUPTED_PACKET
@@ -93,6 +94,14 @@ typedef struct {
 #define DBP_ACTIONS_COUNT	4
 #define DBP_ATTRIBS_COUNT	5
 #define DBP_ATTRIBS_STRUCT_COUNT	4
+#define DBP_KEY_FILENAME	"file_name"
+
+#define DBP_CASE_LINK_CODE(src, code, string) \
+	case code: \
+	{ \
+		src->data_string = STRING_S(string); \
+	} \
+	break;
 
 extern dbp_header_keys_s attribs[];
 extern dbp_header_keys_s actions[];
@@ -125,6 +134,7 @@ typedef struct {
 	network_data_s header_raw;
 	dbp_header_s header_info;
 	hash_table_s header_table;
+	hash_table_s additional_data;
 
 	dbp_protocol_attribs_s attribs;
 
