@@ -69,6 +69,7 @@ int logs_open_file(logger_s *log)
 		LOG_FILE_NAME, LOG_DIR_NAME, dateformat);   
 
 	free(dateformat); 
+
 	log->file_p	= fopen(log->filename, "w+");
 
 	if(log->file_p == NULL) {
@@ -84,7 +85,8 @@ logger_s logs_open()
 		return logs;
 
 	logger_s log    = {0};
-	if(file_dir_mkine(LOG_DIR_NAME) != FILE_DIR_EXISTS)
+	int result 	=file_dir_mkine(LOG_DIR_NAME);
+	if(result != FILE_DIR_EXISTS)
 	{ 
 		printf("could not open directory for writing logs, "
 				"logging subsystem unavailable.\n");
