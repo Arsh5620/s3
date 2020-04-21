@@ -1,7 +1,7 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
-COMMONFLAGS=-Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+COMMONFLAGS=-Wall -std=gnu99 -I/usr/include/mysql -I/usr/include/mysql/mysql
 DEBUGFLAG=-DDEBUG
 PROFILEFLAG=-DPROFILE
 ifeq ($(RELEASE), 1)

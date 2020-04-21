@@ -28,7 +28,8 @@ long strings_svprintf(char **buffer, char *string, va_list list)
 	va_end(list);
 	va_end(copy);
 
-	if (size < 0) {
+	if (size < 0) 
+	{
 		free(pointer);
 		return -1;
 	}
