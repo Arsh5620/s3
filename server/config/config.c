@@ -97,6 +97,11 @@ void config_copy_data(char *struct_memory, int offset
 			*(struct_memory + offset) = strtod(pair->value, NULL);
 		}
 		break;
+	case CONFIG_TYPE_BOOLEAN:
+		{
+			*(struct_memory + offset) = (*pair->value == '0' ? FALSE : TRUE);
+		}
+	break;
 	
 	default:
 		assert(type);

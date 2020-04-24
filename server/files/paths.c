@@ -2,51 +2,42 @@
 #include "paths.h"
 #include "file.h"
 
-my_list_s paths_parse(char *string, long size)
+my_list_s paths_parse(string_s string)
 {
 	my_list_s path_tree	= my_list_new(8, sizeof(file_path_table_s));
 
-	char *index_p	= string, *length_p	= (string + size);
-	boolean is_absolute	= FALSE, has_started	= FALSE;
+	char *index_p	= string.address
+		, *length_p	= (string.address + string.length);
 
 	while (index_p < length_p)
 	{
 		char *new_index_p	= strchr(index_p, '/');
-		if (new_index_p == NULL)
-		{
-			// means that the path does not contain any more directories
-			break;
-		}
 		ulong diff	= new_index_p - index_p;
-
-		if (diff == 0 && has_started == FALSE)
-		{
-			is_absolute	= TRUE;
-		}
-		has_started	= TRUE;
 	
 		file_path_table_s dir	= {
 			.is_file	= FALSE
-			, .buffer	= string
-			, .index	= index_p - string
+			, .buffer	= string.address
+			, .index	= index_p - (char*)string.address
 			, .length	= diff
 		};
 		
-		my_list_push(&path_tree, &dir);
+		if (new_index_p == NULL)
+		{
+			dir.is_file	= TRUE;
+			dir.length	= length_p - index_p;
+		}
+
+		if (diff > 0)
+		{
+			my_list_push(&path_tree, (char*)&dir);
+		}
+
+		if (new_index_p	== NULL)
+		{
+			break;
+		}
 
 		index_p = new_index_p + 1;
-	}
-
-	if (index_p < length_p)
-	{
-		file_path_table_s file	= {
-			.is_file	= TRUE
-			, .buffer	= string
-			, .index	= index_p - string
-			, .length	= length_p - index_p
-		};
-		
-		my_list_push(&path_tree, &file);
 	}
 	return (path_tree);
 }
@@ -54,6 +45,7 @@ my_list_s paths_parse(char *string, long size)
 int paths_mkdir_recursive(my_list_s path_list)
 {
 	char *buffer	= m_malloc(512, MEMORY_FILE_LINE);
+	boolean success	= TRUE;
 	for (size_t i = 0; i < path_list.count; i++)
 	{
 		file_path_table_s path	= 
@@ -67,13 +59,20 @@ int paths_mkdir_recursive(my_list_s path_list)
 		ulong path_length	= path.index + path.length;
 		if (path_length > 512)
 		{
+			success	= FALSE;
 			return (FAILED);
 		}
 
 		memcpy(buffer, path.buffer, path.index + path.length);
 		buffer[path.index + path.length]	= 0;
 
-		mkdir(buffer, S_IRWXU);
+		if (file_dir_mkine(buffer) != FILE_DIR_EXISTS)
+		{
+			perror("mkdir");
+			success	= FALSE;
+			break;
+		}
 	}
-	return (SUCCESS);
+	m_free(buffer, MEMORY_FILE_LINE);
+	return (success ? SUCCESS : FAILED);
 }

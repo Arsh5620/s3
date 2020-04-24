@@ -75,7 +75,7 @@ build-file: $(OBJFILES)
 	$(CC) -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
 
 clean: 
-	git clean -xid
+	git clean -xid -e "backup"
 
 clean-logs:
 	@cd ./logs/ && rm * -I || echo "No logs to clear";

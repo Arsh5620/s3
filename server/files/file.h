@@ -14,6 +14,7 @@ enum file_errors_enum {
 	, FILE_DIR_CREATE_FAILED
 	, FILE_DIR_ERROR_OPEN
 	, FILE_ERROR_OPEN
+	, FILE_ERROR_SEEK
 	, FILE_NETWORK_ERROR
 	, FILE_WRITE_ERROR
 	, FILE_READ_ERROR
@@ -21,6 +22,9 @@ enum file_errors_enum {
 
 #define FILE_MODE_READONLY  "r"
 #define FILE_MODE_WRITEONLY "w"
+#define FILE_MODE_WRITEBINARY	"wb"
+#define FILE_MODE_READBINARY	"rb"
+#define FILE_MODE_WRITENOCREATE	"rb+"
 #define FILE_MODE_APPENDONLY    "a"
 
 #define FILE_MODE_READWRITE 	"r+"
@@ -48,7 +52,7 @@ typedef struct {
 	char is_eof;
 } file_reader_s;
 
-int file_append(char *dest, char *src, ulong size);
+int file_append(char *dest, char *src, ulong index, ulong size);
 int file_dir_mkine(char *dir_name);
 int file_delete(char *filename);
 struct stat file_read_stat(FILE *file);
