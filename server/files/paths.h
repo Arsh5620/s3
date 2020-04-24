@@ -9,5 +9,5 @@ typedef struct {
 	ulong length;
 } file_path_table_s;
 
-my_list_s paths_parse(char *string, long size);
+my_list_s paths_parse(string_s string);
 int paths_mkdir_recursive(my_list_s path_list);

@@ -156,6 +156,9 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 	
 	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_GENERAL_SERVER_ERROR
 		, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
+
+	default:
+		response->data_string	= (string_s){0};
 	}
 	
 	response->response_code	= code;

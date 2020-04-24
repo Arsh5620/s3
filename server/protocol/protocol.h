@@ -18,6 +18,7 @@
 #include "../parser/parser.h"
 #include "../databases/database.h"
 #include "../config/config.h"
+#include "../files/paths.h"
 
 #define DBP_PROTOCOL_MAGIC		0xD0
 #define DBP_TEMP_FORMAT			"%s/download-fn(%ld).tmp"
@@ -40,6 +41,7 @@ enum dbp_attribs_enum {
 	, DBP_ATTRIB_FOLDER
 	, DBP_ATTRIB_CRC
 	, DBP_ATTRIB_UPDATEAT
+	, DBP_ATTRIB_UPDATETRIM
 };
 
 enum dbp_shutdown_enum {
@@ -68,6 +70,8 @@ enum dbp_response_code {
 	, DBP_RESPONSE_CORRUPTED_DATA_HEADERS
 	, DBP_RESPONSE_SETUP_ENV_FAILED
 	, DBP_RESPONSE_GENERAL_SERVER_ERROR
+	, DBP_RESPONSE_GENERAL_DIR_ERROR
+	, DBP_RESPONSE_GENERAL_FILE_ERROR
 	, DBP_RESPONSE_ERROR_WRITE
 	, DBP_RESPONSE_ERROR_READ
 };
@@ -89,11 +93,12 @@ typedef struct {
 	string_s folder_name;
 	uint crc32;
 	long update_at;
+	boolean trim; // 0 means false, every other value is true
 } dbp_protocol_attribs_s;
 
 #define DBP_ACTIONS_COUNT	4
-#define DBP_ATTRIBS_COUNT	5
-#define DBP_ATTRIBS_STRUCT_COUNT	4
+#define DBP_ATTRIBS_COUNT	6
+#define DBP_ATTRIBS_STRUCT_COUNT	DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME	"file_name"
 
 #define DBP_CASE_LINK_CODE(src, code, string) \

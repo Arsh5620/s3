@@ -29,15 +29,16 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response)
 		, attribs.folder_name, attribs.file_name);
 	string_s source	= request->temp_file.filename;
 
-	if (file_dir_mkine(FILEMGMT_FOLDER_NAME) != FILE_DIR_EXISTS)
+	if (file_dir_mkine(FILEMGMT_FOLDER_NAME) != FILE_DIR_EXISTS
+		|| paths_mkdir_recursive(paths_parse(destination)) != SUCCESS)
 	{
-		return (DBP_RESPONSE_GENERAL_SERVER_ERROR);
+		return (DBP_RESPONSE_GENERAL_DIR_ERROR);
 	}
 
 	if (filemgmt_rename_file(destination, source)
 		|| filemgmt_file_add(&attribs.folder_name, &attribs.file_name))
 	{
-		return(DBP_RESPONSE_GENERAL_SERVER_ERROR);
+		return(DBP_RESPONSE_GENERAL_FILE_ERROR);
 	}
 	return (SUCCESS);
 }

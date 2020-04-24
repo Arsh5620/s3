@@ -152,13 +152,11 @@ int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size)
 
 string_s file_path_concat(string_s dir1, string_s dir2, string_s file_name)
 {
-	ulong length	= dir1.length + dir2.length + file_name.length + 1;
-	string_s path	= {0, .length = length};
-	path.address	= m_calloc(length, MEMORY_FILE_LINE);
-	strncpy(path.address, dir1.address, dir1.length);
-	strncpy(path.address + dir1.length, dir2.address, dir2.length);
-	strncpy(path.address + dir1.length + dir2.length
-		, file_name.address, file_name.length);
+	string_s path	= {0};
+	path.length	= strings_sprintf((char**)&path.address, "%.*s/%.*s/%.*s"
+		, dir1.length, dir1.address
+		, dir2.length, dir2.address
+		, file_name.length, file_name.address);
 	return(path);
 }
 
@@ -172,18 +170,23 @@ int file_rename(string_s dest, string_s src)
 	return (result == 0 ? SUCCESS : FAILED);
 }
 
-int file_append(char *dest, char *src, ulong size)
+int file_append(char *dest, char *src, ulong index, ulong size)
 {
 	ulong maxread	= FILE_BUFFER_LENGTH;
 	char *buffer	= m_malloc(maxread, MEMORY_FILE_LINE);
 	ulong written	= 0;
 
-	FILE *src_file	= fopen(src, "rw+");
-	FILE *dest_file	= fopen(dest, FILE_MODE_APPENDONLY);
+	FILE *src_file	= fopen(src, FILE_MODE_READBINARY);
+	FILE *dest_file	= fopen(dest, FILE_MODE_WRITENOCREATE);
 
 	if (src_file	== NULL || dest_file == NULL)
 	{
 		return (FILE_ERROR_OPEN);
+	}
+
+	if (fseek(dest_file, index, SEEK_SET))
+	{
+		return (FILE_ERROR_SEEK);
 	}
 
 	while (written < size)
