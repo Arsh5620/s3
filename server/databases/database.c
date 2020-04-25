@@ -214,32 +214,33 @@ int database_table_call1(MYSQL_STMT *stmt, string_s query
 	return(MYSQL_SUCCESS);
 }
 
+// @ return value, will return -1 for error, and any other value for success
 int database_table_insert(int (*database_function)(MYSQL_STMT *)
 	, string_s query , MYSQL_BIND *bind, size_t count)
 {
 	MYSQL_STMT *stmt = mysql_stmt_init(sql_connection);
 	if (stmt == NULL)
 	{
-		return (MYSQL_ERROR);
+		return (-1);
 	}
 
 	if (database_table_call1(stmt, query, bind, count) == MYSQL_ERROR)
 	{
-		return(MYSQL_ERROR);
+		return(-1);
 	}
 
 	int result  = mysql_stmt_execute(stmt);
 	if (result > 0)
 	{
 		mysql_stmt_close(stmt);
-		return(MYSQL_ERROR);
+		return(-1);
 	}
 	
 	result	= mysql_affected_rows(sql_connection) > 0 ? TRUE: FALSE;
-	if (result == TRUE)
+	if (result == FALSE)
 	{
 		mysql_stmt_close(stmt);
-		return (MYSQL_ERROR);
+		return (-1);
 	}
 	
 	if (database_function != NULL)
@@ -260,6 +261,37 @@ int database_table_row_exists(MYSQL_STMT *stmt)
 	return(row_exists);
 }
 
+// @return value is -1 for error unlike most other functions
+// which return MYSQL_ERROR on failure. 
+// the function will return the rows affected on success
+int database_table_stmt(string_s query
+	, MYSQL_BIND *bind_in, uint bind_in_count)
+{
+	MYSQL_STMT *stmt	= mysql_stmt_init(sql_connection);
+	if (stmt == NULL)
+	{
+		return (-1);
+	}
+
+	int result = database_table_call1(stmt, query, bind_in, bind_in_count);
+	if (result != MYSQL_SUCCESS)
+	{
+		return (-1);
+	}
+
+	result  = mysql_stmt_execute(stmt);
+	if (result)
+	{
+		mysql_stmt_close(stmt);
+		return(-1);
+	}
+
+	result	= mysql_stmt_affected_rows(stmt);
+	mysql_stmt_close(stmt);
+	return(result);
+}
+
+//@return -1 for error, other values for success
 int database_table_query(int (*database_function)(MYSQL_STMT *)
 	, string_s query, MYSQL_BIND *bind_in, uint bind_in_count
 	, MYSQL_BIND *bind_out)
@@ -267,26 +299,27 @@ int database_table_query(int (*database_function)(MYSQL_STMT *)
 	MYSQL_STMT *stmt	= mysql_stmt_init(sql_connection);
 	if (stmt == NULL)
 	{
-		return(MYSQL_ERROR);
+		return(-1);
 	}
 	
 	int result	= database_table_call1(stmt, query, bind_in, bind_in_count);
 	if (result == MYSQL_ERROR)
 	{
-		return(result);
+		return(-1);
 	}
 
 	result  = mysql_stmt_bind_result(stmt, bind_out);
 	if (result)
 	{
 		mysql_stmt_close(stmt);
-		return(MYSQL_ERROR);
+		return(-1);
 	}
 
 	result  = mysql_stmt_execute(stmt);
-	if(result){
+	if(result)
+	{
 		mysql_stmt_close(stmt);
-		return(MYSQL_ERROR);
+		return(-1);
 	}
 
 	if (database_function != NULL)
