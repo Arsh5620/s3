@@ -1,0 +1,38 @@
+What are we doing right now?
+This file will be updated all the time, to make sure we are on track. 
+
+Right now we just finished with the update process, in case we want to
+update a file which already exists, and if the file does not exists
+it must be created with action "create", but any update action is acce-
+pted. 
+
+Next:
+Now we are looking to complete the request function. 
+For request function we will have additional options. 
+First of those additional options will be the response type requested. 
+We have two request types available, first is the type checksum. 
+
+For checksum we will not send the actual file to the client but the 
+SHA1 hash of each 1MB block for the file, if file is less than 1 MB 
+then it will be the 1MB block with rest of the bytes set to ZERO. 
+And each of those sha values will be split by new line terminators \n
+In the response from the server, it should have all the metadata in the
+header attributes, and then the sha values will be sent as data. 
+Server will not request for the client's ACK before sending data as it 
+sent all as a single "packet" (by one packet we here mean one contiguos 
+response, not the same as TCP packet), so the client will have prepare 
+to accept the response for type CRC, even if the client had to discard
+the data later. 
+
+The other type will be Data, which is the actual file itself again with
+all the metadata sent as attributes to the packet in the header. 
+With this response type, server will wait for the client's ACK before 
+it starts processing the data to be sent to the client, and the client
+can also refuse to accept the data, by replying a response with no 
+header and attributes (so an empty packet) ust 0xD000000000000000.
+To accept the data, an empty packet with no headers, but data bits all
+set to high, so 0xD000FFFFFFFFFFFF. 
+
+we are aware that SHA1 is not as secure, but here we are only using 
+the algorithm for comparing files to confirm changes, if in case they 
+need to be resent to the server to update. 

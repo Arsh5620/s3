@@ -100,7 +100,7 @@ int dbp_attribs_assert(hash_table_s table,
 		enum dbp_attribs_enum attrib	= match[i];
 		hash_input_u key	= {.number = attrib};
 		hash_table_bucket_s bucket	= hash_table_get(table, key, NULL_ZERO);
-		if (bucket.is_occupied == 0)
+		if (bucket.is_occupied == 0 && attrib != NULL_ZERO)
 		{
 			return(FALSE);
 		}

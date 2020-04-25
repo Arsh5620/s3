@@ -32,12 +32,6 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	return(protocol);
 }
 
-#ifdef PROFILE
-
-ulong request_counter	= 0;
-
-#endif
-
 void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 {
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
@@ -61,14 +55,6 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 
 		for(int error = 0; error == SUCCESS;)
 		{
-#ifdef PROFILE
-			request_counter++;
-
-			if (request_counter > 1000000)
-			{
-				exit(1111);
-			}
-#endif
 			dbp_response_s response	= {0};
 			dbp_request_s request	= {0};
 			protocol->current_response	= &response;
@@ -99,11 +85,11 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 {
 	config_free_all(attribs_parse, DBP_ATTRIBS_STRUCT_COUNT
 		, (char*)&request->attribs);
+	m_free(request->header_raw.data_address, MEMORY_FILE_LINE);
 	my_list_free(request->header_list);
+	my_list_free(response->header_list);
 	hash_table_free(request->header_table);
 	hash_table_free(request->additional_data);
-	m_free(request->header_raw.data_address, MEMORY_FILE_LINE);
-	my_list_free(response->header_list);
 }
 
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
@@ -157,6 +143,9 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_GENERAL_SERVER_ERROR
 		, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
 
+	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_DELETE_DATANOTNEEDED
+		, DBP_RESPONSE_STRING_DELETE_DATANOTNEEDED);
+
 	default:
 		response->data_string	= (string_s){0};
 	}
@@ -181,7 +170,7 @@ int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 void dbp_connection_shutdown(dbp_protocol_s protocol
 	, enum dbp_shutdown_enum type)
 {
-	if(shutdown(protocol.connection.client, SHUT_RDWR) == 0)
+	if (shutdown(protocol.connection.client, SHUT_RDWR) == 0)
 	{
 		char *reason;
 		switch (type) 
@@ -232,9 +221,9 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 	}
 
 	enum dbp_attribs_enum *asserts = 
-		dbp_call_asserts[request->action - DBP_ATTRIB_ACTION];
+		dbp_call_asserts[request->action - DBP_ACTION_CREATE];
 	boolean assert	= dbp_attribs_assert(request->header_table, asserts
-		, DBP_ACTIONS_COUNT);
+		, DBP_ATTRIBS_COUNT);
 
 	if (assert == FALSE)
 	{
@@ -262,13 +251,13 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		return(result);
 	}
 
-	if (dbp_handle_response(response, DBP_RESPONSE_DATA_SEND) != SUCCESS)
-	{
-		return(DBP_RESPONSE_ERROR_WRITE);
-	}
-
 	if (request->header_info.data_length) 
 	{
+		if (dbp_handle_response(response, DBP_RESPONSE_DATA_SEND) != SUCCESS)
+		{
+			return(DBP_RESPONSE_ERROR_WRITE);
+		}
+
 		if (dbp_file_setup_environment() == SUCCESS) 
 		{
 			result	= dbp_request_data(protocol, request);
@@ -279,7 +268,6 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		} 
 		else 
 		{
-			printf("setting up env failed. ");
 			return(DBP_RESPONSE_SETUP_ENV_FAILED);
 		}
 	}
@@ -291,13 +279,6 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		return(result);
 	}
 	
-	// result	= dbp_response_write(response);
-	
-	// if (result != DBP_CONNECTION_NOERROR)
-	// {
-	// 	return(result);
-	// }
-
 	if (dbp_handle_response(response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
 	{
 		return(DBP_RESPONSE_ERROR_WRITE);
@@ -321,6 +302,9 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response)
 		case DBP_ACTION_UPDATE:
 			result	= dbp_posthook_update(request, response);
 			break;
+		case DBP_ACTION_DELETE:
+			result	= dbp_posthook_delete(request, response);
+			break;
 	}
 	return(result);
 }
@@ -338,6 +322,9 @@ int dbp_action_prehook(dbp_request_s *request)
 			break;
 		case DBP_ACTION_UPDATE:
 			result	= dbp_prehook_update(request);
+			break;
+		case DBP_ACTION_DELETE:
+			result	= dbp_prehook_delete(request);
 			break;
 	}
 	return(result);
