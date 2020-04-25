@@ -142,6 +142,8 @@ int database_table_insert(int (*database_function)(MYSQL_STMT *)
 int database_table_query(int (*database_function)(MYSQL_STMT *)
 	, string_s query, MYSQL_BIND *bind_in, uint bind_in_count
 	, MYSQL_BIND *bind_out);
+int database_table_stmt(string_s query
+	, MYSQL_BIND *bind_in, uint bind_in_count);
 int database_table_row_exists(MYSQL_STMT *stmt);
 /* functions to help with variable binding in mysql*/
 
