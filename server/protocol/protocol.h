@@ -23,12 +23,14 @@
 #define DBP_PROTOCOL_MAGIC		0xD0
 #define DBP_TEMP_FORMAT			"%s/download-fn(%ld).tmp"
 #define DBP_TEMP_DIR			"temp"
+#define DBP_HASH_DIR			"sha1_hash"
 #define DBP_CONFIG_FILENAME		"config.a"
 #define DBP_RESPONSE_FORMAT		"response=%3d\r\n"
 
 // one-to-one mapping to the actions_supported
 enum dbp_actions_enum {
 	DBP_ACTION_CREATE = 128
+	, DBP_ACTION_DELETE
 	, DBP_ACTION_NOTIFICATION
 	, DBP_ACTION_REQUEST
 	, DBP_ACTION_UPDATE
@@ -64,6 +66,7 @@ enum dbp_response_code {
 	, DBP_RESPONSE_FILE_NOT_FOUND
 	, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
 	, DBP_RESPONSE_NOTIFY_TOOBIG
+	, DBP_RESPONSE_DELETE_DATANOTNEEDED
 	/* errors and the connection will need to be closed */
 	, DBP_RESPONSE_ERRORS	= 128
 	, DBP_RESPONSE_CORRUPTED_PACKET
@@ -96,7 +99,7 @@ typedef struct {
 	boolean trim; // 0 means false, every other value is true
 } dbp_protocol_attribs_s;
 
-#define DBP_ACTIONS_COUNT	4
+#define DBP_ACTIONS_COUNT	5
 #define DBP_ATTRIBS_COUNT	6
 #define DBP_ATTRIBS_STRUCT_COUNT	DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME	"file_name"
@@ -148,6 +151,8 @@ typedef struct {
 	 * for the temporary file written to the temp folder
 	 */
 	file_write_s temp_file;
+	string_s temp_hash_file;
+	string_s working_file_name;
 
 	/*
 	 * instance is a pointer to the dbp_protocol_s that will have 
@@ -203,11 +208,13 @@ int dbp_posthook_notification(dbp_request_s *request
 	, dbp_response_s *response);
 int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response);
 int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response);
+int dbp_posthook_delete(dbp_request_s *request, dbp_response_s *response);
 
 int dbp_prehook_notification(dbp_request_s *request);
 int dbp_prehook_create(dbp_request_s *request);
 int dbp_prehook_action(dbp_request_s *request);
 int dbp_prehook_update(dbp_request_s *request);
+int dbp_prehook_delete(dbp_request_s *request);
 
 int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);

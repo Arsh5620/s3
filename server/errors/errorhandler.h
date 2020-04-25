@@ -144,8 +144,8 @@
 #define MYSQLBIND_BIND_FREE \
 	"bind free for params count %d"
 
-#define FILEMGMT_RECORD_STATUS \
-	"record with folder name \"%.*s\", and file name \"%.*s\" has status %d"
+#define FILEMGMT_RECORD_EXISTS \
+	"file \"%.*s\"/\"%.*s\" already exists"
 
 #define MEMORY_ALLOCATION_LOG \
 	"{\n\t{address:\"%p\", new address:\"%p\"}\n\t, " \
@@ -209,6 +209,9 @@
 	
 #define PARSER_STDOUT_ERROR_STRING \
 	"status code: %ld, line no: %ld, index no: %ld, line length: %d\n"
+
+#define DBP_RESPONSE_STRING_DELETE_DATANOTNEEDED \
+	"requested action delete does not expect any data"
 
 #define ERRORS_HANDLE_STDOUT	0b0001
 #define ERRORS_HANDLE_LOGS		0b0010

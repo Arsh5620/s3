@@ -70,7 +70,6 @@ int logs_open_file(logger_s *log)
 	free(dateformat); 
 
 	log->file_p	= fopen(log->filename, "w+");
-
 	if(log->file_p == NULL) {
 		fprintf(stderr, "Could not initialize the logging subsystem\n");
 		return(FAILED);
@@ -84,7 +83,7 @@ logger_s logs_open()
 		return logs;
 
 	logger_s log    = {0};
-	int result 	=file_dir_mkine(LOG_DIR_NAME);
+	int result 	= file_dir_mkine(LOG_DIR_NAME);
 	if(result != FILE_DIR_EXISTS)
 	{ 
 		printf("could not open directory for writing logs, "
@@ -116,6 +115,7 @@ size_t logs_write(enum logger_level level
 {
 	if(logs.is_init == FALSE) {
 		vprintf(string, variable_args); // prints to the console output
+		puts(""); // adds a new line
 		return(FALSE);
 	}
 	

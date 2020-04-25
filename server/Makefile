@@ -11,7 +11,7 @@ else ifeq ($(PROFILE), 1)
 else
 	CFLAGS =-ggdb3 $(COMMONFLAGS) $(DEBUGFLAG)
 endif
-LINKFLAGS=-lmysqlclient
+LINKFLAGS=-lmysqlclient -lssl -lcrypto
 
 HEADERFILES= \
 	./general/defines.h \
@@ -46,7 +46,7 @@ SOURCEFILES= \
 	./main.c \
 	./databases/database.c \
 	./config/config.c \
-	./protocol/create.c \
+	./protocol/action-create.c \
 	./protocol/notification.c \
 	./protocol/protocol.c \
 	./networking/network.c \
@@ -60,7 +60,8 @@ SOURCEFILES= \
 	./protocol/download.c \
 	./protocol/constants.c \
 	./protocol/request.c \
-	./protocol/update.c
+	./protocol/action-update.c \
+	./protocol/action-delete.c
 
 
 OBJFILES=${SOURCEFILES:c=o}

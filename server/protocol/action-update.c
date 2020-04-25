@@ -24,7 +24,7 @@ int dbp_prehook_update(dbp_request_s *request)
 
 	hash_table_add(&request->additional_data, data);
 
-	if (!(filemgmt_file_exists(&attribs.folder_name, &attribs.file_name)
+	if (!(filemgmt_file_exists(attribs.folder_name, attribs.file_name)
 		&& file_f != NULL))
 	{
 		return(DBP_RESPONSE_FILE_NOT_FOUND);
