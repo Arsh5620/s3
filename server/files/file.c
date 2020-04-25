@@ -11,15 +11,16 @@ int file_dir_mkine(char *dir_name)
 {
 	DIR *dir = opendir(dir_name);
 	int error = errno;
-	closedir(dir);
 
-	if (dir)
+	if (dir != NULL)
 	{
+		closedir(dir);
 		return (FILE_DIR_EXISTS);
 	}
 	else if (error == ENOENT) 
 	{
-		if (mkdir(dir_name, S_IRWXU | S_IRGRP | S_IXGRP) != 0) 
+		error	= mkdir(dir_name, S_IRWXU | S_IRGRP | S_IXGRP);
+		if (error != 0) 
 		{
 			return FILE_DIR_CREATE_FAILED;
 		}
@@ -53,7 +54,8 @@ int file_delete(char *filename)
 	return (unlink(filename));
 }
 
-int file_download(FILE *file, network_s *network, file_write_s *info)
+int file_download(FILE *file, network_s *network, file_write_s *info
+	, void (*sha1_hash)(file_write_s*, network_data_s, boolean))
 {
 	int read_required = 0;
 	do
@@ -72,7 +74,7 @@ int file_download(FILE *file, network_s *network, file_write_s *info)
 
 		network_data_s data = network_read_stream(network, read_required);
 	
-		if (data.error_code) 
+		if (data.error_code)
 		{
 			network_data_free(data);
 			return(FILE_NETWORK_ERROR);
@@ -80,6 +82,8 @@ int file_download(FILE *file, network_s *network, file_write_s *info)
 	
 		int bytes_written   = fwrite(data.data_address, 1
 			, data.data_length, file);
+
+		sha1_hash(info, data, FALSE);
 	
 		if (bytes_written != data.data_length)
 		{
@@ -90,6 +94,8 @@ int file_download(FILE *file, network_s *network, file_write_s *info)
 		info->index += data.data_length;
 	} 
 	while(info->index < info->size);
+
+	sha1_hash(info, (network_data_s){0}, TRUE);
 
 	fflush(file);
 	return(FILE_SUCCESS);    
