@@ -40,7 +40,6 @@ enum dbp_actions_enum {
 enum dbp_attribs_enum {
 	DBP_ATTRIB_ACTION = 128
 	, DBP_ATTRIB_FILENAME
-	, DBP_ATTRIB_FOLDER
 	, DBP_ATTRIB_CRC
 	, DBP_ATTRIB_UPDATEAT
 	, DBP_ATTRIB_UPDATETRIM
@@ -93,14 +92,13 @@ typedef struct {
 
 typedef struct {
 	string_s file_name;
-	string_s folder_name;
 	uint crc32;
 	long update_at;
 	boolean trim; // 0 means false, every other value is true
 } dbp_protocol_attribs_s;
 
 #define DBP_ACTIONS_COUNT	5
-#define DBP_ATTRIBS_COUNT	6
+#define DBP_ATTRIBS_COUNT	5
 #define DBP_ATTRIBS_STRUCT_COUNT	DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME	"file_name"
 

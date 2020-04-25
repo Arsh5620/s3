@@ -5,20 +5,18 @@ int dbp_prehook_create(dbp_request_s *request)
 {
 	dbp_protocol_attribs_s attribs = request->attribs;
 	
-	if(STRINGS_EMPTY(attribs.file_name) 
-		|| STRINGS_EMPTY(attribs.folder_name))
+	if(STRINGS_EMPTY(attribs.file_name))
 	{
 		return(DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 	}
 
-	if (filemgmt_file_exists(attribs.folder_name, attribs.file_name))
+	if (filemgmt_file_exists(attribs.file_name))
 	{
 		return(DBP_RESPONSE_FILE_EXISTS_ALREADY);
 	}
 
 	request->working_file_name	= file_path_concat
-		(STRING_S(FILEMGMT_FOLDER_NAME)
-		, attribs.folder_name, attribs.file_name);
+		(STRING_S(FILEMGMT_FOLDER_NAME), attribs.file_name);
 	return(SUCCESS);
 }
 
@@ -39,7 +37,7 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response)
 	}
 
 	if (filemgmt_rename_file(destination, source)
-		|| filemgmt_file_add(attribs.folder_name, attribs.file_name))
+		|| filemgmt_file_add(attribs.file_name))
 	{
 		return(DBP_RESPONSE_GENERAL_FILE_ERROR);
 	}

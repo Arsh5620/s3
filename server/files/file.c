@@ -156,12 +156,11 @@ int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size)
 	return(FILE_SUCCESS);
 }
 
-string_s file_path_concat(string_s dir1, string_s dir2, string_s file_name)
+string_s file_path_concat(string_s dir1, string_s file_name)
 {
 	string_s path	= {0};
-	path.length	= strings_sprintf((char**)&path.address, "%.*s/%.*s/%.*s"
+	path.length	= strings_sprintf((char**)&path.address, "%.*s/%.*s"
 		, dir1.length, dir1.address
-		, dir2.length, dir2.address
 		, file_name.length, file_name.address);
 	return(path);
 }

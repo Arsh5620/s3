@@ -129,7 +129,7 @@ file_write_s dbp_file_download(dbp_request_s *request)
 	int download_status   = file_download(temp
 		, &protocol->connection, &fileinfo, dbp_file_hash_sha1);
 
-	assert(request->working_file_name.address); // its a bug if value not set
+	// assert(request->working_file_name.address); // its a bug if value not set
 
 	char *hash_file_name;
 	length	= strings_sprintf(&hash_file_name, "%s/temp-(%d).sha1"

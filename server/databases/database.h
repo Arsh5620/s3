@@ -78,7 +78,6 @@ typedef struct database_table_bind {
 
 #define STRING_S(x)	(string_s){.address=x, .length=sizeof(x)-1}
 
-#define TABLE1_FI_COLUMN_FOLDER_NAME	STRING_S("folder_name")
 #define TABLE1_FI_COLUMN_FILE_NAME		STRING_S("file_name")
 #define TABLE1_FI_COLUMN_FILE_CD		STRING_S("file_cd")
 #define TABLE1_FI_COLUMN_FILE_UD		STRING_S("file_ud")
@@ -92,8 +91,7 @@ typedef struct database_table_bind {
 
 #define DATABASE_TABLE_FI_CREATE \
 	"CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_FI_NAME \
-	" (folder_name VARCHAR(256)" \
-	", file_name VARCHAR(256)" \
+	" (file_name VARCHAR(256)" \
 	", file_cd DATE" \
 	", file_ud DATE" \
 	", file_la DATE" \
@@ -109,13 +107,6 @@ typedef struct database_table_bind {
 
 #define DATABASE_TABLE_FI_CHECKEXISTS \
 	"SELECT COUNT(*) AS 'A' FROM " DATABASE_TABLE_FI_NAME
-
-#define DATABASE_TABLE_FI_INSERT \
-	"INSERT INTO "DATABASE_TABLE_FI_NAME" "\
-	"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-
-#define DATABASE_TABLE_FI_QUERY \
-	"SELECT * FROM " DATABASE_TABLE_FI_NAME
 
 #define DATABASE_CREATE_DATABASE \
 	"CREATE DATABASE IF NOT EXISTS " DATABASE_DB_NAME

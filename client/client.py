@@ -58,7 +58,6 @@ while(1):
 
 	key_value_pairs	= ("action=create\n"
 		"filename=\"filename\"\n"
-		"folder=\"folder1/folder2\"\n"
 		"crc=00565423\n")
 	key_value_pair_nonparseable	= ("action.==create\n"
 		"filename~\"filename\"\n"
@@ -70,12 +69,10 @@ while(1):
 		"crc=1234\n")
 	key_value_pair_update	= ("action=update\n"
 		"filename=\"filename\"\n"
-		"folder=\"folder1/folder2\"\n"
 		"updateat=20000\n"
-		"trim=0")
+		"trim=\"0\"\n")
 	key_value_pair_delete	= ("action=delete\n"
-		"filename=\"filename\"\n"
-		"folder=\"folder1/folder2\"\n")
+		"filename=\"filename\"\n")
 
 	key_value_pair_thin		= ("action=create\n")
 	key_value_pair_invalidaction	= ("action=whatever\n")

@@ -145,7 +145,7 @@
 	"bind free for params count %d"
 
 #define FILEMGMT_RECORD_EXISTS \
-	"file \"%.*s\"/\"%.*s\" already exists"
+	"file \"%.*s\" already exists"
 
 #define MEMORY_ALLOCATION_LOG \
 	"{\n\t{address:\"%p\", new address:\"%p\"}\n\t, " \
