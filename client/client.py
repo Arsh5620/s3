@@ -58,7 +58,7 @@ while(1):
 
 	key_value_pairs	= ("action=create\n"
 		"filename=\"filename\"\n"
-		"folder=\"what/is/this/life//all///about\"\n"
+		"folder=\"folder1/folder2\"\n"
 		"crc=00565423\n")
 	key_value_pair_nonparseable	= ("action.==create\n"
 		"filename~\"filename\"\n"
@@ -70,9 +70,12 @@ while(1):
 		"crc=1234\n")
 	key_value_pair_update	= ("action=update\n"
 		"filename=\"filename\"\n"
-		"folder=\"what/is/this/life//all///about\"\n"
+		"folder=\"folder1/folder2\"\n"
 		"updateat=20000\n"
 		"trim=0")
+	key_value_pair_delete	= ("action=delete\n"
+		"filename=\"filename\"\n"
+		"folder=\"folder1/folder2\"\n")
 
 	key_value_pair_thin		= ("action=create\n")
 	key_value_pair_invalidaction	= ("action=whatever\n")
@@ -87,7 +90,8 @@ while(1):
 		"6. Send thin attribs for the action\n"
 		"7. Send correct/valid packet\n"
 		"8. Send packet with keys only, and no values\n"
-		"9. Send file update packet.\n")
+		"9. Send file update packet\n"
+		"A. Delete the file\n")
 
 	data_entered	= input() # wait for the client to press enter before sending the packet
 
@@ -113,6 +117,8 @@ while(1):
 		header_pairs	= key_value_pair_onlykeys
 	elif (data_entered == "9"):
 		header_pairs	= key_value_pair_update
+	elif (data_entered == "A"):
+		header_pairs	= key_value_pair_delete
 	else:
 		print("Incorrect option selected, kill "
 			"program with Ctrl + C if does not exit")
@@ -124,7 +130,8 @@ while(1):
 	file_data = fin.read()
 	file_len = len(file_data)
 
-	magic_packet += file_len
+	if (data_entered != "A"):
+		magic_packet += file_len
 
 	header_keys = header_pairs
 	header_keys += ' ' * (128 - len(header_keys))
