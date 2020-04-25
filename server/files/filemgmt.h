@@ -4,22 +4,28 @@
 #include "../files/file.h"
 #include "../general/strings.h"
 
-#define FILE_EXISTS	1
-#define FILE_NOTFOUND	0
-#define FILE_SQL_COULD_NOT_BIND	2
+enum filemgmt_errors_enum {
+	FILEMGMT_EXISTS	= 1
+	, FILEMGMT_NOT_FOUND
+	, FILEMGMT_SQL_COULD_NOT_BIND
+};
 
 #define FILEMGMT_QUERY_FILEFOLDEREXISTS  \
 	"SELECT * FROM " DATABASE_TABLE_FI_NAME \
-	" WHERE file_name = ? and folder_name = ?"
+	" WHERE file_name = ?"
 
 #define FILEMGMT_QUERY_DELETE \
 	"DELETE FROM " DATABASE_TABLE_FI_NAME \
-	" WHERE file_name = ? AND folder_name = ? LIMIT 1;"
+	" WHERE file_name = ? LIMIT 1;"
+
+#define FILEMGMT_QUERY_INSERT \
+	"INSERT INTO " DATABASE_TABLE_FI_NAME \
+	" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 #define FILEMGMT_FOLDER_NAME	"backup/"
 
-int filemgmt_file_exists(string_s folder_name, string_s file_name);
-int filemgmt_file_add(string_s folder_name, string_s file_name);
+int filemgmt_file_exists(string_s file_name);
+int filemgmt_file_add(string_s file_name);
 int filemgmt_rename_file(string_s dest, string_s src);
-int filemgmt_remove_meta(string_s folder_name, string_s file_name);
+int filemgmt_remove_meta(string_s file_name);
 #endif

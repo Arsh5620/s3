@@ -168,11 +168,13 @@ char *memory_log_gettype(int i)
 void memory_log_handle(malloc_enum type
 	, malloc_node_s *node, malloc_update_s *update)
 {
+#ifdef MEMORY_DEBUG_LOG
 	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 		, MEMORY_ALLOCATION_LOG
 		, node->address, node->new_addr
 		, memory_log_gettype(update->type), update->size
 		, update->file_name, update->line_no);
+#endif
 }
 
 // function to release all the memory used by the structures

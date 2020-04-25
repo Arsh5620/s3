@@ -69,6 +69,6 @@ FILE *file_open(char *name, int length, char *mode);
 int file_download(FILE *file, network_s *network, file_write_s *info
 	, void (*sha1_hash)(file_write_s*, network_data_s, boolean));
 int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size);
-string_s file_path_concat(string_s dir1, string_s dir2, string_s file_name);
+string_s file_path_concat(string_s dir1, string_s file_name);
 
 # endif

@@ -7,40 +7,34 @@
 #include "../databases/database.h"
 
 int filemgmt_bind_fileinfo(database_table_bind_s *bind
-	, string_s folder_name, string_s file_name, boolean alloc)
+	, string_s file_name, boolean alloc)
 {
 	string_s strings[] = {
 		TABLE1_FI_COLUMN_FILE_NAME
-		, TABLE1_FI_COLUMN_FOLDER_NAME
 	};
 
 	database_table_bind_s bind_in	= alloc
-		? database_bind_select_copy (database_get_global_bind(), strings, 2)
+		? database_bind_select_copy (database_get_global_bind(), strings, 1)
 		: *bind;
 	database_bind_clean(bind_in);
 
 	if(database_bind_add_data(bind_in, TABLE1_FI_COLUMN_FILE_NAME
 		, file_name) == MYSQL_ERROR)
 	{
-		return(FILE_SQL_COULD_NOT_BIND);
+		return(FILEMGMT_SQL_COULD_NOT_BIND);
 	}
-	
-	if(database_bind_add_data(bind_in, TABLE1_FI_COLUMN_FOLDER_NAME
-		, folder_name)  == MYSQL_ERROR)
-	{
-		return(FILE_SQL_COULD_NOT_BIND);
-	}
+
 	*bind = bind_in;
 	return(MYSQL_SUCCESS);
 }
 
-int filemgmt_file_exists(string_s folder_name, string_s file_name)
+int filemgmt_file_exists(string_s file_name)
 {
 	database_table_bind_s bind_out	= database_get_global_bind();
 	database_table_bind_s bind_in	= {0};
 
 	int result = 
-		filemgmt_bind_fileinfo(&bind_in, folder_name, file_name, TRUE);
+		filemgmt_bind_fileinfo(&bind_in, file_name, TRUE);
 	if (result != SUCCESS)
 	{
 		return (result);
@@ -49,14 +43,13 @@ int filemgmt_file_exists(string_s folder_name, string_s file_name)
 	result = database_table_query(database_table_row_exists
 		, STRING_S(FILEMGMT_QUERY_FILEFOLDEREXISTS)
 		, bind_in.bind_params
-		, 2
+		, 1
 		, bind_out.bind_params);
 
 	if (result != FALSE)
 	{
 		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 			, FILEMGMT_RECORD_EXISTS
-			, folder_name.length, folder_name.address
 			, file_name.length, file_name.address);
 	}
 
@@ -64,18 +57,18 @@ int filemgmt_file_exists(string_s folder_name, string_s file_name)
 	return (result == TRUE);
 }
 
-int filemgmt_file_add(string_s folder_name, string_s file_name)
+int filemgmt_file_add(string_s file_name)
 {
 	database_table_bind_s bind_in	= database_get_global_bind();
 
 	int result = 
-		filemgmt_bind_fileinfo(&bind_in, folder_name, file_name, FALSE);
+		filemgmt_bind_fileinfo(&bind_in, file_name, FALSE);
 	if (result != SUCCESS)
 	{
 		return (result);
 	}
 
-	if (database_table_insert(NULL, STRING_S(DATABASE_TABLE_FI_INSERT)
+	if (database_table_insert(NULL, STRING_S(FILEMGMT_QUERY_INSERT)
 		, bind_in.bind_params, bind_in.count) == -1)
 	{
 		return(FAILED);
@@ -93,18 +86,18 @@ int filemgmt_rename_file(string_s dest, string_s src)
 	return (SUCCESS);
 }
 
-int filemgmt_remove_meta(string_s folder_name, string_s file_name)
+int filemgmt_remove_meta(string_s file_name)
 {
 	database_table_bind_s bind_in	= {0};
 
-	int result = filemgmt_bind_fileinfo(&bind_in, folder_name, file_name, TRUE);
+	int result = filemgmt_bind_fileinfo(&bind_in, file_name, TRUE);
 	if (result != SUCCESS)
 	{
 		return (result);
 	}
 
 	int deleted	= database_table_stmt(STRING_S(FILEMGMT_QUERY_DELETE)
-		, bind_in.bind_params, 2);
+		, bind_in.bind_params, 1);
 	
 	if (deleted != -1)
 	{
@@ -114,4 +107,13 @@ int filemgmt_remove_meta(string_s folder_name, string_s file_name)
 	{
 		return (FAILED);
 	}
+}
+
+// this function shall setup the environment, which means building 
+// the directory tree, setting up working/temporary/sha1 hash file names
+// for success it will return FILEMGMT_SUCCESS, and for failure 
+// it will return FILEMGMT_**failure code**
+int filemgmt_setup_environment(string_s folder_name, string_s file_name)
+{
+	return(0);
 }
