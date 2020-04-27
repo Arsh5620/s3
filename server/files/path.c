@@ -25,7 +25,7 @@ my_list_s path_lex(string_s path, boolean *is_absolute)
 		file_path_node_s dir	= {
 			.is_file	= FALSE
 			, .buffer	= path.address
-			, .index	= (ulong)(index_p - path.length)
+			, .index	= (ulong)(index_p - path.address)
 			, .length	= diff
 		};
 		
@@ -35,7 +35,7 @@ my_list_s path_lex(string_s path, boolean *is_absolute)
 			dir.length	= (ulong)(length_p - index_p);
 		}
 
-		if (diff > 0)
+		if (diff > 0 || dir.is_file)
 		{
 			my_list_push(&path_tree, (char*)&dir);
 		}
@@ -86,7 +86,7 @@ file_path_s path_parse(string_s path)
 	return (result);
 }
 
-char *path_construct(my_list_s path_list)
+char *path_construct(my_list_s path_list, boolean remove_file)
 {
 	char *buffer	= m_malloc(513, MEMORY_FILE_LINE);
 	ulong index	= 0;
@@ -98,11 +98,21 @@ char *path_construct(my_list_s path_list)
 		if (index + path.length + 1 > 512)
 		{
 			m_free(buffer, MEMORY_FILE_LINE);
+			return(NULL);
 		}
+
+		if (remove_file == TRUE && path.is_file == TRUE)
+		{
+			break;
+		}
+		
 		memcpy(buffer + index, path.buffer + path.index, path.length);
 		index += path.length;
-		*(buffer + index)	= '/';
-		index ++;
+		if (path.is_file == FALSE)
+		{
+			*(buffer + index)	= '/';
+			index ++;
+		}
 	}
 	*(buffer + index)	= 0;
 	return (buffer);

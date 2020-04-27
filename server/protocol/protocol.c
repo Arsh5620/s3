@@ -25,7 +25,7 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	else 
 	{
 		output_handle(OUTPUT_HANDLE_LOGS
-			, LOG_LEVEL_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
+			, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
 			, DATABASE_FAILURE_OTHER)
 			, PROTOCOL_MYSQL_FAILED_CONNECT);
 	}
@@ -37,8 +37,6 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_NETWORK_WAIT_CONNECT);
 	
-	int connection_status	= 0;
-
 	while (network_connect_accept_sync(&protocol->connection), TRUE)
 	{ 
 		struct sockaddr_in client	= protocol->connection.client_socket;

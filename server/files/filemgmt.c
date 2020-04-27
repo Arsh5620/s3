@@ -14,8 +14,9 @@ int filemgmt_bind_fileinfo(database_table_bind_s *bind
 	};
 
 	database_table_bind_s bind_in	= new_bind
-		? database_bind_select_copy (database_get_global_bind(), strings, 1)
+		? database_bind_select_copy(database_get_global_bind(), strings, 1)
 		: *bind;
+		
 	database_bind_clean(bind_in);
 
 	if(database_bind_add_data(bind_in, TABLE_FI_COLUMN_FILE_NAME
@@ -96,6 +97,8 @@ int filemgmt_remove_meta(string_s file_name)
 
 	int deleted	= database_table_stmt
 		(STRING(FILEMGMT_QUERY_DELETE), bind_in.bind_params, 1);
+	
+	database_bind_free(bind_in);
 	
 	if (deleted != -1)
 	{

@@ -16,7 +16,7 @@ int dbp_prehook_create(dbp_request_s *request)
 	}
 
 	request->working_file_name	= file_path_concat
-		(STRING(FILEMGMT_FOLDER_NAME), attribs.file_name);
+		(STRING(FILEMGMT_FOLDER_NAME), attribs.file_name, FALSE);
 	return(SUCCESS);
 }
 
@@ -36,7 +36,7 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response)
 	}
 
 	my_list_s path_list	= path_parse(destination).path_list;
-	char *path	= path_construct(path_list);
+	char *path	= path_construct(path_list, TRUE);
 	int result	= path_mkdir_recursive(path);
 	m_free(path, MEMORY_FILE_LINE);
 	if (result != SUCCESS)

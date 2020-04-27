@@ -61,12 +61,12 @@ struct stat file_stat(FILE *file);
 
 void file_reader_close(file_reader_s *reader);
 file_reader_s file_reader_init(FILE *file);
-int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size);
+int file_reader_next(file_reader_s *reader, long index, long size);
 
 int file_append(char *dest, char *src, ulong index, ulong size);
 int file_download(FILE *file, network_s *network
 	, ulong size, file_sha1 *hash
 	, void (*sha1_hash)(file_sha1*, network_data_s, boolean));
-string_s file_path_concat(string_s path1, string_s path2);
+string_s file_path_concat(string_s path1, string_s path2, boolean remove_file);
 
 # endif
