@@ -6,7 +6,7 @@
 #include "../files/file.h"
 #include "../data-structures/list.h"
 #include "../parser/parser.h"
-#include "../general/strings.h"
+#include "../general/string.h"
 #include "../general/binarysearch.h"
 
 enum config_data_type {

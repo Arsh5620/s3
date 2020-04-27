@@ -59,6 +59,11 @@
 		"lexer.h": "c",
 		"assert.h": "c",
 		"paths.h": "c",
-		"ssl.h": "c"
+		"ssl.h": "c",
+		"define.h": "c",
+		"output.h": "c",
+		"config.h": "c",
+		"path.h": "c",
+		"linked_list.h": "c"
 	}
 }

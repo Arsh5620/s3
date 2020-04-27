@@ -7,18 +7,18 @@
 #include <time.h>
 #include <unistd.h>
 #include "../networking/network.h"
-#include "../errors/errorhandler.h"
+#include "../output/output.h"
 #include "../files/file.h"
 #include "../general/binarysearch.h"
-#include "../general/defines.h"
+#include "../general/define.h"
 #include "../data-structures/hash_table.h"
 #include "../memdbg/memory.h"
-#include "../general/strings.h"
+#include "../general/string.h"
 #include "../data-structures/list.h"
 #include "../parser/parser.h"
 #include "../databases/database.h"
 #include "../config/config.h"
-#include "../files/paths.h"
+#include "../files/path.h"
 
 #define DBP_PROTOCOL_MAGIC		0xD0
 #define DBP_TEMP_FORMAT			"%s/download-fn(%ld).tmp"
@@ -105,7 +105,7 @@ typedef struct {
 #define DBP_CASE_LINK_CODE(src, code, string) \
 	case code: \
 	{ \
-		src->data_string = STRING_S(string); \
+		src->data_string = STRING(string); \
 	} \
 	break;
 
@@ -148,7 +148,7 @@ typedef struct {
 	 * temp_file will contain all the information such as name, size, 
 	 * for the temporary file written to the temp folder
 	 */
-	file_write_s temp_file;
+	file_info_s temp_file;
 	string_s temp_hash_file;
 	string_s working_file_name;
 
@@ -217,7 +217,7 @@ int dbp_prehook_delete(dbp_request_s *request);
 int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);
 int dbp_file_setup_environment();
-file_write_s dbp_file_download(dbp_request_s *request);
+file_info_s dbp_file_download(dbp_request_s *request);
 
 hash_table_s dbp_header_hash(my_list_s list);
 dbp_header_s dbp_header_parse8(size_t magic);

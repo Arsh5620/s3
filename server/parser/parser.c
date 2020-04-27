@@ -1,10 +1,10 @@
 #include <string.h>
 #include <stdio.h>
 #include "parser.h"
-#include "../general/strings.h"
+#include "../general/string.h"
 #include "../files/file.h"
 #include "../memdbg/memory.h"
-#include "../errors/errorhandler.h"
+#include "../output/output.h"
 
 my_list_s parser_parse(lexer_status_s *status_r, char *buffer, int length)
 {
@@ -77,7 +77,7 @@ void parser_push_copy(my_list_s *list, key_value_pair_s pair)
 my_list_s parser_parse_file(FILE *file)
 {
 	// fill the file initially. 
-	file_reader_s reader    = file_init_reader(file);
+	file_reader_s reader    = file_reader_init(file);
 	file_reader_fill(&reader, 0, reader.maxlength);
 
 	lexer_s lexer	= lexer_init(reader.buffer, reader.readlength);
@@ -126,7 +126,7 @@ my_list_s parser_parse_file(FILE *file)
 			lexer_reset(&lexer, &status, reader.readlength);
 		}
 	} 
-	while ((reader.is_eof  == 0 || reader.readlength > 0)
+	while ((reader.eof  == 0 || reader.readlength > 0)
 				&& status.errno == 0);
 	
 	if (status.status == PARSER_EOF && pair.is_valid)
@@ -134,7 +134,7 @@ my_list_s parser_parse_file(FILE *file)
 		parser_push_copy(&list, pair);
 	}
 	
-	file_close_reader(&reader);
+	file_reader_close(&reader);
 	return(list);
 }
 
@@ -154,12 +154,11 @@ static char *warnings[] = {
 void parser_print_lineinfo(lexer_s lexer, 
 	lexer_status_s status, char error, char *message)
 {
-	int length = strings_count_until(
-		lexer.buffer + status.base_index,
-		lexer.size - status.base_index
-		, '\n');
+	char *base_pointer	= lexer.buffer + status.base_index;
+	long max_n	= lexer.size - status.base_index;
+	long length	= ((char*)memchr(base_pointer, '\n', max_n) - base_pointer);
 
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_WARN
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_WARN
 		, PARSER_STDOUT_ERROR_STRING
 		, error ? status.errno : status.warnno
 		, status.lineno 
@@ -171,7 +170,7 @@ void parser_print_lineinfo(lexer_s lexer,
 
 	char c = 0;
 
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_WARN
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_WARN
 		, PARSER_OUT_LINE_INFO
 		, stat, lexer.buffer + status.base_index
 		, rest , lexer.buffer + status.base_index + stat

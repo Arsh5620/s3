@@ -20,30 +20,30 @@ int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request)
 int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request)
 {
 	network_data_atom_s data	= network_read_long(&protocol->connection);
-	if (((data._u.long_t >> (6*8))&0xFFFF) != 0xd0d1)
+	if (((data.u.long_t >> (6*8))&0xFFFF) != 0xd0d1)
 	{
 		return(FAILED);
 	}
 	if (request->header_info.data_length 
-		!= ((data._u.long_t) & 0x0000FFFFFFFFFFFF))
+		!= ((data.u.long_t) & 0x0000FFFFFFFFFFFF))
 	{
 		return(FAILED);
 	}
 	return(SUCCESS);
 }
 
-void dbp_file_hash_sha1(file_write_s *writer, network_data_s data, boolean fin)
+void dbp_file_hash_sha1(file_sha1 *hash, network_data_s data, boolean fin)
 {
-	if (writer->hash_buffer == NULL)
+	if (hash->hash_buffer == NULL)
 	{
-		writer->hash_buffer	= m_calloc(FILE_BUFFER_LENGTH, MEMORY_FILE_LINE);
-		writer->hash_size	= (FILE_BUFFER_LENGTH);
-		writer->hash_index	= 0;
+		hash->hash_buffer	= m_calloc(FILE_BUFFER_LENGTH, MEMORY_FILE_LINE);
+		hash->hash_size	= (FILE_BUFFER_LENGTH);
+		hash->hash_index	= 0;
 		// default element count is 10, and each element is 20 in length
-		writer->hash_list	= my_list_new(10, 20); 
+		hash->hash_list	= my_list_new(10, 20); 
 	}
 	
-	ulong write	= (writer->hash_size - writer->hash_index);
+	ulong write	= (hash->hash_size - hash->hash_index);
 	ulong actual_write	= data.data_length;
 
 	if (write > actual_write)
@@ -54,22 +54,22 @@ void dbp_file_hash_sha1(file_write_s *writer, network_data_s data, boolean fin)
 	// first lets copy the data required.
 	if (write)
 	{
-		memcpy(writer->hash_buffer + writer->hash_index, data.data_address, write);
+		memcpy(hash->hash_buffer + hash->hash_index, data.data_address, write);
 	}
 
-	writer->hash_index += write;
-	if (writer->hash_index	== writer->hash_size || (fin && writer->hash_index))
+	hash->hash_index += write;
+	if (hash->hash_index	== hash->hash_size || (fin && hash->hash_index))
 	{
 		char sha1[20];
-		unsigned char *digest	= SHA1((unsigned char*)writer->hash_buffer
-			, writer->hash_size, (unsigned char*)sha1);
+		unsigned char *digest	= SHA1((unsigned char*)hash->hash_buffer
+			, hash->hash_size, (unsigned char*)sha1);
 
-		my_list_push(&writer->hash_list, (char*)digest);
+		my_list_push(&hash->hash_list, (char*)digest);
 
 		ulong diff = actual_write - write;
-		memcpy(writer->hash_buffer, data.data_address, diff);
-		memset(writer->hash_buffer + diff, NULL_ZERO, writer->hash_size - diff);
-		writer->hash_index	= diff;
+		memcpy(hash->hash_buffer, data.data_address, diff);
+		memset(hash->hash_buffer + diff, NULL_ZERO, hash->hash_size - diff);
+		hash->hash_index	= diff;
 	}
 }
 
@@ -98,50 +98,51 @@ int dbp_file_hash_writesha1(char *file_name, my_list_s list)
 	return (SUCCESS);
 }
 
-file_write_s dbp_file_download(dbp_request_s *request)
+file_info_s dbp_file_download(dbp_request_s *request)
 {
 	static int counter = 0;
 
 	char *temp_file;
-	file_write_s fileinfo  =  {0};
+	file_info_s fileinfo  =  {0};
+	file_sha1 hash = {0};
 	fileinfo.size = request->header_info.data_length;
 
-	long length  = strings_sprintf(&temp_file, DBP_TEMP_FORMAT
+	long length;
+	temp_file	= string_sprintf(DBP_TEMP_FORMAT, &length
 		, DBP_TEMP_DIR
 		, ++counter);
 	
-	FILE *temp  = fopen(temp_file, FILE_MODE_WRITEONLY);
+	FILE *temp  = fopen(temp_file, FILE_MODE_WRITEBINARY);
 
 	if (temp == NULL || length <= 0) 
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
 		fileinfo.size   = -1;
 		return(fileinfo);
 	}
 
-	fileinfo.filename.address   = temp_file;
-	fileinfo.filename.length    = length;
+	fileinfo.name.address   = temp_file;
+	fileinfo.name.length    = length;
 
 	clock_t starttime = clock();
 
 	dbp_protocol_s *protocol	= (dbp_protocol_s*)request->instance;
 	int download_status   = file_download(temp
-		, &protocol->connection, &fileinfo, dbp_file_hash_sha1);
+		, &protocol->connection, fileinfo.size, &hash, dbp_file_hash_sha1);
 
 	// assert(request->working_file_name.address); // its a bug if value not set
 
-	char *hash_file_name;
-	length	= strings_sprintf(&hash_file_name, "%s/temp-(%d).sha1"
+	char *hash_file_name = string_sprintf("%s/temp-(%d).sha1", &length
 		, DBP_TEMP_DIR, counter);
 	
 	request->temp_hash_file.address	= hash_file_name;
 	request->temp_hash_file.length	= length;
 
-	dbp_file_hash_writesha1(hash_file_name, fileinfo.hash_list);
+	dbp_file_hash_writesha1(hash_file_name, hash.hash_list);
 
 	m_free(hash_file_name, MEMORY_FILE_LINE); // will log out a warning
-	m_free(fileinfo.hash_buffer, MEMORY_FILE_LINE);
+	m_free(hash.hash_buffer, MEMORY_FILE_LINE);
 
 	clock_t endtime = clock();
 
@@ -152,7 +153,7 @@ file_write_s dbp_file_download(dbp_request_s *request)
 	double speed = (((double)fileinfo.size / 1024 / 128) 
 		* (1000 / time_elapsed));
 
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_DOWNLOAD_COMPLETE
 		, request->attribs.file_name.length 
 		, request->attribs.file_name.address 
@@ -169,7 +170,7 @@ int dbp_file_setup_environment()
 	int result  = file_dir_mkine(DBP_TEMP_DIR);
 	if(result != FILE_DIR_EXISTS)
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, PROTOCOL_SETUP_ENV_DIR_PERMISSIONS
 			, DBP_TEMP_DIR);
 		return(FAILED);

@@ -5,8 +5,8 @@
 #include <assert.h>
 
 #include "./memory.h"
-#include "../general/defines.h"
-#include "../errors/errorhandler.h"
+#include "../general/define.h"
+#include "../output/output.h"
 
 #ifdef DEBUG
 
@@ -64,7 +64,7 @@ void memory_track_update(void * address, void *new_addr, long size
 	if(entry.is_occupied != TRUE) 
 	{
 		char *errorm	= MEMORY_ALLOCATION_NOENTRY;
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG,
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG,
 			MEMORY_ALLOCATION_ERROR
 			, address, new_addr
 			, memory_log_gettype(type), size
@@ -169,7 +169,7 @@ void memory_log_handle(malloc_enum type
 	, malloc_node_s *node, malloc_update_s *update)
 {
 #ifdef MEMORY_DEBUG_LOG
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 		, MEMORY_ALLOCATION_LOG
 		, node->address, node->new_addr
 		, memory_log_gettype(update->type), update->size
