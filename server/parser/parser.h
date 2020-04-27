@@ -28,7 +28,7 @@ enum parser_status_enum {
 };
 
 #define PARSER_OUT_LINE_INFO	"\n%.*s%.*s\n%*.*s^ -- %s"
-#define PARSER_EMPTY_STRING	""
+#define PARSER_EMPTY_STRING		""
 
 typedef struct {
 	char *key;

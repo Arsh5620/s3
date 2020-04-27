@@ -10,12 +10,12 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	dbp_protocol_s protocol = { 0 };
 	protocol.logs = logs_open();
 
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_LOG_INIT_COMPLETE);
 		
 	protocol.connection = network_connect_init_sync(port);
 
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_NETWORK_SBS_INIT);
 		
 	if (database_init(DBP_CONFIG_FILENAME) == MYSQL_SUCCESS) 
@@ -24,9 +24,9 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	} 
 	else 
 	{
-		error_handle(ERRORS_HANDLE_LOGS
+		output_handle(OUTPUT_HANDLE_LOGS
 			, LOG_LEVEL_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
-			, SERVER_DATABASE_FAILURE)
+			, DATABASE_FAILURE_OTHER)
 			, PROTOCOL_MYSQL_FAILED_CONNECT);
 	}
 	return(protocol);
@@ -34,20 +34,18 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 
 void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 {
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_NETWORK_WAIT_CONNECT);
 	
 	int connection_status	= 0;
 
-	while (connection_status = 
-		network_connect_accept_sync(&(protocol->connection))
-		, connection_status == SUCCESS)
+	while (network_connect_accept_sync(&protocol->connection), TRUE)
 	{ 
 		struct sockaddr_in client	= protocol->connection.client_socket;
 		char *client_ip		= inet_ntoa(client.sin_addr);
 		ushort client_port	= ntohs(client.sin_port);
 
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, PROTOCOL_NETWORK_CLIENT_CONNECT
 			, client_ip, client_port); 
 
@@ -77,7 +75,7 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 
 		dbp_connection_shutdown(*protocol, shutdown);
 	}
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_SERVER_SHUTDOWN);
 }
 
@@ -185,7 +183,7 @@ void dbp_connection_shutdown(dbp_protocol_s protocol
 			reason	= PROTOCOL_SHUTDOWN_REASON_UNKNOWN;
 			break;
 		}
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
 	}
 }
@@ -194,7 +192,7 @@ void dbp_close(dbp_protocol_s protocol)
 {
 	close(protocol.connection.client);
 	close(protocol.connection.server);
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DBP_CONNECTION_SHUTDOWN_CLEANUP);
 	logs_close();
 }
@@ -284,7 +282,7 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		return(DBP_RESPONSE_ERROR_WRITE);
 	}
 
-	m_free(request->temp_file.filename.address, MEMORY_FILE_LINE);
+	m_free(request->temp_file.name.address, MEMORY_FILE_LINE);
 	return(DBP_RESPONSE_SUCCESS);
 }
 

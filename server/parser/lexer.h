@@ -1,6 +1,6 @@
 #ifndef LEXER_INCLUDE_GAURD
 #define LEXER_INCLUDE_GAURD
-#include "../general/defines.h"
+#include "../general/define.h"
 // please read file configformat.2 for more information on how this lexer
 // produces tokens. 
 

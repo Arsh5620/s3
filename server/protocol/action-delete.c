@@ -5,7 +5,7 @@
 // so the file is still recoverable, unless an overwrite to the same name
 int dbp_prehook_delete(dbp_request_s *request)
 {
-	if (STRINGS_EMPTY(request->attribs.file_name))
+	if (STRING_ISEMPTY(request->attribs.file_name))
 	{
 		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 	}

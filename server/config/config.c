@@ -117,7 +117,7 @@ void config_copy_data(char *struct_memory, int offset
 void config_parse_files(char *filename, struct config_parse *configs
 	, int config_count, char *struct_memory) 
 {
-	FILE *config	= fopen(filename, FILE_MODE_READONLY);
+	FILE *config	= fopen(filename, FILE_MODE_READBINARY);
 	my_list_s parsed	= parser_parse_file(config);
 	config_read_all(parsed, configs, config_count, struct_memory);
 	fclose(config);

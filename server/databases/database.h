@@ -6,7 +6,7 @@
 
 #include <stddef.h>
 #include <mysql.h>
-#include "../general/strings.h"
+#include "../general/string.h"
 #include "../data-structures/hash_table.h"
 #include "../config/config.h"
 
@@ -18,6 +18,16 @@ typedef struct sql_connection_information
 	char *db;
 	unsigned int port;
 } database_connection_s;
+
+enum database_error_exit_enum 
+{
+	DATABASE_MYSQL_LIBINIT = 64
+	, DATABASE_MYSQL_INIT 
+	, DATABASE_LOGIN_FAIL
+	, DATABASE_INTEGRITY_CHECK_FAIL
+	, DATABASE_BIND_QUERY_FAIL
+	, DATABASE_FAILURE_OTHER
+};
 
 enum config_types {
 	CONFIG_USERNAME
@@ -73,21 +83,19 @@ typedef struct database_table_bind {
 #define MYSQL_SUCCESS	0
 #define MYSQL_ERROR		1
 
-#define DATABASE_DB_NAME	"dbp"
+#define DATABASE_DB_NAME		"dbp"
 #define DATABASE_TABLE_FI_NAME	"file_information"
 
-#define STRING_S(x)	(string_s){.address=x, .length=sizeof(x)-1}
-
-#define TABLE1_FI_COLUMN_FILE_NAME		STRING_S("file_name")
-#define TABLE1_FI_COLUMN_FILE_CD		STRING_S("file_cd")
-#define TABLE1_FI_COLUMN_FILE_UD		STRING_S("file_ud")
-#define TABLE1_FI_COLUMN_FILE_LA		STRING_S("file_la")
-#define TABLE1_FI_COLUMN_FILE_LM		STRING_S("file_lm")
-#define TABLE1_FI_COLUMN_FILE_DD		STRING_S("file_dd")
-#define TABLE1_FI_COLUMN_FILE_SIZE		STRING_S("file_size")
-#define TABLE1_FI_COLUMN_FILE_MD5		STRING_S("file_md5")
-#define TABLE1_FI_COLUMN_PERMISSIONS	STRING_S("permission")
-#define TABLE1_FI_COLUMN_OWNER			STRING_S("owner")
+#define TABLE_FI_COLUMN_FILE_NAME	STRING("file_name")
+#define TABLE_FI_COLUMN_FILE_CD		STRING("file_cd")
+#define TABLE_FI_COLUMN_FILE_UD		STRING("file_ud")
+#define TABLE_FI_COLUMN_FILE_LA		STRING("file_la")
+#define TABLE_FI_COLUMN_FILE_LM		STRING("file_lm")
+#define TABLE_FI_COLUMN_FILE_DD		STRING("file_dd")
+#define TABLE_FI_COLUMN_FILE_SIZE	STRING("file_size")
+#define TABLE_FI_COLUMN_FILE_MD5	STRING("file_md5")
+#define TABLE_FI_COLUMN_PERMISSIONS	STRING("permission")
+#define TABLE_FI_COLUMN_OWNER		STRING("owner")
 
 #define DATABASE_TABLE_FI_CREATE \
 	"CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_FI_NAME \

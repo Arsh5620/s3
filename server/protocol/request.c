@@ -20,11 +20,11 @@ size_t dbp_header_code_compare(void *memory, char *str, size_t strlen)
 ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 {
 	network_data_atom_s header_read	= network_read_long(&protocol.connection);
-	request->header_info = dbp_header_parse8(header_read._u.long_t);
+	request->header_info = dbp_header_parse8(header_read.u.long_t);
 	
 	if (request->header_info.magic != DBP_PROTOCOL_MAGIC)
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_ABORTED_CORRUPTION
 			, request->header_info.magic);
 		return(DBP_RESPONSE_CORRUPTED_PACKET);
@@ -36,7 +36,7 @@ ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 	request->header_raw	= header_raw;
 	if (header_raw.error_code)
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_READ_HEADERS_FAILED);
 		return(DBP_RESPONSE_ERROR_READ);
 	}

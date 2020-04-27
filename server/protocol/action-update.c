@@ -6,15 +6,15 @@ int dbp_prehook_update(dbp_request_s *request)
 {
 	dbp_protocol_attribs_s attribs = request->attribs;
 
-	if(STRINGS_EMPTY(attribs.file_name))
+	if(STRING_ISEMPTY(attribs.file_name))
 	{
 		return(DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 	}
 
-	string_s file = file_path_concat(STRING_S(FILEMGMT_FOLDER_NAME)
+	string_s file = file_path_concat(STRING(FILEMGMT_FOLDER_NAME)
 		,attribs.file_name);
 
-	FILE *file_f	= fopen(file.address, FILE_MODE_READONLY);
+	FILE *file_f	= fopen(file.address, FILE_MODE_READBINARY);
 	hash_table_bucket_s	data;
 	data.key.address	= DBP_KEY_FILENAME;
 	data.key_len		= sizeof(DBP_KEY_FILENAME) - 1;
@@ -29,7 +29,7 @@ int dbp_prehook_update(dbp_request_s *request)
 		return(DBP_RESPONSE_FILE_NOT_FOUND);
 	}
 	
-	struct stat file_stats	= file_read_stat(file_f);
+	struct stat file_stats	= file_stat(file_f);
 	fclose(file_f);
 	if (attribs.update_at > -1 && attribs.update_at <= file_stats.st_size)
 	{
@@ -65,7 +65,7 @@ int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response)
 	}
 
 	int result	= file_append(file_name_s
-		, request->temp_file.filename.address
+		, request->temp_file.name.address
 		, request->attribs.update_at
 		, request->header_info.data_length);
 

@@ -2,12 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "database.h"
-#include "../logger/logs.h"
-#include "../general/defines.h"
+#include "./database.h"
 #include "../general/binarysearch.h"
 #include "../memdbg/memory.h"
-#include "../errors/errorhandler.h"
+#include "../output/output.h"
 
 static MYSQL *sql_connection;
 static database_table_bind_s binds;
@@ -45,7 +43,7 @@ int database_init(char *config_file)
 	config_parse_files(config_file
 		, config_property, CONFIG_COUNT, (char*)&connect);
 
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 		, PROTOCOL_MYSQL_LOGIN_INFO
 		, connect.host, connect.port
 		, connect.user
@@ -58,17 +56,17 @@ int database_init(char *config_file)
 
 	if (mysql_library_init(0, NULL, NULL))
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS
+			, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC, DATABASE_MYSQL_LIBINIT)
 			, DATABASE_MYSQL_LIB_INIT_FAILED);
-		exit(SERVER_DATABASE_FAILURE);
 	}
 
 	sql_connection 	= mysql_init(NULL);
 	if (sql_connection == NULL) 
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS
+			, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC, DATABASE_MYSQL_INIT)
 			, DATABASE_MYSQL_INIT_FAILED);
-		exit(SERVER_DATABASE_FAILURE);
 	}
 
 	if (NULL == mysql_real_connect(sql_connection
@@ -76,21 +74,22 @@ int database_init(char *config_file)
 		, connect.passwd , connect.db
 		, connect.port , NULL , 0))
 	{
-	   	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+	   	output_handle(OUTPUT_HANDLE_LOGS
+		   	, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC, DATABASE_LOGIN_FAIL)
 			, DATABASE_MYSQL_AUTH_FAILED
 			, mysql_error(sql_connection));
-		exit(SERVER_DATABASE_FAILURE);
 	}
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_MYSQL_CONNECTED);
 	
 	config_free_all(config_property, CONFIG_COUNT, (char*)&connect);
 
 	if (database_verify_integrity() != MYSQL_SUCCESS)
 	{
-		error_handle(ERRORS_HANDLE_LOGS
-			, LOG_LEVEL_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
-			, SERVER_DATABASE_INTEGRITY)
+		output_handle(OUTPUT_HANDLE_LOGS
+			, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
+			, DATABASE_INTEGRITY_CHECK_FAIL)
 			, DATABASE_INTEGRITY_FAILED);
 	}
 
@@ -100,15 +99,15 @@ int database_init(char *config_file)
 
 int database_verify_integrity()
 {
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_INTEGRITY_CHECK);
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_INTEGRITY_PING);
 
 	int connection_enabled  = mysql_ping(sql_connection);
 	if (connection_enabled == 0) 
 	{ 
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_CONNECTED_SERVER
 			, mysql_get_server_info(sql_connection));
 	}
@@ -121,7 +120,7 @@ int database_verify_integrity()
 		if(MYSQL_SUCCESS != 
 				mysql_select_db(sql_connection, DATABASE_DB_NAME)) 
 		{
-			error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+			output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 				, DATABASE_INT_DB_SELECT_FAILED
 				, mysql_error(sql_connection));
 			return (MYSQL_ERROR);
@@ -129,20 +128,20 @@ int database_verify_integrity()
 
 		if (result)
 		{
-			error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+			output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 				, DATABASE_INT_DB_CREATED, DATABASE_DB_NAME);
 			return (database_create_tables());
 		} 
 		else 
 		{
-			error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+			output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 				, DATABASE_INT_DB_CREATE_FAILED, DATABASE_DB_NAME);
 			return (database_check_tables());
 		}
 	} 
 	else 
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 				, DATABASE_INT_DB_CREATE_ACCESS, DATABASE_DB_NAME);
 	}
 	return(MYSQL_ERROR);
@@ -152,12 +151,12 @@ int database_create_tables()
 {
 	if (MYSQL_SUCCESS == mysql_query(sql_connection, DATABASE_TABLE_FI_CREATE))
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_INT_TABLE_CREATED, DATABASE_TABLE_FI_NAME);
 	}
 	else
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, DATABASE_INT_TABLE_CREATE_FAILED
 			, DATABASE_DB_NAME
 			, mysql_error(sql_connection));
@@ -176,12 +175,12 @@ int database_check_tables()
 
 	if (query == MYSQL_SUCCESS) 
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_INT_TABLE_FOUND, DATABASE_TABLE_FI_NAME);
 	} 
 	else 
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_INFO
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_INT_TABLE_NOT_FOUND, DATABASE_TABLE_FI_NAME);
 		return(database_create_tables());
 	}
@@ -347,9 +346,9 @@ database_table_bind_s database_bind_setup(MYSQL *mysql, char *select_query)
 	 */
 	if (query != 0)
 	{
-		error_handle(ERRORS_HANDLE_STDOLOG
-			, LOG_LEVEL_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
-			, SERVER_DATABASE_FAILURE)
+		output_handle(OUTPUT_HANDLE_BOTH
+			, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
+			, DATABASE_BIND_QUERY_FAIL)
 			, MYSQLBIND_QUERY_FAILED
 			, mysql_error(mysql));
 	}
@@ -364,9 +363,9 @@ database_table_bind_s database_bind_setup(MYSQL *mysql, char *select_query)
 	MYSQL_RES *result	= mysql_store_result(mysql); 
 	if (result == NULL) 
 	{
-		error_handle(ERRORS_HANDLE_STDOLOG
-			, LOG_LEVEL_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
-			, SERVER_DATABASE_FAILURE)
+		output_handle(OUTPUT_HANDLE_BOTH
+			, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC
+			, DATABASE_BIND_QUERY_FAIL)
 			, MYSQLBIND_QUERY_RESULT_FAILED, mysql_error(mysql));
 	}
 
@@ -379,14 +378,14 @@ database_table_bind_s database_bind_setup(MYSQL *mysql, char *select_query)
 	{
 		if (table_binds.table_name.address	== NULL)
 		{
-			STRING_S_MALLOC(table_binds.table_name
-				, column->table, column->table_length);
+			table_binds.table_name	= string_new_copy(column->table
+				, column->table_length);
 		}
 
 		database_bind_fields_s field	= database_bind_field(column, NULL);
 		table_binds.fields[iterator++] = field;
 
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 			, MYSQLBIND_QUERY_COLUMN_DISCOVERED
 			, table_binds.table_name.length, table_binds.table_name.address
 			, field.name.length, field.name.address);
@@ -403,14 +402,14 @@ database_table_bind_s database_bind_setup(MYSQL *mysql, char *select_query)
 database_table_bind_s database_bind_select_copy
 	(database_table_bind_s source, string_s *columns, int count)
 {
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 		, MYSQLBIND_BIND_COPY_REQUEST
 		, count);
 
 	for (size_t i = 0; i < count; ++i)
 	{
 		string_s string	= columns[i];
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 			, MYSQLBIND_BIND_COPY_REQUEST_INFO
 			, string.length, string.address
 			, string.length);
@@ -420,7 +419,7 @@ database_table_bind_s database_bind_select_copy
 
 	if (count > source.count)
 	{
-		error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, MYSQLBIND_COLUMN_COUNT_ERROR
 			, source.count
 			, count);
@@ -442,7 +441,7 @@ database_table_bind_s database_bind_select_copy
 
 		if (bucket.key.address == NULL) 
 		{
-			error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_ERROR
+			output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 				, MYSQLBIND_COLUMN_NOT_FOUND
 				, string.length, string.address
 				, string.length);
@@ -521,7 +520,7 @@ void database_bind_free(database_table_bind_s bind)
 	m_free(bind.bind_params, MEMORY_FILE_LINE);
 
 	hash_table_free(bind.hash_table);
-	error_handle(ERRORS_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
+	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 			, MYSQLBIND_BIND_FREE
 			, bind.count);
 }

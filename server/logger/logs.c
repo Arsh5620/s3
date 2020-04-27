@@ -6,8 +6,8 @@
 #include <string.h>
 
 #include "./logs.h"
-#include "../general/defines.h"
-#include "../general/strings.h"
+#include "../general/define.h"
+#include "../general/string.h"
 #include "../memdbg/memory.h"
 #include "../files/file.h"
 
@@ -17,7 +17,7 @@ static logger_s logs = {0};
 // time according to format, check strftime for more information
 // set ns (nanosecond) to 1 to use the LOG_DATE_FORMAT_NS
 // use free to free memory when not in use anymore.
-char *logs_gettime_s(char *format, char ns, size_t *len)
+char *logs_gettime_s(char *format, char ns, long *len)
 {
 	char *memory    = malloc(LOG_MAX_TIMESTRINGL);
 	if(memory == NULL)
@@ -61,11 +61,11 @@ char *logs_gettime_s(char *format, char ns, size_t *len)
 
 int logs_open_file(logger_s *log)
 {
-	size_t length	= 0;
+	long length	= 0;
 	char *dateformat	= logs_gettime_s(LOG_DATE_FORMAT, FALSE, &length);
 
-	strings_sprintf(&log->filename, 
-		LOG_FILE_NAME, LOG_DIR_NAME, dateformat);   
+	log->filename	= string_sprintf2(LOG_FILE_NAME, NULL
+		, LOG_DIR_NAME, dateformat);   
 
 	free(dateformat); 
 
@@ -120,7 +120,7 @@ size_t logs_write(enum logger_level level
 	}
 	
 	char is_error	= 0;
-	size_t length	= 0;
+	long length	= 0;
 	char *dateformat	= logs_gettime_s(LOG_DATE_FORMAT, TRUE, &length);
 	int write	= fwrite(dateformat, 1, length, logs.file_p);
 
@@ -138,8 +138,7 @@ size_t logs_write(enum logger_level level
 	if(length != write)
 		is_error	= TRUE;
 	else { 
-		char *buffer	= 0;
-		length  = strings_svprintf(&buffer, string, variable_args);
+		char *buffer	= string_svprintf2(string, variable_args, &length);
 		write	= fwrite(buffer, 1, length, logs.file_p);
 		
 		fwrite(LOG_FILE_NEWLINE, 1, 2, logs.file_p);

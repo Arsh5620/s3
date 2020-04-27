@@ -28,13 +28,13 @@ enum logger_level {
 	, LOGGER_LEVEL_CATASTROPHIC // program WILL exit. 
 };
 
-#define LOG_LEVEL(x) (x & 0xFF)
-#define LOG_LEVEL_EXIT_GET(x) (x >> 8)
-#define LOG_LEVEL_EXIT_SET(x, y) (x | (y << 8))
+#define LOG_LEVEL(x)		(x & 0xFF)
+#define LOG_EXIT_GET(x) 	(x >> 8)
+#define LOG_EXIT_SET(x, y)	(LOG_LEVEL(x) | (y << 8))
 
 logger_s logs_open();
 void logs_close();
-char *logs_gettime_s(char *format, char ns, size_t *len);
+char *logs_gettime_s(char *format, char ns, long *len);
 size_t logs_write(enum logger_level level
 	, char *string, va_list variable_args);
 

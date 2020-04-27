@@ -16,15 +16,15 @@ int dbp_prehook_notification(dbp_request_s *request)
 int dbp_posthook_notification(dbp_request_s *request, dbp_response_s *response)
 {
 	FILE *file  = 
-		fopen(request->temp_file.filename.address, FILE_MODE_READONLY);
+		fopen(request->temp_file.name.address, FILE_MODE_READBINARY);
 
-	file_reader_s reader    = file_init_reader(file);
+	file_reader_s reader    = file_reader_init(file);
 	file_reader_fill(&reader, 0, request->header_info.data_length);
 
-	error_handle(ERRORS_HANDLE_STDOLOG, LOGGER_LEVEL_INFO
+	output_handle(OUTPUT_HANDLE_BOTH, LOGGER_LEVEL_INFO
 		, NOTIFICATION_GENERAL
 		, (int)reader.readlength, (char*)reader.buffer);
 
-	file_close_reader(&reader);
+	file_reader_close(&reader);
 	return(SUCCESS);
 }
