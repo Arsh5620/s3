@@ -1,12 +1,15 @@
-#include "file.h"
 #include <errno.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include "./file.h"
+#include "./path.h"
 #include "../memdbg/memory.h"
+#include "../general/string.h"
 
-//file dir make if not exists
+// make a directory if not exists, returns FILE_DIR_EXISTS if the directory
+// is either created or already exists, and returns error otherwise.
 int file_dir_mkine(char *dir_name)
 {
 	DIR *dir = opendir(dir_name);
@@ -32,20 +35,18 @@ int file_dir_mkine(char *dir_name)
 	return(FILE_DIR_ERROR_OPEN);
 }
 
-// only need to use if the name is not null-terminated. 
-// use fopen if the name is null terminated to open the file. 
-FILE *file_open(char *name, int length, char *mode)
+
+FILE *file_open(string_s name, char *mode)
 {   
-	if (length > FILE_NAME_LENGTH)
+	if (name.length > FILE_NAME_LENGTH)
 	{
 		return(NULL);
 	}
 
-	char filename[length + 1];
-	filename[length] = NULL_ZERO;
-	memcpy(filename, name, length);
+	string_s name_null	= string_new_copy(name.address, name.length);
+	FILE *file	= fopen(name_null.address, mode);
+	string_free(name_null);
 
-	FILE *file  = fopen(filename, mode);
 	return(file);
 }
 
@@ -54,13 +55,14 @@ int file_delete(char *filename)
 	return (unlink(filename));
 }
 
-int file_download(FILE *file, network_s *network, file_write_s *info
-	, void (*sha1_hash)(file_write_s*, network_data_s, boolean))
+int file_download(FILE *file, network_s *network
+	, ulong size, file_sha1 *hash
+	, void (*sha1_hash)(file_sha1*, network_data_s, boolean))
 {
-	int read_required = 0;
+	ulong read_required = 0, index = 0;
 	do
 	{
-		read_required = info->size - info->index;
+		read_required = size - index;
 
 		if (read_required > FILE_BUFFER_LENGTH)
 		{
@@ -80,38 +82,35 @@ int file_download(FILE *file, network_s *network, file_write_s *info
 			return(FILE_NETWORK_ERROR);
 		}
 	
-		int bytes_written   = fwrite(data.data_address, 1
-			, data.data_length, file);
-
-		sha1_hash(info, data, FALSE);
+		int written   = fwrite(data.data_address, 1, data.data_length, file);
 	
-		if (bytes_written != data.data_length)
+		if (written != data.data_length)
 		{
 			return(FILE_WRITE_ERROR);
 		}
 
+		sha1_hash(hash, data, FALSE);
 		network_data_free(data);
-		info->index += data.data_length;
+		index += data.data_length;
 	} 
-	while(info->index < info->size);
+	while (index < size);
 
-	sha1_hash(info, (network_data_s){0}, TRUE);
+	sha1_hash(hash, (network_data_s){0}, TRUE);
 
 	fflush(file);
-	return(FILE_SUCCESS);    
+	return (FILE_SUCCESS);    
 }
 
-struct stat file_read_stat(FILE *file)
+struct stat file_stat(FILE *file)
 {
 	struct stat file_stat = {0};
 	fstat(file->_fileno, &file_stat);
 	return(file_stat);
 }
 
-// file_init_reader sets up memory for an open file to be 
-// read as a stream so that the entire file does not need to 
-// be loaded into the memory. 
-file_reader_s file_init_reader(FILE *file)
+// this function initializes file_reader_s so that files can be 
+// read as stream without having to read the entire file into memory.
+file_reader_s file_reader_init(FILE *file)
 {
 	file_reader_s reader = {0};
 	if (file == NULL)
@@ -122,11 +121,11 @@ file_reader_s file_init_reader(FILE *file)
 	reader.file	= file;
 	reader.maxlength	= FILE_BUFFER_LENGTH;
 	reader.buffer	= m_malloc(FILE_BUFFER_LENGTH, MEMORY_FILE_LINE);
-	reader.stats	= file_read_stat(file);
-	return(reader);
+	reader.stats	= file_stat(file);
+	return (reader);
 }
 
-void file_close_reader(file_reader_s *reader)
+void file_reader_close(file_reader_s *reader)
 {
 	if (reader->buffer)
 	{
@@ -134,45 +133,53 @@ void file_close_reader(file_reader_s *reader)
 	}
 }
 
-// file_reader_fill will fill the buffer with file data 
-// data will be written at (buffer + fill_at) for fill_size bytes
-int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size)
+// fills the buffer at index location with size bytes
+int file_reader_next(file_reader_s *reader, long index, long size)
 {
-	if (reader->is_eof)
+	if (reader->eof)
 	{
 		reader->readlength  = -1;
 		return (FILE_ERROR);
 	}
 
-	int read    = fread(reader->buffer + fill_at, 1, fill_size, reader->file);
+	int read    = fread(reader->buffer + index, 1, size, reader->file);
 
-	reader->is_eof = feof(reader->file);
+	reader->eof = feof(reader->file);
 	reader->readlength  = read;
 
-	if (read != fill_size &&  reader->is_eof == 0)
+	if (read != size &&  reader->eof == FALSE)
 	{
 		return(FILE_READ_ERROR);
 	}
 	return(FILE_SUCCESS);
 }
 
-string_s file_path_concat(string_s dir1, string_s file_name)
+string_s file_path_concat(string_s path1, string_s path2)
 {
-	string_s path	= {0};
-	path.length	= strings_sprintf((char**)&path.address, "%.*s/%.*s"
-		, dir1.length, dir1.address
-		, file_name.length, file_name.address);
-	return(path);
+	long length;
+	char *path	= string_sprintf("%.*s/%.*s", &length
+		, path1.length, path1.address
+		, path2.length, path2.address);
+	
+	string_s path_s;
+	path_s.address	= path;
+	path_s.length	= length;
+	file_path_s normalized_path	= path_parse(path_s);
+	char *path_p	= path_construct(normalized_path.path_list);
+	m_free(path, MEMORY_FILE_LINE);
+
+	path_s.address	= path_p;
+	path_s.length	= strlen(path_p);
+
+	// TODO: normalize paths
+	// that is removing all the unneccessary forward slashes, "." and ".."
+	// and also the "root-forward-slash" if it exists.
+	return(path_s);
 }
 
 int file_rename(string_s dest, string_s src)
 {
-	int result	= rename(src.address, dest.address);
-	if (result == -1)
-	{
-		perror("rename");
-	}
-	return (result == 0 ? SUCCESS : FAILED);
+	return (rename(src.address, dest.address));
 }
 
 int file_append(char *dest, char *src, ulong index, ulong size)
@@ -182,9 +189,9 @@ int file_append(char *dest, char *src, ulong index, ulong size)
 	ulong written	= 0;
 
 	FILE *src_file	= fopen(src, FILE_MODE_READBINARY);
-	FILE *dest_file	= fopen(dest, FILE_MODE_WRITENOCREATE);
+	FILE *dest_file	= fopen(dest, FILE_MODE_WRITEEXISTING);
 
-	if (src_file	== NULL || dest_file == NULL)
+	if (src_file == NULL || dest_file == NULL)
 	{
 		return (FILE_ERROR_OPEN);
 	}
