@@ -1,23 +1,20 @@
 # ifndef NETWORK_INCLUDE_GAURD
 # define NETWORK_INCLUDE_GAURD
 
-#define __NETWORK__
-
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include "../general/defines.h"
+#include <netinet/tcp.h>
+#include "../general/define.h"
 
-#define NETWORK_PORT			4096
-#define NETWORK_LISTEN_QUEQUE	8
-#define NETWORK_READ_BUFFER		(8 MB) /* 8 * 1024 * 1024 */
+#define NETWORK_READ_BUFFER MB(1)
 
 enum network_errors_enum {
 	NETWORK_ERROR_SUCCESS	= 0
 	, NETWORK_ERROR_READ_PARTIAL = 128
 	, NETWORK_ERROR_READ_CONNRESET
 	, NETWORK_ERROR_READ_ERROR
+	, NETWORK_REQUEST_TOO_BIG
 };
-
 
 /**
  * server - server file pointer
@@ -45,9 +42,7 @@ typedef struct network_connection_data
 } network_data_s;
 
 /**
- * data_types_s: for network read less than 8 bytes, where
- * value can be converted to a C type such as char, short, int or long. 
- * we will be able to do the converstion and use this struct.
+ * for atomic data types the buffer will be cast into one of the avail types
  */
 typedef struct {
 	union {
@@ -55,15 +50,16 @@ typedef struct {
 		short short_t;
 		int int_t;
 		long long_t;
-	} _u;
+	} u;
 	uint error_code;
 } network_data_atom_s;
 
 network_s network_connect_init_sync(int port);
-int network_connect_accept_sync(network_s *connection);
-void network_data_free(network_data_s data);
+void network_connect_accept_sync(network_s *connection);
 
 network_data_s network_read_stream(network_s *connection, ulong size);
+void network_data_free(network_data_s data);
+
 int network_write_stream(network_s *network, char *buffer, ulong buffer_length);
 
 #define NETWORK_READ_DECLARE(type) \
