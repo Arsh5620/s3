@@ -13,56 +13,8 @@ else
 endif
 LINKFLAGS=-lmysqlclient -lssl -lcrypto
 
-HEADERFILES= \
-	./general/defines.h \
-	./general/strings.h \
-	./general/binarysearch.h \
-	./data-structures/hash_table.h \
-	./data-structures/list.h \
-	./files/file.h \
-	./files/paths.h \
-	./files/filemgmt.h \
-	./memdbg/memory.h \
-	./databases/database.h \
-	./config/config.h \
-	./protocol/protocol.h \
-	./networking/network.h \
-	./parser/parser.h \
-	./parser/lexer.h \
-	./logger/logs.h \
-	./threading/threads.h \
-	./errors/errorhandler.h \
-	./data-structures/linked_list.h
-
-SOURCEFILES= \
-	./general/binarysearch.c \
-	./general/strings.c \
-	./data-structures/hash_table.c \
-	./data-structures/list.c \
-	./files/filemgmt.c \
-	./files/file.c \
-	./files/paths.c \
-	./memdbg/memory.c \
-	./main.c \
-	./databases/database.c \
-	./config/config.c \
-	./protocol/action-create.c \
-	./protocol/notification.c \
-	./protocol/protocol.c \
-	./networking/network.c \
-	./parser/parser.c \
-	./parser/lexer.c \
-	./logger/logs.c \
-	./threading/threads.c \
-	./errors/errorhandler.c \
-	./data-structures/linked_list.c \
-	./protocol/response.c \
-	./protocol/download.c \
-	./protocol/constants.c \
-	./protocol/request.c \
-	./protocol/action-update.c \
-	./protocol/action-delete.c
-
+HEADERFILES=$(shell find . -type f -name "*.h")
+SOURCEFILES=$(shell find . -type f -name "*.c")
 
 OBJFILES=${SOURCEFILES:c=o}
 EXECUTABLE=main
