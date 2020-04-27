@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include "../general/string.h"
 #include "../networking/network.h"
-#include "../general/strings.h"
 #include "../data-structures/list.h"
 
 enum file_errors_enum {
@@ -21,54 +21,52 @@ enum file_errors_enum {
 	, FILE_READ_ERROR
 };
 
-#define FILE_MODE_READONLY  "r"
-#define FILE_MODE_WRITEONLY "w"
 #define FILE_MODE_WRITEBINARY	"wb"
 #define FILE_MODE_READBINARY	"rb"
-#define FILE_MODE_WRITENOCREATE	"rb+"
-#define FILE_MODE_APPENDONLY    "a"
-
-#define FILE_MODE_READWRITE 	"r+"
-#define FILE_MODE_READOVERWRITE "w+"
-#define FILE_MODE_READAPPEND    "a+"
+#define FILE_MODE_WRITEEXISTING	"rb+"
 
 #define FILE_NAME_LENGTH	(256)
-#define FILE_BUFFER_LENGTH	(1 MB)
+#define FILE_BUFFER_LENGTH	(MB(1))
 #define FILE_SHA1_SIZE		(160/8)
 
-typedef struct file_write_helper
+typedef struct file_info
 {
 	size_t index;
 	size_t size;
-	string_s filename;
-	my_list_s hash_list; // sha1 hash for every 1 MB of file block
-	char file_sha1[20]; // 20 bytes means 160 bits
+	string_s name;
+} file_info_s;
+
+typedef struct file_hash_sha1
+{
+	my_list_s hash_list;	// sha1 hash for every 1 MB of file block
 	char *hash_buffer;
 	ulong hash_index, hash_size;
-} file_write_s;
+} file_sha1;
 
 typedef struct {
 	FILE *file;
 	struct stat stats;    
 
 	char *buffer;
-	long index
-		, readlength
-		, maxlength;
-	char is_eof;
+	long index;
+	long readlength;
+	long maxlength;
+	boolean eof;
 } file_reader_s;
 
-int file_append(char *dest, char *src, ulong index, ulong size);
-int file_dir_mkine(char *dir_name);
-int file_delete(char *filename);
-struct stat file_read_stat(FILE *file);
-file_reader_s file_init_reader(FILE *file);
+int file_dir_mkine(char *dir);
+int file_delete(char *file);
 int file_rename(string_s dest, string_s src);
-void file_close_reader(file_reader_s *reader);
-FILE *file_open(char *name, int length, char *mode);
-int file_download(FILE *file, network_s *network, file_write_s *info
-	, void (*sha1_hash)(file_write_s*, network_data_s, boolean));
+struct stat file_stat(FILE *file);
+
+void file_reader_close(file_reader_s *reader);
+file_reader_s file_reader_init(FILE *file);
 int file_reader_fill(file_reader_s *reader, long fill_at, long fill_size);
-string_s file_path_concat(string_s dir1, string_s file_name);
+
+int file_append(char *dest, char *src, ulong index, ulong size);
+int file_download(FILE *file, network_s *network
+	, ulong size, file_sha1 *hash
+	, void (*sha1_hash)(file_sha1*, network_data_s, boolean));
+string_s file_path_concat(string_s path1, string_s path2);
 
 # endif

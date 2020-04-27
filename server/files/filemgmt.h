@@ -2,7 +2,7 @@
 #define FILEMGMT_INCLUDE_GAURD
 
 #include "../files/file.h"
-#include "../general/strings.h"
+#include "../general/string.h"
 
 enum filemgmt_errors_enum {
 	FILEMGMT_EXISTS	= 1
