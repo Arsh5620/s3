@@ -78,7 +78,7 @@ my_list_s parser_parse_file(FILE *file)
 {
 	// fill the file initially. 
 	file_reader_s reader    = file_reader_init(file);
-	file_reader_fill(&reader, 0, reader.maxlength);
+	file_reader_next(&reader, 0, reader.maxlength);
 
 	lexer_s lexer	= lexer_init(reader.buffer, reader.readlength);
 	my_list_s list	= my_list_new(12, sizeof(key_value_pair_s));
@@ -120,7 +120,7 @@ my_list_s parser_parse_file(FILE *file)
 					, reader.buffer + status.base_index, bytes_move);
 			}
 
-			file_reader_fill(&reader, bytes_move, bytes_fill);
+			file_reader_next(&reader, bytes_move, bytes_fill);
 
 			reader.readlength += bytes_move;
 			lexer_reset(&lexer, &status, reader.readlength);

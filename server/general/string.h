@@ -14,7 +14,7 @@ typedef struct string_struct {
 #define STRING_ISEMPTY(string)	(string.address == NULL || string.length < 1)
 
 #define STRING(x) \
-	(string_s){.address = x, .length = sizeof(x), .max_length = sizeof(x)}
+	(string_s){.address = x, .length = sizeof(x) - 1, .max_length = sizeof(x)}
 // @ lower case flag
 #define STRING_LC_FLAG			(0x20)
 

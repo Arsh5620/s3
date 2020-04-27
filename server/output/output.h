@@ -5,10 +5,10 @@
 #include "../general/define.h"
 
 #define PROTOCOL_LOG_INIT_COMPLETE \
-	"logging subsystem has been started"
+	"logging sub-system has been started"
 
 #define PROTOCOL_NETWORK_SBS_INIT \
-	"setting up network subsystem"
+	"setting up network sub-system now"
 
 #define PROTOCOL_MYSQL_LOGIN_INFO \
 	"attempting to connect to mysql server: \n" \
@@ -18,35 +18,35 @@
 	"database: \"%s\""
 
 #define PROTOCOL_MYSQL_FAILED_CONNECT \
-	"failed to connect to mysql, program will now exit"
+	"failed to connect to mysql server, program will now exit"
 
 #define PROTOCOL_NETWORK_WAIT_CONNECT \
 	"server is waiting for a client to connect"
 
 #define PROTOCOL_NETWORK_CLIENT_CONNECT \
-	"a client connected from host \"%s\" and port number %d"
+	"a client connected from address \"%s\" and port number (%d)"
 
 #define PROTOCOL_SERVER_SHUTDOWN \
 	"server is about to shutdown, finishing cleanup before exit"
 
 #define PROTOCOL_CLIENT_CONNECT_ABORTED \
-	"client connection has been terminated, reason: \"%s\""
+	"client connection has been terminated for reason: \"%s\""
 
 #define PROTOCOL_DOWNLOAD_FILE_NOOPEN \
-	"could not open the temporary file for writing upload from the client"
+	"could not open the temporary file for writing data from the client"
 
 #define PROTOCOL_DOWNLOAD_COMPLETE \
-	"data for file name \"%.*s\" uploaded %d bytes " \
+	"client sent file name \"%.*s\" for (%d) bytes " \
 	"[status: %d, time: %.3fms, speed: %.2fMb/s]"
 
 #define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS\
-	"could not open directory \"%s\", could be directory permissions issue"
+	"could not open directory \"%s\", permission denied"
 
 #define PROTOCOL_ABORTED_CORRUPTION \
 	"connection terminated because of corruption: [0x%.16lx]"
 
 #define PROTOCOL_READ_HEADERS_FAILED \
-	"error while reading the stream for key value pairs in headers"
+	"error while reading the key value pairs in the buffer"
 
 #define PROTOCOL_SHUTDOWN_REASON_FLOW \
 	"expected as per program flow"
@@ -61,7 +61,7 @@
 	"could not initialize mysql client library"
 
 #define DATABASE_MYSQL_INIT_FAILED \
-	"could not init a mysql handle"
+	"could not initialize a mysql handle to attempt connection"
 
 #define DATABASE_MYSQL_AUTH_FAILED \
 	"could not connect or authenticate with mysql server, error: %s"
@@ -76,7 +76,7 @@
 	"failed to create database/table schema, integrity check failed"
 
 #define DATABASE_INTEGRITY_PING	\
-	"checking database for connection and response, ping"
+	"checking database for connection and response, pinging server"
 
 #define DATABASE_CONNECTED_SERVER \
 	"connected to mysql database, ping successful, server name: \"%s\""
@@ -113,19 +113,19 @@
 	"network function \"%s\" error: %s, errno: %d"
 
 #define NETWORK_PORT_LISTENING \
-	"network init complete on port %d, " \
-	"and is listening with queque length of %d"
+	"network initialization complete on port number (%d), " \
+	"server now listening with a queque length of (%d)"
 
 #define MYSQLBIND_QUERY_FAILED \
-	"mysql bind setup failed, bind setup is required" \
-	" for parameterized queries, error: %s"
+	"mysql bind setup failed, setup required" \
+	" for querying the server, error: %s"
 
 #define MYSQLBIND_QUERY_RESULT_FAILED \
 	"mysql bind setup failed, error when performing" \
 	" mysql_store_result, error: %s"
 
 #define MYSQLBIND_QUERY_COLUMN_DISCOVERED \
-	"column discovery for bind setup found: %.*s.%.*s"
+	"column discovery for bind setup found: [%.*s::%.*s]"
 
 #define MYSQLBIND_COLUMN_COUNT_ERROR \
 	"selective bind columns requesting more column count than avail"\
@@ -136,13 +136,13 @@
 	"the table, column name: %.*s and length %d"
 
 #define MYSQLBIND_BIND_COPY_REQUEST \
-	"copy of binds requested, for %d columns"
+	"copy of binds requested for %d columns"
 
 #define MYSQLBIND_BIND_COPY_REQUEST_INFO \
 	"column information for bind copy: name \"%.*s\" with length %d"
 
 #define MYSQLBIND_BIND_FREE \
-	"bind free for params count %d"
+	"bind release requested for %d columns"
 
 #define FILEMGMT_RECORD_EXISTS \
 	"file \"%.*s\" already exists"
@@ -159,59 +159,57 @@
 	"address not found in table"
 
 #define DBP_CONNECTION_SHUTDOWN_CLEANUP \
-	"closing sockets / closing logging subsystem"
+	"closing sockets / closing logging sub-system"
 
 // RESPONSE STRINGS
 
 #define DBP_RESPONSE_STRING_ACTION_INVALID \
-	"the packet received does not contain a valid action type"
+	"Invalid action type."
 
 #define DBP_RESPONSE_STRING_HEADER_EMPTY \
-	"the packet received was empty, and has been discarded"
+	"Packet is empty."
 
 #define DBP_RESPONSE_STRING_PARSE_ERROR \
-	"the packet received does not follow the correct header key format"
+	"Invalid header format."
 
 #define DBP_RESPONSE_STRING_THIN_ATTRIBS \
-	"the packet received does not contain the " \
-	"required attributes for the requested action"
+	"Required attributes not present."
 
 #define DBP_RESPONSE_STRING_DATA_SEND \
-	"send data"
+	"Send data"
 
 #define DBP_RESPONSE_STRING_PACKET_OK \
-	"packet ok"
+	"OK"
 
 #define DBP_RESPONSE_STRING_CORRUPTED_PACKET \
-	"packet header corrupted, connection rejected"
+	"Packet header corrupted, conn-rejected."
 
 #define DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS \
-	"data header corrupted, connection rejected"
+	"Data header corrupted, conn-rejected."
 
 #define DBP_RESPONSE_STRING_SETUP_ENV_FAILED \
-	"setting up environment failed, connection rejected"
+	"Server error, cannot create environment."
 
 #define DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID \
-	"values passed to the packet as headers are rejected, try again"
+	"Invalid values."
 	
 #define DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY \
-	"file already exists"
+	"File already exists."
 
 #define DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR \
-	"server fault!, server cannot process your request at this time"
+	"Server error."
 
 #define DBP_RESPONSE_STRING_FILE_NOT_FOUND \
-	"requested file does not exists"
+	"File does not exists"
 
 #define DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS \
-	"update index is out of file bounds, \"update at\" index " \
-	"either bigger than file or less than zero"
+	"Update index out of bounds."
 	
 #define PARSER_STDOUT_ERROR_STRING \
-	"status code: %ld, line no: %ld, index no: %ld, line length: %d\n"
+	"status code: %ld, line no: %ld, index no: %ld, line length: %d"
 
 #define DBP_RESPONSE_STRING_DELETE_DATANOTNEEDED \
-	"requested action delete does not expect any data"
+	"Data not required."
 
 #define OUTPUT_HANDLE_STDOUT	0b0001
 #define OUTPUT_HANDLE_LOGS		0b0010

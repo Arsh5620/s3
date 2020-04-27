@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "output.h"
 
-void error_handle(long handle_type
+void output_handle(long handle_type
 	, enum logger_level log_level, char *format, ...)
 {
 	char stdout_print	= (handle_type & OUTPUT_HANDLE_STDOUT) > 0;

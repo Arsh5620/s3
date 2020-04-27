@@ -12,7 +12,7 @@ int dbp_prehook_update(dbp_request_s *request)
 	}
 
 	string_s file = file_path_concat(STRING(FILEMGMT_FOLDER_NAME)
-		,attribs.file_name);
+		,attribs.file_name, FALSE);
 
 	FILE *file_f	= fopen(file.address, FILE_MODE_READBINARY);
 	hash_table_bucket_s	data;

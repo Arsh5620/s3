@@ -154,7 +154,7 @@ int file_reader_next(file_reader_s *reader, long index, long size)
 	return(FILE_SUCCESS);
 }
 
-string_s file_path_concat(string_s path1, string_s path2)
+string_s file_path_concat(string_s path1, string_s path2, boolean remove_file)
 {
 	long length;
 	char *path	= string_sprintf("%.*s/%.*s", &length
@@ -165,7 +165,7 @@ string_s file_path_concat(string_s path1, string_s path2)
 	path_s.address	= path;
 	path_s.length	= length;
 	file_path_s normalized_path	= path_parse(path_s);
-	char *path_p	= path_construct(normalized_path.path_list);
+	char *path_p	= path_construct(normalized_path.path_list, remove_file);
 	m_free(path, MEMORY_FILE_LINE);
 
 	path_s.address	= path_p;

@@ -19,7 +19,7 @@ int dbp_posthook_notification(dbp_request_s *request, dbp_response_s *response)
 		fopen(request->temp_file.name.address, FILE_MODE_READBINARY);
 
 	file_reader_s reader    = file_reader_init(file);
-	file_reader_fill(&reader, 0, request->header_info.data_length);
+	file_reader_next(&reader, 0, request->header_info.data_length);
 
 	output_handle(OUTPUT_HANDLE_BOTH, LOGGER_LEVEL_INFO
 		, NOTIFICATION_GENERAL

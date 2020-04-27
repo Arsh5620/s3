@@ -5,7 +5,7 @@
 #include "../general/define.h"
 #include "../memdbg/memory.h"
 
-char *strings_internal_svprintf(char *string
+char *string_internal_svprintf(char *string
 	, va_list list, long *length, boolean alloc_debug)
 {
 	long size   = 0;
@@ -45,30 +45,30 @@ char *strings_internal_svprintf(char *string
 	return (pointer);
 }
 
-char *strings_svprintf(char *string, va_list list, long *length)
+char *string_svprintf(char *string, va_list list, long *length)
 {
-	return (strings_internal_svprintf(string, list, length, TRUE));
+	return (string_internal_svprintf(string, list, length, TRUE));
 }
 
-char *strings_svprintf2(char *string, va_list list, long *length)
+char *string_svprintf2(char *string, va_list list, long *length)
 {
-	return (strings_internal_svprintf(string, list, length, FALSE));
+	return (string_internal_svprintf(string, list, length, FALSE));
 }
 
-char *strings_sprintf(char *string, long *length, ...)
+char *string_sprintf(char *string, long *length, ...)
 {
 	va_list args;
 	va_start(args, length);
-	char *buffer	= strings_internal_svprintf(string, args, length, TRUE);
+	char *buffer	= string_internal_svprintf(string, args, length, TRUE);
 	va_end(args);
 	return(buffer);
 }
 
-char *strings_sprintf2(char *string, long *length, ...)
+char *string_sprintf2(char *string, long *length, ...)
 {
 	va_list args;
 	va_start(args, length);
-	char *buffer	= strings_internal_svprintf(string, args, length, FALSE);
+	char *buffer	= string_internal_svprintf(string, args, length, FALSE);
 	va_end(args);
 	return(buffer);
 }
@@ -85,7 +85,7 @@ void string_tolower(char *memory, ulong length)
 	}
 }
 
-string_s strings_new_copy(char *data, ulong length)
+string_s string_new_copy(char *data, ulong length)
 {
 	string_s string;
 	// +1 is for the NULL terminator

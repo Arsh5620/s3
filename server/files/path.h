@@ -17,4 +17,4 @@ typedef struct {
 my_list_s path_lex(string_s path, boolean *is_absolute);
 file_path_s path_parse(string_s path);
 int path_mkdir_recursive(char *path);
-char *path_construct(my_list_s path_list);
+char *path_construct(my_list_s path_list, boolean include_file);
