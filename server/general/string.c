@@ -21,7 +21,15 @@ char *string_internal_svprintf(char *string
 	}
 
 	size++;             /* For '\0' */
-	pointer = calloc(1, size);
+	if (alloc_debug) 
+	{
+		pointer	= m_calloc(size, MEMORY_FILE_LINE);
+	}
+	else 
+	{
+		pointer = calloc(1, size);
+	}
+	
 	if (pointer == NULL)
 	{
 		return NULL;

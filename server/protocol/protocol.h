@@ -17,7 +17,7 @@
 #include "../data-structures/list.h"
 #include "../parser/parser.h"
 #include "../databases/database.h"
-#include "../config/config.h"
+#include "../dataparser/data.h"
 #include "../files/path.h"
 
 #define DBP_PROTOCOL_MAGIC		0xD0
@@ -85,12 +85,6 @@ typedef struct {
 } dbp_header_s;
 
 typedef struct {
-	char *string;
-	ulong strlen;
-	enum dbp_attribs_enum attrib_code;
-} dbp_header_keys_s;
-
-typedef struct {
 	string_s file_name;
 	uint crc32;
 	long update_at;
@@ -109,17 +103,9 @@ typedef struct {
 	} \
 	break;
 
-extern dbp_header_keys_s attribs[];
-extern dbp_header_keys_s actions[];
+extern data_keys_s attribs[];
+extern data_keys_s actions[];
 extern enum dbp_attribs_enum dbp_call_asserts[][DBP_ATTRIBS_COUNT];
-extern struct config_parse attribs_parse[];
-
-#define DBP_STRINGKEY(str, code) \
-	(dbp_header_keys_s) { \
-		.string = str \
-		, .strlen = sizeof(str) - 1 \
-		, .attrib_code = code \
-	}
 
 typedef struct {
 	/*

@@ -26,7 +26,6 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response)
 	// and that the data has been downloaded to a temp file.
 	// all we need to do is a simple file move. 
 
-	dbp_protocol_attribs_s attribs	= request->attribs;
 	string_s destination	= request->working_file_name;
 	string_s source	= request->temp_file.name;
 
@@ -37,15 +36,18 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response)
 
 	my_list_s path_list	= path_parse(destination).path_list;
 	char *path	= path_construct(path_list, TRUE);
+	char *path2 = path_construct(path_list, FALSE);
 	int result	= path_mkdir_recursive(path);
 	m_free(path, MEMORY_FILE_LINE);
 	if (result != SUCCESS)
 	{
 		return (DBP_RESPONSE_GENERAL_DIR_ERROR);
 	}
-	
-	if (filemgmt_rename_file(destination, source)
-		|| filemgmt_file_add(attribs.file_name))
+	string_s s1;
+	s1.address	= path2;
+	s1.length	= strlen(path2);
+	if (filemgmt_rename_file(s1, source)
+		|| filemgmt_file_add(s1))
 	{
 		return(DBP_RESPONSE_GENERAL_FILE_ERROR);
 	}

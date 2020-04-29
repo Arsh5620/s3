@@ -57,7 +57,7 @@ while(1):
 	magic_invalid1	= 0x00D1000000000000
 
 	key_value_pairs	= ("action=create\n"
-		"filename=\"filename\"\n"
+		"filename=\"../this../../this/will/be././a/../whole./.../lot/of/../././directories/filename\"\n"
 		"crc=00565423\n")
 	key_value_pair_nonparseable	= ("action.==create\n"
 		"filename~\"filename\"\n"

@@ -8,7 +8,7 @@
 #include <mysql.h>
 #include "../general/string.h"
 #include "../data-structures/hash_table.h"
-#include "../config/config.h"
+#include "../dataparser/data.h"
 
 typedef struct sql_connection_information
 {
