@@ -79,8 +79,6 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 
 void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 {
-	config_free_all(attribs_parse, DBP_ATTRIBS_STRUCT_COUNT
-		, (char*)&request->attribs);
 	m_free(request->header_raw.data_address, MEMORY_FILE_LINE);
 	my_list_free(request->header_list);
 	my_list_free(response->header_list);
@@ -208,7 +206,8 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 	}
 	
 	request->instance	= (char*)protocol;
-	request->header_table   = dbp_header_hash(request->header_list);
+	request->header_table   = data_make_table(request->header_list
+		, attribs, DBP_ATTRIBS_COUNT);
 
 	result	= dbp_request_read_action(request);
 	if (result != DBP_RESPONSE_SUCCESS)
@@ -232,10 +231,6 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 	
 	dbp_protocol_attribs_s dbp_parsed_attribs	= {0};
 
-	config_read_all(request->header_list
-		, attribs_parse
-		, DBP_ATTRIBS_STRUCT_COUNT
-		, (char*)&dbp_parsed_attribs);
 	
 	request->attribs	= dbp_parsed_attribs;
 	request->additional_data	= hash_table_init(10, TRUE);

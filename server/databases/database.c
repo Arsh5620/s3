@@ -10,17 +10,12 @@
 static MYSQL *sql_connection;
 static database_table_bind_s binds;
 
-struct config_parse config_property[5] = {
-	STRUCT_CONFIG_PARSE("database", CONFIG_DATABASE
-		, database_connection_s, db, CONFIG_TYPE_STRING)
-	, STRUCT_CONFIG_PARSE("machine", CONFIG_MACHINE
-		, database_connection_s, host, CONFIG_TYPE_STRING)
-	, STRUCT_CONFIG_PARSE("password", CONFIG_PASSWORD
-		, database_connection_s, passwd, CONFIG_TYPE_STRING)
-	, STRUCT_CONFIG_PARSE("port", CONFIG_PORT
-		, database_connection_s, port, CONFIG_TYPE_INT)
-	, STRUCT_CONFIG_PARSE("username", CONFIG_USERNAME
-		, database_connection_s, user, CONFIG_TYPE_STRING)
+data_keys_s configs[] = {
+	DBP_KEY("database", CONFIG_DATABASE)
+	, DBP_KEY("machine", CONFIG_MACHINE)
+	, DBP_KEY("password", CONFIG_PASSWORD)
+	, DBP_KEY("port", CONFIG_PORT)
+	, DBP_KEY("username", CONFIG_USERNAME)
 };
 
 MYSQL *database_get_handle()
@@ -33,6 +28,12 @@ database_table_bind_s database_get_global_bind()
 	return(binds);
 }
 
+int database_setup_login(data_result_s result, database_connection_s *conninfo)
+{
+	char *username	= data_get_key_value(result.hash, CONFIG_USERNAME);
+	return (FAILED);
+}	
+
 // After database_init is called a static variable sql_connection
 // is initialized to the connection information and a mysql db 
 // connection is attempted. 
@@ -40,8 +41,10 @@ int database_init(char *config_file)
 {
 	database_connection_s connect = {0};
 
-	config_parse_files(config_file
-		, config_property, CONFIG_COUNT, (char*)&connect);
+	data_result_s result	= data_parse_files(config_file
+		, configs, sizeof(configs)/sizeof(data_keys_s));
+
+	database_setup_login(result, &connect);
 
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 		, PROTOCOL_MYSQL_LOGIN_INFO
@@ -83,7 +86,7 @@ int database_init(char *config_file)
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 			, DATABASE_MYSQL_CONNECTED);
 	
-	config_free_all(config_property, CONFIG_COUNT, (char*)&connect);
+	data_free(result);
 
 	if (database_verify_integrity() != MYSQL_SUCCESS)
 	{

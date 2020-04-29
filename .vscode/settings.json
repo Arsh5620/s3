@@ -64,6 +64,10 @@
 		"output.h": "c",
 		"config.h": "c",
 		"path.h": "c",
-		"linked_list.h": "c"
+		"linked_list.h": "c",
+		"vector": "c",
+		"memory": "c",
+		"thread": "c",
+		"data.h": "c"
 	}
 }
