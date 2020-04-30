@@ -3,11 +3,31 @@
 #include <assert.h>
 #include "data.h"
 
-int data_convert(key_value_pair_s *pair, enum config_data_type type
+int data_get_and_convert(data_result_s result, long key
+	, enum data_type type, char *memory, long length)
+{
+	key_value_pair_s *pair	= data_get_key_value(result, key);
+	if (pair == NULL)
+	{
+		return (DATA_KEY_NOT_FOUND);
+	}
+	if (data_convert(pair, type, memory, length) == FAILED)
+	{
+		return (DATA_CANNOT_CONVERT);
+	}
+	return (SUCCESS);
+}
+
+int data_convert(key_value_pair_s *pair, enum data_type type
 	, char *out, ulong length)
 {
 	switch (type)
 	{
+	case CONFIG_TYPE_CHAR_PCOPY:
+		{
+			*(char**)(out)	= pair->value;
+		}
+		break;
 	case CONFIG_TYPE_STRING_S:
 		{
 			if (length < sizeof(string_s))
@@ -79,13 +99,14 @@ int data_convert(key_value_pair_s *pair, enum config_data_type type
 	return (SUCCESS);
 }
 
-char *data_get_key_value(hash_table_s table, long key)
+key_value_pair_s *data_get_key_value(data_result_s result, long key)
 {
 	hash_input_u key_u = {.number = key};
-	hash_table_bucket_s bucket	= hash_table_get(table, key_u, 0);
-	if (bucket.key.address != NULL)
+	hash_table_bucket_s bucket	= hash_table_get(result.hash, key_u, 0);
+	if (bucket.is_occupied == 1)
 	{
-		return (bucket.value.address);
+		return ((key_value_pair_s*)
+			my_list_get(result.list, bucket.value.number));
 	}
 	
 	return (NULL);
@@ -168,7 +189,7 @@ hash_table_s data_make_table(my_list_s list
 
 			hash_table_bucket_s bucket  = {0};
 			bucket.key.number	= attr.attrib_code;
-			bucket.value.number	= index;
+			bucket.value.number	= i;
 
 			hash_table_add(&table, bucket);
 		}

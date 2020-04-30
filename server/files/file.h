@@ -67,6 +67,6 @@ int file_append(char *dest, char *src, ulong index, ulong size);
 int file_download(FILE *file, network_s *network
 	, ulong size, file_sha1 *hash
 	, void (*sha1_hash)(file_sha1*, network_data_s, boolean));
-string_s file_path_concat(string_s path1, string_s path2, boolean remove_file);
+string_s file_path_concat(string_s path1, string_s path2);
 
 # endif

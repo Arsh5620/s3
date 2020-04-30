@@ -30,8 +30,18 @@ database_table_bind_s database_get_global_bind()
 
 int database_setup_login(data_result_s result, database_connection_s *conninfo)
 {
-	char *username	= data_get_key_value(result.hash, CONFIG_USERNAME);
-	return (FAILED);
+	IFELSERETURN(data_get_and_convert(result, CONFIG_USERNAME
+		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->user, sizeof(char*)));
+	IFELSERETURN(data_get_and_convert(result, CONFIG_PASSWORD
+		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->passwd, sizeof(char*)));
+	IFELSERETURN(data_get_and_convert(result, CONFIG_DATABASE
+		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->db, sizeof(char*)));
+	IFELSERETURN(data_get_and_convert(result, CONFIG_MACHINE
+		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->host, sizeof(char*)));
+	IFELSERETURN(data_get_and_convert(result, CONFIG_PORT
+		, CONFIG_TYPE_SHORT, (char*)&conninfo->port, sizeof(short)));
+
+	return (SUCCESS);
 }	
 
 // After database_init is called a static variable sql_connection

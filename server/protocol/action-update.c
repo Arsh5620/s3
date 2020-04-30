@@ -4,36 +4,26 @@
 
 int dbp_prehook_update(dbp_request_s *request)
 {
-	dbp_protocol_attribs_s attribs = request->attribs;
-
-	if(STRING_ISEMPTY(attribs.file_name))
+	string_s file_name	= request->file_info.real_file_name;
+	FILE *file	= fopen(file_name.address, FILE_MODE_READBINARY);
+	
+	if (!(filemgmt_file_exists(request->file_info.file_name) && file != NULL))
 	{
-		return(DBP_RESPONSE_ATTRIB_VALUE_INVALID);
-	}
-
-	string_s file = file_path_concat(STRING(FILEMGMT_FOLDER_NAME)
-		,attribs.file_name, FALSE);
-
-	FILE *file_f	= fopen(file.address, FILE_MODE_READBINARY);
-	hash_table_bucket_s	data;
-	data.key.address	= DBP_KEY_FILENAME;
-	data.key_len		= sizeof(DBP_KEY_FILENAME) - 1;
-	data.value.address	= file.address;
-	data.value_len		= file.length;
-
-	hash_table_add(&request->additional_data, data);
-
-	if (!(filemgmt_file_exists(attribs.file_name)
-		&& file_f != NULL))
-	{
-		return(DBP_RESPONSE_FILE_NOT_FOUND);
+		return (DBP_RESPONSE_FILE_NOT_FOUND);
 	}
 	
-	struct stat file_stats	= file_stat(file_f);
-	fclose(file_f);
-	if (attribs.update_at > -1 && attribs.update_at <= file_stats.st_size)
+	struct stat file_stats	= file_stat(file);
+	fclose(file);
+
+	long update_at	= 0;
+	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATEAT
+		, CONFIG_TYPE_LONG, (char*)&update_at, sizeof(long)))
 	{
-		// then everything is good, we can update the file. 
+		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
+	}
+
+	if (update_at > -1 && update_at <= file_stats.st_size)
+	{
 		return(SUCCESS);
 	}
 	else 
@@ -44,32 +34,32 @@ int dbp_prehook_update(dbp_request_s *request)
 
 int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response)
 {
-	hash_input_u key_name	= {
-		.address = DBP_KEY_FILENAME
-	};
-	ulong key_length	= sizeof(DBP_KEY_FILENAME) - 1;
+	boolean trunc	= 0;
+	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATETRIM
+		, CONFIG_TYPE_BOOLEAN, (char*)&trunc, sizeof(boolean)))
+	{
+		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
+	}
 
-	hash_table_bucket_s	file_name	= hash_table_get
-		(request->additional_data, key_name, key_length);
+	ulong update_at	= 0;
+	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATEAT
+		, CONFIG_TYPE_LONG, (char*)&update_at, sizeof(long)))
+	{
+		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
+	}
 
-	char *file_name_s	= file_name.value.address;
-	if (file_name_s == NULL)
+	string_s real_file	= request->file_info.real_file_name;
+	if (trunc && truncate(real_file.address, update_at))
 	{
 		return(DBP_RESPONSE_GENERAL_SERVER_ERROR);
 	}
 
-	if (request->attribs.trim 
-		&& truncate(file_name.value.address, request->attribs.update_at))
-	{
-		return(DBP_RESPONSE_GENERAL_SERVER_ERROR);
-	}
-
-	int result	= file_append(file_name_s
-		, request->temp_file.name.address
-		, request->attribs.update_at
+	int result	= file_append(real_file.address
+		, request->file_info.temp_file_name.address
+		, update_at
 		, request->header_info.data_length);
-
-	m_free(file_name_s, MEMORY_FILE_LINE);
+	
+	//TODO free memory used.
 	if (result != FILE_SUCCESS)
 	{
 		return(DBP_RESPONSE_GENERAL_SERVER_ERROR);
