@@ -83,7 +83,6 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 	my_list_free(request->header_list);
 	my_list_free(response->header_list);
 	hash_table_free(request->header_table);
-	hash_table_free(request->additional_data);
 }
 
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
@@ -193,6 +192,34 @@ void dbp_close(dbp_protocol_s protocol)
 	logs_close();
 }
 
+int dbp_setupenv(dbp_request_s *request)
+{
+	string_s client_filename	= {0};
+	if (filemgmt_setup_temp_files(&request->file_info) != SUCCESS)
+	{
+		return (DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE);
+	}
+
+	if (data_get_and_convert(request->data_result, DBP_ATTRIB_FILENAME
+		, CONFIG_TYPE_STRING_S, (char*)&client_filename, sizeof(string_s))
+		 == SUCCESS)
+	{
+		if (client_filename.address != NULL && client_filename.length == 0)
+		{
+			return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
+		}
+		int result = filemgmt_setup_environment(client_filename
+			, &request->file_info);
+		
+		if (result != SUCCESS)
+		{
+			return (DBP_RESPONSE_SETUP_ENV_FAILED);
+		}
+	}
+	return (SUCCESS);
+}
+
+
 // returns 0 for no-error, any other number for error or conn close request
 ulong dbp_next_request(dbp_protocol_s *protocol)
 {
@@ -225,16 +252,16 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		return(DBP_RESPONSE_THIN_ATTRIBS);
 	}
 	
-	//right after we have confirmed that all the required attribs
-	//are present for the function call to succeed, we can parse them
-	//to the structure for dbp_common_attribs_s
+	// TODO
+	request->data_result.list	= request->header_list;
+	request->data_result.hash	= request->header_table;
 	
-	dbp_protocol_attribs_s dbp_parsed_attribs	= {0};
-
+	result	= dbp_setupenv(request);
+	if (result != SUCCESS)
+	{
+		return (result);
+	}
 	
-	request->attribs	= dbp_parsed_attribs;
-	request->additional_data	= hash_table_init(10, TRUE);
-
 	result = dbp_action_prehook(request);
 
 	if (result != DBP_RESPONSE_SUCCESS)
@@ -249,17 +276,10 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 			return(DBP_RESPONSE_ERROR_WRITE);
 		}
 
-		if (dbp_file_setup_environment() == SUCCESS) 
+		result	= dbp_request_data(protocol, request);
+		if (result != DBP_RESPONSE_SUCCESS)
 		{
-			result	= dbp_request_data(protocol, request);
-			if (result != DBP_RESPONSE_SUCCESS)
-			{
-				return(result);
-			}
-		} 
-		else 
-		{
-			return(DBP_RESPONSE_SETUP_ENV_FAILED);
+			return(result);
 		}
 	}
 
@@ -275,7 +295,7 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		return(DBP_RESPONSE_ERROR_WRITE);
 	}
 
-	m_free(request->temp_file.name.address, MEMORY_FILE_LINE);
+	// TODO still have release resources used by file mgmt.
 	return(DBP_RESPONSE_SUCCESS);
 }
 

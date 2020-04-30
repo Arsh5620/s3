@@ -154,7 +154,7 @@ int file_reader_next(file_reader_s *reader, long index, long size)
 	return(FILE_SUCCESS);
 }
 
-string_s file_path_concat(string_s path1, string_s path2, boolean remove_file)
+string_s file_path_concat(string_s path1, string_s path2)
 {
 	long length;
 	char *path	= string_sprintf("%.*s/%.*s", &length
@@ -164,17 +164,13 @@ string_s file_path_concat(string_s path1, string_s path2, boolean remove_file)
 	string_s path_s;
 	path_s.address	= path;
 	path_s.length	= length;
+
 	file_path_s normalized_path	= path_parse(path_s);
-	char *path_p	= path_construct(normalized_path.path_list, remove_file);
+	string_s result	= path_construct(normalized_path.path_list);
 	m_free(path, MEMORY_FILE_LINE);
+	path_free(normalized_path);
 
-	path_s.address	= path_p;
-	path_s.length	= strlen(path_p);
-
-	// TODO: normalize paths
-	// that is removing all the unneccessary forward slashes, "." and ".."
-	// and also the "root-forward-slash" if it exists.
-	return(path_s);
+	return(result);
 }
 
 int file_rename(string_s dest, string_s src)

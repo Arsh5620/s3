@@ -5,7 +5,7 @@ int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request)
 {
 	if (dbp_request_data_headers(protocol, request) == SUCCESS)
 	{
-		request->temp_file	= dbp_file_download(request);
+		dbp_file_download(request);
 	} 
 	else
 	{
@@ -98,32 +98,22 @@ int dbp_file_hash_writesha1(char *file_name, my_list_s list)
 	return (SUCCESS);
 }
 
-file_info_s dbp_file_download(dbp_request_s *request)
+int dbp_file_download(dbp_request_s *request)
 {
-	static int counter = 0;
-
 	char *temp_file;
 	file_info_s fileinfo  =  {0};
 	file_sha1 hash = {0};
 	fileinfo.size = request->header_info.data_length;
+	temp_file	= request->file_info.temp_file_name.address;
 
-	long length;
-	temp_file	= string_sprintf(DBP_TEMP_FORMAT, &length
-		, DBP_TEMP_DIR
-		, ++counter);
-	
 	FILE *temp  = fopen(temp_file, FILE_MODE_WRITEBINARY);
 
-	if (temp == NULL || length <= 0) 
+	if (temp == NULL)
 	{
 		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR
 			, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
-		fileinfo.size   = -1;
-		return(fileinfo);
+		return(FAILED);
 	}
-
-	fileinfo.name.address   = temp_file;
-	fileinfo.name.length    = length;
 
 	clock_t starttime = clock();
 
@@ -131,17 +121,9 @@ file_info_s dbp_file_download(dbp_request_s *request)
 	int download_status   = file_download(temp
 		, &protocol->connection, fileinfo.size, &hash, dbp_file_hash_sha1);
 
-	// assert(request->working_file_name.address); // its a bug if value not set
+	dbp_file_hash_writesha1(request->file_info.hash_file_name.address
+		, hash.hash_list);
 
-	char *hash_file_name = string_sprintf("%s/temp-(%d).sha1", &length
-		, DBP_TEMP_DIR, counter);
-	
-	request->temp_hash_file.address	= hash_file_name;
-	request->temp_hash_file.length	= length;
-
-	dbp_file_hash_writesha1(hash_file_name, hash.hash_list);
-
-	m_free(hash_file_name, MEMORY_FILE_LINE); // will log out a warning
 	m_free(hash.hash_buffer, MEMORY_FILE_LINE);
 
 	clock_t endtime = clock();
@@ -155,25 +137,11 @@ file_info_s dbp_file_download(dbp_request_s *request)
 
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_DOWNLOAD_COMPLETE
-		, request->attribs.file_name.length 
-		, request->attribs.file_name.address 
+		, request->file_info.file_name.length 
+		, request->file_info.file_name.address 
 		, fileinfo.size , download_status
 		, time_elapsed , speed);
 
 	fclose(temp);
-	return(fileinfo);
-}
-
-int dbp_file_setup_environment()
-{
-	// first make sure the temporary file directory exists. 
-	int result  = file_dir_mkine(DBP_TEMP_DIR);
-	if(result != FILE_DIR_EXISTS)
-	{
-		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
-			, PROTOCOL_SETUP_ENV_DIR_PERMISSIONS
-			, DBP_TEMP_DIR);
-		return(FAILED);
-	}
 	return(SUCCESS);
 }

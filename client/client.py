@@ -56,11 +56,13 @@ while(1):
 	magic_invalid0	= 0x0008000000000000
 	magic_invalid1	= 0x00D1000000000000
 
+	file_name_1 = "this/will/be./whole./.../lot/directories/filename"
+
 	key_value_pairs	= ("action=create\n"
-		"filename=\"../this../../this/will/be././a/../whole./.../lot/of/../././directories/filename\"\n"
+		"filename=\"" + file_name_1 + "\"\n"
 		"crc=00565423\n")
 	key_value_pair_nonparseable	= ("action.==create\n"
-		"filename~\"filename\"\n"
+		"filename~\"" + file_name_1 + "\"\n"
 		"folder\n"
 		"crc=jkhkjhkk\n")
 	key_value_pair_onlykeys	= ("action=create\n"
@@ -68,11 +70,11 @@ while(1):
 		"folder=\"\"\n"
 		"crc=1234\n")
 	key_value_pair_update	= ("action=update\n"
-		"filename=\"filename\"\n"
+		"filename=\"" + file_name_1 + "\"\n"
 		"updateat=20000\n"
 		"trim=\"0\"\n")
 	key_value_pair_delete	= ("action=delete\n"
-		"filename=\"filename\"\n")
+		"filename=\"" + file_name_1 + "\"\n")
 
 	key_value_pair_thin		= ("action=create\n")
 	key_value_pair_invalidaction	= ("action=whatever\n")

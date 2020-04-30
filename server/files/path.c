@@ -86,7 +86,7 @@ file_path_s path_parse(string_s path)
 	return (result);
 }
 
-char *path_construct(my_list_s path_list, boolean remove_file)
+string_s path_construct(my_list_s path_list)
 {
 	char *buffer	= m_malloc(513, MEMORY_FILE_LINE);
 	ulong index	= 0;
@@ -98,14 +98,9 @@ char *path_construct(my_list_s path_list, boolean remove_file)
 		if (index + path.length + 1 > 512)
 		{
 			m_free(buffer, MEMORY_FILE_LINE);
-			return(NULL);
+			return((string_s){0});
 		}
 
-		if (remove_file == TRUE && path.is_file == TRUE)
-		{
-			break;
-		}
-		
 		memcpy(buffer + index, path.buffer + path.index, path.length);
 		index += path.length;
 		if (path.is_file == FALSE)
@@ -115,7 +110,17 @@ char *path_construct(my_list_s path_list, boolean remove_file)
 		}
 	}
 	*(buffer + index)	= 0;
-	return (buffer);
+
+	char *new_buffer	= m_realloc(buffer, index + 1, MEMORY_FILE_LINE);
+	if (new_buffer != NULL)
+	{
+		buffer	= new_buffer;
+	}
+	string_s file	= {0};
+	file.address	= buffer;
+	file.length		= index;
+	file.max_length	= index + 1;
+	return (file);
 }
 
 int path_mkdir_recursive(char *path)
@@ -136,4 +141,9 @@ int path_mkdir_recursive(char *path)
 		index	= length + 1;
 	}
 	return (success ? SUCCESS : FAILED);
+}
+
+void path_free(file_path_s path)
+{
+	my_list_free(path.path_list);
 }

@@ -16,7 +16,7 @@ int dbp_prehook_notification(dbp_request_s *request)
 int dbp_posthook_notification(dbp_request_s *request, dbp_response_s *response)
 {
 	FILE *file  = 
-		fopen(request->temp_file.name.address, FILE_MODE_READBINARY);
+		fopen(request->file_info.temp_file_name.address, FILE_MODE_READBINARY);
 
 	file_reader_s reader    = file_reader_init(file);
 	file_reader_next(&reader, 0, request->header_info.data_length);

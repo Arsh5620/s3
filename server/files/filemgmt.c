@@ -5,6 +5,7 @@
 #include "./filemgmt.h"
 #include "../output/output.h"
 #include "../databases/database.h"
+#include "../files/path.h"
 
 int filemgmt_bind_fileinfo(database_table_bind_s *bind
 	, string_s file_name, boolean new_bind)
@@ -110,11 +111,62 @@ int filemgmt_remove_meta(string_s file_name)
 	}
 }
 
-// this function shall setup the environment, which means building 
-// the directory tree, setting up working/temporary/sha1 hash file names
-// for success it will return FILEMGMT_SUCCESS, and for failure 
-// it will return FILEMGMT_**failure code**
-int filemgmt_setup_environment(string_s folder_name, string_s file_name)
+int filemgmt_setup_environment(string_s client_filename
+	, filemgmt_file_name_s *file_info)
 {
-	return(0);
+	if (file_dir_mkine(FILEMGMT_FOLDER_NAME) != FILE_DIR_EXISTS)
+	{
+		return (FAILED);
+	}
+
+	my_list_s path_list	= path_parse(client_filename).path_list;
+	string_s file_name	= path_construct(path_list);
+	string_s real_file_name		= 
+		file_path_concat(STRING(FILEMGMT_FOLDER_NAME), file_name);
+
+	if (file_name.address == NULL)
+	{
+		return (FAILED);
+	}
+
+	file_info->file_name	= file_name;
+	file_info->real_file_name	= real_file_name;
+
+	int result	= path_mkdir_recursive(real_file_name.address);
+	return (result);
+}
+
+int filemgmt_setup_temp_files(filemgmt_file_name_s *file_info)
+{
+	if (file_dir_mkine(FILEMGMT_TEMP_DIR) != FILE_DIR_EXISTS)
+	{
+		return (FAILED);
+	}
+	static long counter = 0;
+
+	long length;
+	char *temp_file_p	= string_sprintf(FILEMGMT_TEMP_FORMAT, &length
+		, FILEMGMT_TEMP_DIR
+		, ++counter);
+	
+	string_s temp_file	= {0, .address = temp_file_p, .length = length};
+
+	if (temp_file_p == NULL)
+	{
+		return (FAILED);
+	}
+
+	char *hash_file_p = string_sprintf(FILEMGMT_HASH_FORMAT, &length
+		, FILEMGMT_TEMP_DIR, counter);
+	string_s hash_file	= {0, .address = hash_file_p, .length = length};
+	
+	if (hash_file_p == NULL)
+	{
+		return (FAILED);
+	}
+
+	file_info->hash_file_name	= hash_file;
+	file_info->temp_file_name	= temp_file;
+
+	return (SUCCESS);
 }

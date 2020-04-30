@@ -27,6 +27,8 @@ enum exit_codes_enum
 	, SERVER_ACCEPT_FAILED
 };
 
+#define IFELSERETURN(x) if ((x) != SUCCESS) { return (FAILED); }
+
 typedef char boolean;
 typedef unsigned char uchar;
 typedef unsigned short ushort;

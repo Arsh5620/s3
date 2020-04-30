@@ -19,11 +19,9 @@
 #include "../databases/database.h"
 #include "../dataparser/data.h"
 #include "../files/path.h"
+#include "../files/filemgmt.h"
 
 #define DBP_PROTOCOL_MAGIC		0xD0
-#define DBP_TEMP_FORMAT			"%s/download-fn(%ld).tmp"
-#define DBP_TEMP_DIR			"temp"
-#define DBP_HASH_DIR			"sha1_hash"
 #define DBP_CONFIG_FILENAME		"config.a"
 #define DBP_RESPONSE_FORMAT		"response=%3d\r\n"
 
@@ -76,6 +74,7 @@ enum dbp_response_code {
 	, DBP_RESPONSE_GENERAL_FILE_ERROR
 	, DBP_RESPONSE_ERROR_WRITE
 	, DBP_RESPONSE_ERROR_READ
+	, DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE
 };
 
 typedef struct {
@@ -126,17 +125,10 @@ typedef struct {
 	network_data_s header_raw;
 	dbp_header_s header_info;
 	hash_table_s header_table;
-	hash_table_s additional_data;
 
-	dbp_protocol_attribs_s attribs;
+	data_result_s data_result; // both the list and the hash of the header values
 
-	/*
-	 * temp_file will contain all the information such as name, size, 
-	 * for the temporary file written to the temp folder
-	 */
-	file_info_s temp_file;
-	string_s temp_hash_file;
-	string_s working_file_name;
+	filemgmt_file_name_s file_info;
 
 	/*
 	 * instance is a pointer to the dbp_protocol_s that will have 
@@ -203,7 +195,7 @@ int dbp_prehook_delete(dbp_request_s *request);
 int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);
 int dbp_file_setup_environment();
-file_info_s dbp_file_download(dbp_request_s *request);
+int dbp_file_download(dbp_request_s *request);
 
 hash_table_s dbp_header_hash(my_list_s list);
 dbp_header_s dbp_header_parse8(size_t magic);
