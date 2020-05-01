@@ -1,15 +1,15 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
-COMMONFLAGS=-Wall -std=gnu99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+COMMONFLAGS=-Wall -std=c99 -I/usr/include/mysql -I/usr/include/mysql/mysql
 DEBUGFLAG=-DDEBUG
-PROFILEFLAG=-DPROFILE
+PROFILEFLAG=-DPROFILE 
 ifeq ($(RELEASE), 1)
-	CFLAGS =-O3 $(COMMONFLAGS)
+	CFLAGS =-O3
 else ifeq ($(PROFILE), 1)
-	CFLAGS =-pg $(COMMONFLAGS) $(PROFILEFLAG)
+	CFLAGS =-pg $(PROFILEFLAG)
 else
-	CFLAGS =-ggdb3 $(COMMONFLAGS) $(DEBUGFLAG)
+	CFLAGS =-ggdb3 $(DEBUGFLAG)
 endif
 LINKFLAGS=-lmysqlclient -lssl -lcrypto
 
@@ -22,10 +22,10 @@ EXECUTABLE=main
 all: build-file clean-logs
 
 $(OBJFILES): %.o: %.c $(HEADERFILES)
-	$(CC) -c $< $(CFLAGS) -o $@
+	$(CC) -c $< -o $@ $(COMMONFLAGS) $(CFLAGS)
 
 build-file: $(OBJFILES)
-	$(CC) -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
+	$(CC) -pg -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
 
 clean: 
 	git clean -xid -e "backup"

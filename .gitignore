@@ -11,4 +11,5 @@ unit-testing
 client/*
 !client/client.py
 server/backup
+server/backup-sha1
 server/profiler

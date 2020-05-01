@@ -28,6 +28,7 @@ enum exit_codes_enum
 };
 
 #define IFELSERETURN(x) if ((x) != SUCCESS) { return (FAILED); }
+#define MFREEIFNOTNULL(x) if ((x) != NULL) { m_free(x, MEMORY_FILE_LINE);}
 
 typedef char boolean;
 typedef unsigned char uchar;

@@ -107,6 +107,11 @@ extern data_keys_s actions[];
 extern enum dbp_attribs_enum dbp_call_asserts[][DBP_ATTRIBS_COUNT];
 
 typedef struct {
+	long update_at;
+	boolean trim;
+} dbp_action_update_s;
+
+typedef struct {
 	/*
 	 * action is the type of action that the client has requested to perform
 	 * this can include but is not limited to "notification", "request"
@@ -125,6 +130,8 @@ typedef struct {
 	network_data_s header_raw;
 	dbp_header_s header_info;
 	hash_table_s header_table;
+
+	char *additional_data; // action level data that can be set and used.
 
 	data_result_s data_result; // both the list and the hash of the header values
 
@@ -185,12 +192,14 @@ int dbp_posthook_notification(dbp_request_s *request
 int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response);
 int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response);
 int dbp_posthook_delete(dbp_request_s *request, dbp_response_s *response);
+int dbp_posthook_request(dbp_request_s *request, dbp_response_s *response);
 
 int dbp_prehook_notification(dbp_request_s *request);
 int dbp_prehook_create(dbp_request_s *request);
 int dbp_prehook_action(dbp_request_s *request);
 int dbp_prehook_update(dbp_request_s *request);
 int dbp_prehook_delete(dbp_request_s *request);
+int dbp_prehook_request(dbp_request_s *request);
 
 int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);
