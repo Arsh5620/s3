@@ -111,6 +111,19 @@ int filemgmt_remove_meta(string_s file_name)
 	}
 }
 
+int filemgmt_mkdirs(filemgmt_file_name_s *file_info)
+{
+	int result	= path_mkdir_recursive(file_info->real_file_name.address);
+	if (result != SUCCESS)
+	{
+		return (result);
+	}
+
+	result	= path_mkdir_recursive(file_info->real_hash_file_name.address);
+
+	return (result);
+}
+
 int filemgmt_setup_environment(string_s client_filename
 	, filemgmt_file_name_s *file_info)
 {
@@ -119,21 +132,30 @@ int filemgmt_setup_environment(string_s client_filename
 		return (FAILED);
 	}
 
+	if (file_dir_mkine(FILEMGMT_HASH_FOLDER) != FILE_DIR_EXISTS)
+	{
+		return (FAILED);
+	}
+
 	my_list_s path_list	= path_parse(client_filename).path_list;
 	string_s file_name	= path_construct(path_list);
-	string_s real_file_name		= 
-		file_path_concat(STRING(FILEMGMT_FOLDER_NAME), file_name);
-
+	my_list_free(path_list);
+	
 	if (file_name.address == NULL)
 	{
 		return (FAILED);
 	}
 
-	file_info->file_name	= file_name;
-	file_info->real_file_name	= real_file_name;
-
-	int result	= path_mkdir_recursive(real_file_name.address);
-	return (result);
+	string_s real_file_name		= 
+		file_path_concat(STRING(FILEMGMT_FOLDER_NAME), file_name);
+	string_s real_hash_file_name		= 
+		file_path_concat(STRING(FILEMGMT_HASH_FOLDER), file_name);
+	
+	file_info->file_name			= file_name;
+	file_info->real_file_name		= real_file_name;
+	file_info->real_hash_file_name	= real_hash_file_name;
+	
+	return (SUCCESS);
 }
 
 int filemgmt_setup_temp_files(filemgmt_file_name_s *file_info)
@@ -165,8 +187,8 @@ int filemgmt_setup_temp_files(filemgmt_file_name_s *file_info)
 		return (FAILED);
 	}
 
-	file_info->hash_file_name	= hash_file;
-	file_info->temp_file_name	= temp_file;
+	file_info->temp_hash_file_name	= hash_file;
+	file_info->temp_file_name		= temp_file;
 
 	return (SUCCESS);
 }

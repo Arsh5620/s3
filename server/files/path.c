@@ -80,6 +80,7 @@ file_path_s path_parse(string_s path)
 		}
 	}
 
+	my_list_free(path_list);
 	file_path_s result;
 	result.path_list	= final_path;
 	result.is_absolute	= is_absolute;

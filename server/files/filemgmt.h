@@ -14,8 +14,9 @@ typedef struct filemgmt_file_name
 {
 	string_s file_name;
 	string_s real_file_name;
+	string_s real_hash_file_name;
 	string_s temp_file_name;
-	string_s hash_file_name;
+	string_s temp_hash_file_name;
 } filemgmt_file_name_s;
 
 
@@ -32,6 +33,7 @@ typedef struct filemgmt_file_name
 	" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 #define FILEMGMT_FOLDER_NAME	"backup/"
+#define FILEMGMT_HASH_FOLDER	"backup-sha1/"
 #define FILEMGMT_TEMP_FORMAT	"%s/download-fn(%ld).tmp"
 #define FILEMGMT_TEMP_DIR		"temp"
 #define FILEMGMT_HASH_FORMAT	"%s/temp-(%d).sha1"
@@ -43,4 +45,5 @@ int filemgmt_remove_meta(string_s file_name);
 int filemgmt_setup_environment(string_s client_filename
 	, filemgmt_file_name_s *file_info);
 int filemgmt_setup_temp_files(filemgmt_file_name_s *file_info);
+int filemgmt_mkdirs(filemgmt_file_name_s *file_info);
 #endif

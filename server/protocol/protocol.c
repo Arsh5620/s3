@@ -32,6 +32,9 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	return(protocol);
 }
 
+static long profiler	= 0;
+const long profiler_exit	= 1000000;
+
 void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 {
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
@@ -51,6 +54,11 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 
 		for(int error = 0; error == SUCCESS;)
 		{
+			if (++profiler >= profiler_exit)
+			{
+				exit(1);
+			}
+			
 			dbp_response_s response	= {0};
 			dbp_request_s request	= {0};
 			protocol->current_response	= &response;
@@ -83,6 +91,16 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 	my_list_free(request->header_list);
 	my_list_free(response->header_list);
 	hash_table_free(request->header_table);
+	if (request->additional_data)
+	{
+		m_free(request->additional_data, MEMORY_FILE_LINE);
+		request->additional_data	= NULL_ZERO;
+	}
+	MFREEIFNOTNULL(request->file_info.file_name.address);
+	MFREEIFNOTNULL(request->file_info.real_hash_file_name.address);
+	MFREEIFNOTNULL(request->file_info.real_file_name.address);
+	MFREEIFNOTNULL(request->file_info.temp_file_name.address);
+	MFREEIFNOTNULL(request->file_info.temp_hash_file_name.address);
 }
 
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
@@ -200,17 +218,39 @@ int dbp_setupenv(dbp_request_s *request)
 		return (DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE);
 	}
 
-	if (data_get_and_convert(request->data_result, DBP_ATTRIB_FILENAME
-		, CONFIG_TYPE_STRING_S, (char*)&client_filename, sizeof(string_s))
-		 == SUCCESS)
+	int result	= data_get_and_convert(request->data_result
+		, DBP_ATTRIB_FILENAME
+		, CONFIG_TYPE_STRING_S
+		, (char*)&client_filename
+		, sizeof(string_s));
+
+	if (result == SUCCESS)
 	{
 		if (client_filename.address != NULL && client_filename.length == 0)
 		{
 			return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 		}
-		int result = filemgmt_setup_environment(client_filename
+		result = filemgmt_setup_environment(client_filename
 			, &request->file_info);
 		
+		if (result != SUCCESS)
+		{
+			return (DBP_RESPONSE_SETUP_ENV_FAILED);
+		}
+
+		switch (request->action)
+		{
+			case DBP_ACTION_CREATE:
+			case DBP_ACTION_UPDATE:
+			break;
+
+			default:
+			{
+				return (SUCCESS);
+			}
+		}
+
+		result	= filemgmt_mkdirs(&request->file_info);
 		if (result != SUCCESS)
 		{
 			return (DBP_RESPONSE_SETUP_ENV_FAILED);
@@ -316,6 +356,9 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response)
 		case DBP_ACTION_DELETE:
 			result	= dbp_posthook_delete(request, response);
 			break;
+		case DBP_ACTION_REQUEST:
+			result	= dbp_posthook_request(request, response);
+			break;
 	}
 	return(result);
 }
@@ -336,6 +379,9 @@ int dbp_action_prehook(dbp_request_s *request)
 			break;
 		case DBP_ACTION_DELETE:
 			result	= dbp_prehook_delete(request);
+			break;
+		case DBP_ACTION_REQUEST:
+			result	= dbp_prehook_request(request);
 			break;
 	}
 	return(result);

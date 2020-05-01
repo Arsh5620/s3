@@ -15,14 +15,26 @@ int dbp_prehook_update(dbp_request_s *request)
 	struct stat file_stats	= file_stat(file);
 	fclose(file);
 
-	long update_at	= 0;
+	request->additional_data	= 
+		m_malloc(sizeof(dbp_action_update_s), MEMORY_FILE_LINE);
+
+	dbp_action_update_s *update_attribs = 
+		(dbp_action_update_s*) request->additional_data;
+
 	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATEAT
-		, CONFIG_TYPE_LONG, (char*)&update_at, sizeof(long)))
+		, CONFIG_TYPE_LONG, (char*)&update_attribs->update_at, sizeof(long)))
 	{
 		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 	}
 
-	if (update_at > -1 && update_at <= file_stats.st_size)
+	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATETRIM
+		, CONFIG_TYPE_BOOLEAN, (char*)&update_attribs->trim, sizeof(boolean)))
+	{
+		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
+	}
+
+	if (update_attribs->update_at > -1 
+		&& update_attribs->update_at <= file_stats.st_size)
 	{
 		return(SUCCESS);
 	}
@@ -34,29 +46,19 @@ int dbp_prehook_update(dbp_request_s *request)
 
 int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response)
 {
-	boolean trunc	= 0;
-	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATETRIM
-		, CONFIG_TYPE_BOOLEAN, (char*)&trunc, sizeof(boolean)))
-	{
-		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
-	}
-
-	ulong update_at	= 0;
-	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATEAT
-		, CONFIG_TYPE_LONG, (char*)&update_at, sizeof(long)))
-	{
-		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
-	}
+	dbp_action_update_s *update_attribs = 
+		(dbp_action_update_s*) request->additional_data;
 
 	string_s real_file	= request->file_info.real_file_name;
-	if (trunc && truncate(real_file.address, update_at))
+	if (update_attribs->trim 
+		&& truncate(real_file.address, update_attribs->update_at))
 	{
 		return(DBP_RESPONSE_GENERAL_SERVER_ERROR);
 	}
 
 	int result	= file_append(real_file.address
 		, request->file_info.temp_file_name.address
-		, update_at
+		, update_attribs->update_at
 		, request->header_info.data_length);
 	
 	//TODO free memory used.

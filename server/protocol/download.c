@@ -121,7 +121,7 @@ int dbp_file_download(dbp_request_s *request)
 	int download_status   = file_download(temp
 		, &protocol->connection, fileinfo.size, &hash, dbp_file_hash_sha1);
 
-	dbp_file_hash_writesha1(request->file_info.hash_file_name.address
+	dbp_file_hash_writesha1(request->file_info.temp_hash_file_name.address
 		, hash.hash_list);
 
 	m_free(hash.hash_buffer, MEMORY_FILE_LINE);
