@@ -22,8 +22,12 @@
 #include "../files/filemgmt.h"
 
 #define DBP_PROTOCOL_MAGIC		0xD0
+#define DBP_PROTOCOL_MAGIC_LEN	(8)
+#define DBP_PROTOCOL_HEADER_MAXLEN	(256 << 4)
 #define DBP_CONFIG_FILENAME		"config.a"
-#define DBP_RESPONSE_FORMAT		"response=%3d\r\n"
+#define DBP_RESPONSE_FORMAT_STRING	"%.*s=\"%.*s\"\r\n"
+#define DBP_RESPONSE_FORMAT_LONG	"%.*s=\"%ld\"\r\n"
+#define DBP_RESPONSE_KEY_NAME	"response"
 
 // one-to-one mapping to the actions_supported
 enum dbp_actions_enum {
@@ -75,6 +79,7 @@ enum dbp_response_code {
 	, DBP_RESPONSE_ERROR_WRITE
 	, DBP_RESPONSE_ERROR_READ
 	, DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE
+	, DBP_RESPONSE_ERROR_WRITING_HEADERS
 };
 
 typedef struct {
@@ -95,10 +100,10 @@ typedef struct {
 #define DBP_ATTRIBS_STRUCT_COUNT	DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME	"file_name"
 
-#define DBP_CASE_LINK_CODE(src, code, string) \
+#define DBP_ASSIGN(string_dest, code, string) \
 	case code: \
 	{ \
-		src->data_string = STRING(string); \
+		string_dest = STRING(string); \
 	} \
 	break;
 
@@ -152,8 +157,9 @@ typedef struct {
 	 * response_code is the response indicator, which idicates success or
 	 * failure after a call to the requested action. 
 	 */
-	int response_code;
-	string_s data_string;
+	long response_code;
+	string_s writer;
+	long data_written;
 	char *instance;
 } dbp_response_s;
 
@@ -214,11 +220,11 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response);
 
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code);
 
-int dbp_response_write(dbp_response_s *response);
-void dbp_response_make_header(dbp_response_s *response
-	, char *buffer, ulong header_length);
+int dbp_response_write(dbp_response_s *response
+	, long (*writer)(dbp_response_s *in));
+long dbp_response_write_header(dbp_response_s *response
+	, char *buffer, ulong buffer_length);
 ulong dbp_response_make_magic(dbp_response_s *response);
-ulong dbp_response_header_length(dbp_response_s *response);
 
 int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request);
 int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request);

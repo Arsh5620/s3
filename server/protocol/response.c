@@ -1,74 +1,122 @@
 #include "protocol.h"
 
-int dbp_response_write(dbp_response_s *response)
+int dbp_response_write(dbp_response_s *response
+	, long (*writer)(dbp_response_s *in))
 {
 	network_s *connection	= 
 		&((dbp_protocol_s*)response->instance)->connection;
-	ulong header_len	= dbp_response_header_length(response);
-	ulong size	= sizeof(ulong) + header_len + response->data_string.length;
+	
+	char *memory	= m_malloc(NETWORK_WRITE_BUFFER, MEMORY_FILE_LINE);
+	response->writer.address	= memory;
+	response->writer.length		= DBP_PROTOCOL_MAGIC_LEN;
+	response->writer.max_length	= NETWORK_WRITE_BUFFER;
+	response->data_written	= 0;
 
-	response->header_info.data_length	= response->data_string.length;
+	key_value_pair_s pair	= {0};
+	pair.key	= DBP_RESPONSE_KEY_NAME;
+	pair.value	= (char*) response->response_code;
+	pair.key_length		= sizeof(DBP_RESPONSE_KEY_NAME) - 1;
+	pair.value_length	= 0;
+
+	if (response->header_list.address == NULL)
+	{
+		response->header_list	= my_list_new(1, sizeof(key_value_pair_s));
+	}
+	my_list_push(&response->header_list, (char*)&pair);
+
+	int result	= dbp_response_write_header(response
+		, memory + DBP_PROTOCOL_MAGIC_LEN
+		, NETWORK_WRITE_BUFFER - DBP_PROTOCOL_MAGIC_LEN);
+
+	if (result == -1)
+	{
+		return (DBP_RESPONSE_ERROR_WRITING_HEADERS);
+	}
+	// align the header on a 16 byte boundary
+	// we are checking if the result is on a 16 byte boundary, 
+	// if it is not, then we add 15 which increments the boundary
+	// (for e.g. if the last 4 bits are '0001', adding 15 means '10000'
+	// , and last 4 bits are ZEROED. If the last 4 bits are '1111', adding
+	// 15 means '11110', and last 4 bits are ZEROED again)
+	// and then we ZERO the last 4 of the bits.
+	result	= result & 0XF ? (result + 0XF) & ~0XF : result;
+
+	response->writer.length += result;
+
 	response->header_info.magic	= DBP_PROTOCOL_MAGIC;
-	// we have to go with the next multiple of 16
-	response->header_info.header_length	= header_len;
-		
-	ulong i	= dbp_response_make_magic(response);
+	response->header_info.header_length	= result;
 
-	char *address	= m_calloc(size, MEMORY_FILE_LINE);
-	memcpy(address, (char*)&i, sizeof(ulong));
-	dbp_response_make_header(response, address + sizeof(ulong), header_len);
-	memcpy(address + header_len + sizeof(ulong)
-		, response->data_string.address
-		, response->data_string.length);
-	network_write_stream(connection, address, size);
-	m_free(address, MEMORY_FILE_LINE);
+	/*
+	 * Here it is writer's responsiblity to set the 
+	 * "response->header_info.data_length" upon first call to this function
+	 */
+	long data_written	= 0;
+	boolean header_written	= FALSE;
+	while ((data_written	= writer(response)), TRUE)
+	{
+		if (data_written < 0)
+		{
+			return (DBP_RESPONSE_ERROR_WRITE);
+		}
+
+		if (header_written == FALSE)
+		{
+			*(ulong*)(response->writer.address)	=
+				dbp_response_make_magic(response);
+		}
+
+		header_written	= TRUE;
+		network_write_stream(connection
+			, response->writer.address, response->writer.length);
+
+		if (response->data_written == response->header_info.data_length)
+		{
+			break;
+		}
+		response->writer.length	= 0;
+	}
+	
+	m_free(memory, MEMORY_FILE_LINE);
+	my_list_free(response->header_list);
+	response->header_list	= (my_list_s){0};
 	return(SUCCESS);
 }
 
-ulong dbp_response_header_length(dbp_response_s *response)
+long dbp_response_write_header(dbp_response_s *response
+	, char *buffer, ulong buffer_length)
 {
-	ulong header_length	= sizeof(DBP_RESPONSE_FORMAT);
-	my_list_s header_list	= response->header_list;
-
-	for (size_t i = 0; i < header_list.count; i++)
-	{
-		key_value_pair_s pair	= 
-			*(key_value_pair_s*)my_list_get(header_list, i);
-
-		// for each line the length of the line is 
-		// key + value + assignment-sign + 
-		// (quotations-for-value + new-line + carriage-return) = 5
-		header_length += (pair.key_length + pair.value_length + 5);
-	}
-
-	header_length	= header_length & 0XF 
-		? (header_length + 0XF) & ~0XF 
-		: header_length;
-	return(header_length);
-}
-
-void dbp_response_make_header(dbp_response_s *response
-	, char *buffer, ulong header_length)
-{
-	ulong dbp_response_len	= sizeof(DBP_RESPONSE_FORMAT);
+	long index	= 0;
 	if (buffer)
 	{
-		snprintf(buffer, dbp_response_len + 1
-			, DBP_RESPONSE_FORMAT, response->response_code);
-	
-		ulong index = dbp_response_len - 1;
 		for (size_t i = 0; i < response->header_list.count; i++)
 		{
 			key_value_pair_s pair	= 
 				*(key_value_pair_s*)my_list_get(response->header_list, i);
 
-			int written	= snprintf(buffer + index, header_length - index
-				, "%.*s=\"%.*s\"\r\n"
-				, pair.key_length, pair.key
-				, pair.value_length, pair.value);
+			int written	= 0;
+			if (pair.value_length)
+			{
+				written	= snprintf(buffer + index, buffer_length - index
+					, DBP_RESPONSE_FORMAT_STRING
+					, pair.key_length, pair.key
+					, pair.value_length, pair.value);
+			} 
+			else 
+			{
+				written	= snprintf(buffer + index, buffer_length - index
+					, DBP_RESPONSE_FORMAT_LONG
+					, pair.key_length, pair.key
+					, (long)pair.value);
+			}
 			index	+= written;
+
+			if (index > DBP_PROTOCOL_HEADER_MAXLEN || index > buffer_length)
+			{
+				return (-1);
+			}
 		}
 	}
+	return (index);
 }
 
 ulong dbp_response_make_magic(dbp_response_s *response)

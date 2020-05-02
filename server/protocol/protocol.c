@@ -103,67 +103,89 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 	MFREEIFNOTNULL(request->file_info.temp_hash_file_name.address);
 }
 
+long dbp_handle_response_string(dbp_response_s *response)
+{
+	string_s link	= {0};
+	string_s writer	= response->writer;
+
+	switch (response->response_code)
+	{
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_DATA_SEND, DBP_RESPONSE_STRING_DATA_SEND);
+	
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_PACKET_OK, DBP_RESPONSE_STRING_PACKET_OK);
+
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_ACTION_INVALID, DBP_RESPONSE_STRING_ACTION_INVALID);
+
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_HEADER_EMPTY, DBP_RESPONSE_STRING_HEADER_EMPTY);
+
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_PARSE_ERROR, DBP_RESPONSE_STRING_PARSE_ERROR);
+	
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_THIN_ATTRIBS, DBP_RESPONSE_STRING_THIN_ATTRIBS);
+		
+	DBP_ASSIGN(link, DBP_RESPONSE_ATTRIB_VALUE_INVALID
+		, DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
+
+	DBP_ASSIGN(link, DBP_RESPONSE_FILE_EXISTS_ALREADY
+		, DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
+		
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_FILE_NOT_FOUND, DBP_RESPONSE_STRING_FILE_NOT_FOUND);
+		
+	DBP_ASSIGN(link, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
+		, DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
+	
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_CORRUPTED_PACKET, DBP_RESPONSE_STRING_CORRUPTED_PACKET);
+	
+	DBP_ASSIGN(link, DBP_RESPONSE_CORRUPTED_DATA_HEADERS
+		, DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
+	
+	DBP_ASSIGN(link
+		, DBP_RESPONSE_SETUP_ENV_FAILED,  DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
+	
+	DBP_ASSIGN(link, DBP_RESPONSE_GENERAL_SERVER_ERROR
+		, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
+
+	DBP_ASSIGN(link, DBP_RESPONSE_DELETE_DATANOTNEEDED
+		, DBP_RESPONSE_STRING_DELETE_DATANOTNEEDED);
+
+	default:
+		link = (string_s){0};
+	}
+
+	response->header_info.data_length	= link.length;
+	
+	long avail_write	= writer.max_length - writer.length;
+	long required_write	= link.length - response->data_written;
+	long to_write	= required_write > avail_write 
+		? avail_write : required_write;
+
+	if (to_write > 0)
+	{
+		memcpy(writer.address + writer.length
+			, link.address + response->data_written, to_write);
+		response->data_written	+= to_write;
+		response->writer.length	+= to_write;
+	}
+	return (to_write);
+}
+
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
 {
-	switch (code)
-	{
-	case DBP_RESPONSE_SUCCESS: // alias to SUCCESS
+	if (code == DBP_RESPONSE_SUCCESS)
 	{
 		return(SUCCESS);
 	}
 	
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_DATA_SEND, DBP_RESPONSE_STRING_DATA_SEND);
-	
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_PACKET_OK, DBP_RESPONSE_STRING_PACKET_OK);
-
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_ACTION_INVALID, DBP_RESPONSE_STRING_ACTION_INVALID);
-
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_HEADER_EMPTY, DBP_RESPONSE_STRING_HEADER_EMPTY);
-
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_PARSE_ERROR, DBP_RESPONSE_STRING_PARSE_ERROR);
-	
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_THIN_ATTRIBS, DBP_RESPONSE_STRING_THIN_ATTRIBS);
-		
-	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_ATTRIB_VALUE_INVALID
-		, DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
-
-	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_FILE_EXISTS_ALREADY
-		, DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
-		
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_FILE_NOT_FOUND, DBP_RESPONSE_STRING_FILE_NOT_FOUND);
-		
-	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
-		, DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
-	
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_CORRUPTED_PACKET, DBP_RESPONSE_STRING_CORRUPTED_PACKET);
-	
-	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_CORRUPTED_DATA_HEADERS
-		, DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
-	
-	DBP_CASE_LINK_CODE(response
-		, DBP_RESPONSE_SETUP_ENV_FAILED,  DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
-	
-	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_GENERAL_SERVER_ERROR
-		, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
-
-	DBP_CASE_LINK_CODE(response, DBP_RESPONSE_DELETE_DATANOTNEEDED
-		, DBP_RESPONSE_STRING_DELETE_DATANOTNEEDED);
-
-	default:
-		response->data_string	= (string_s){0};
-	}
-	
 	response->response_code	= code;
 
-	if (dbp_response_write(response) != SUCCESS)
+	if (dbp_response_write(response, dbp_handle_response_string) != SUCCESS)
 	{
 		return(DBP_RESPONSE_ERROR_WRITE);
 	}

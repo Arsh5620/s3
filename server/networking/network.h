@@ -6,7 +6,8 @@
 #include <netinet/tcp.h>
 #include "../general/define.h"
 
-#define NETWORK_READ_BUFFER MB(1)
+#define NETWORK_READ_BUFFER	MB(1)
+#define NETWORK_WRITE_BUFFER	MB(1)
 
 enum network_errors_enum {
 	NETWORK_ERROR_SUCCESS	= 0
