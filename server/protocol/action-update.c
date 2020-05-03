@@ -5,15 +5,14 @@
 int dbp_prehook_update(dbp_request_s *request)
 {
 	string_s file_name	= request->file_info.real_file_name;
-	FILE *file	= fopen(file_name.address, FILE_MODE_READBINARY);
 	
-	if (!(filemgmt_file_exists(request->file_info.file_name) && file != NULL))
+	struct stat file_stats = {0};
+	
+	if (!filemgmt_file_exists(request->file_info.file_name
+		, request->file_info.real_file_name, &file_stats))
 	{
 		return (DBP_RESPONSE_FILE_NOT_FOUND);
 	}
-	
-	struct stat file_stats	= file_stat(file);
-	fclose(file);
 
 	request->additional_data	= 
 		m_malloc(sizeof(dbp_action_update_s), MEMORY_FILE_LINE);

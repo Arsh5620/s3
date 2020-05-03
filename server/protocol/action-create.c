@@ -3,7 +3,8 @@
 
 int dbp_prehook_create(dbp_request_s *request)
 {
-	if (filemgmt_file_exists(request->file_info.file_name))
+	if (filemgmt_file_exists(request->file_info.file_name
+		, request->file_info.real_file_name, NULL))
 	{
 		return (DBP_RESPONSE_FILE_EXISTS_ALREADY);
 	}

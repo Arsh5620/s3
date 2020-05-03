@@ -56,6 +56,7 @@ enum dbp_response_code {
 	DBP_RESPONSE_SUCCESS
 	, DBP_RESPONSE_DATA_SEND	= 1
 	, DBP_RESPONSE_PACKET_OK
+	, DBP_RESPONSE_PACKET_DATA
 	/* warnings but we can continue the connection */
 	, DBP_RESPONSE_WARNINGS	 = 32
 	, DBP_RESPONSE_ACTION_INVALID
@@ -67,7 +68,7 @@ enum dbp_response_code {
 	, DBP_RESPONSE_FILE_NOT_FOUND
 	, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
 	, DBP_RESPONSE_NOTIFY_TOOBIG
-	, DBP_RESPONSE_DELETE_DATANOTNEEDED
+	, DBP_RESPONSE_DATA_NONE_NEEDED
 	/* errors and the connection will need to be closed */
 	, DBP_RESPONSE_ERRORS	= 128
 	, DBP_RESPONSE_CORRUPTED_PACKET
@@ -158,6 +159,7 @@ typedef struct {
 	 * failure after a call to the requested action. 
 	 */
 	long response_code;
+	filemgmt_file_name_s *file_info;
 	string_s writer;
 	long data_written;
 	char *instance;

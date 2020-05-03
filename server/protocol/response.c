@@ -45,7 +45,7 @@ int dbp_response_write(dbp_response_s *response
 
 	response->header_info.magic	= DBP_PROTOCOL_MAGIC;
 	response->header_info.header_length	= result;
-
+	response->header_info.data_length	= 0;
 	/*
 	 * Here it is writer's responsiblity to set the 
 	 * "response->header_info.data_length" upon first call to this function
