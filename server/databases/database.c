@@ -270,7 +270,7 @@ int database_table_row_exists(MYSQL_STMT *stmt)
 	{
 		row_exists	= TRUE;
 	}
-	return(row_exists);
+	return (row_exists);
 }
 
 // @return value is -1 for error unlike most other functions

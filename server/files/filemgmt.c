@@ -30,7 +30,8 @@ int filemgmt_bind_fileinfo(database_table_bind_s *bind
 	return(MYSQL_SUCCESS);
 }
 
-int filemgmt_file_exists(string_s file_name)
+int filemgmt_file_exists(string_s file_name
+	, string_s real_name,  struct stat *file_stats)
 {
 	database_table_bind_s bind_out	= database_get_global_bind();
 	database_table_bind_s bind_in	= {0};
@@ -55,7 +56,27 @@ int filemgmt_file_exists(string_s file_name)
 	}
 
 	database_bind_free(bind_in);
-	return (result == TRUE);
+
+	if (result == FALSE)
+	{
+		return (FALSE);
+	}
+
+	FILE *file	= fopen(real_name.address, FILE_MODE_READBINARY);
+
+	if (file == NULL)
+	{
+		return (FALSE);
+	}
+	
+	if (file_stats != NULL)
+	{
+		struct stat f1	= file_stat(file);
+		*file_stats	= f1;
+	}
+	fclose(file);
+
+	return (TRUE);
 }
 
 int filemgmt_file_add(string_s file_name)

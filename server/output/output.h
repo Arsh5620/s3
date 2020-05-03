@@ -208,7 +208,7 @@
 #define PARSER_STDOUT_ERROR_STRING \
 	"status code: %ld, line no: %ld, index no: %ld, line length: %d"
 
-#define DBP_RESPONSE_STRING_DELETE_DATANOTNEEDED \
+#define DBP_RESPONSE_STRING_DATA_NONE_NEEDED \
 	"Data not required."
 
 #define OUTPUT_HANDLE_STDOUT	0b0001

@@ -65,6 +65,7 @@ void dbp_connection_accept_loop(dbp_protocol_s *protocol)
 			protocol->current_request	= &request;
 			response.instance	= (char*)protocol;
 			request.instance	= (char*)protocol;
+			response.file_info	= &request.file_info;
 
 			error	= dbp_next_request(protocol);
 			// printf("dbp_next returned value: %d, ", error);
@@ -152,8 +153,8 @@ long dbp_handle_response_string(dbp_response_s *response)
 	DBP_ASSIGN(link, DBP_RESPONSE_GENERAL_SERVER_ERROR
 		, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
 
-	DBP_ASSIGN(link, DBP_RESPONSE_DELETE_DATANOTNEEDED
-		, DBP_RESPONSE_STRING_DELETE_DATANOTNEEDED);
+	DBP_ASSIGN(link, DBP_RESPONSE_DATA_NONE_NEEDED
+		, DBP_RESPONSE_STRING_DATA_NONE_NEEDED);
 
 	default:
 		link = (string_s){0};

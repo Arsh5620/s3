@@ -38,7 +38,8 @@ typedef struct filemgmt_file_name
 #define FILEMGMT_TEMP_DIR		"temp"
 #define FILEMGMT_HASH_FORMAT	"%s/temp-(%d).sha1"
 
-int filemgmt_file_exists(string_s file_name);
+int filemgmt_file_exists(string_s file_name
+	, string_s real_name,  struct stat *file_stats);
 int filemgmt_file_add(string_s file_name);
 int filemgmt_rename_file(string_s dest, string_s src);
 int filemgmt_remove_meta(string_s file_name);

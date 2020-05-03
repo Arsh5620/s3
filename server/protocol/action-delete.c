@@ -7,7 +7,7 @@ int dbp_prehook_delete(dbp_request_s *request)
 {
 	if (request->header_info.data_length)
 	{
-		return (DBP_RESPONSE_DELETE_DATANOTNEEDED);
+		return (DBP_RESPONSE_DATA_NONE_NEEDED);
 	}
 
 	if (filemgmt_remove_meta(request->file_info.file_name) != SUCCESS)

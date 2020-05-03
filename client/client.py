@@ -75,6 +75,8 @@ while(1):
 		"trim=\"0\"\n")
 	key_value_pair_delete	= ("action=delete\n"
 		"filename=\"" + file_name_1 + "\"\n")
+	key_value_pair_request	= ("action=request\n"
+		"filename=\"" + file_name_1 + "\"\n")
 
 	key_value_pair_thin		= ("action=create\n")
 	key_value_pair_invalidaction	= ("action=whatever\n")
@@ -90,7 +92,8 @@ while(1):
 		"7. Send correct/valid packet\n"
 		"8. Send packet with keys only, and no values\n"
 		"9. Send file update packet\n"
-		"A. Delete the file\n")
+		"A. Delete the file\n"
+		"B. Request the file\n")
 
 	data_entered	= input() # wait for the client to press enter before sending the packet
 
@@ -118,6 +121,8 @@ while(1):
 		header_pairs	= key_value_pair_update
 	elif (data_entered == "A"):
 		header_pairs	= key_value_pair_delete
+	elif (data_entered == "B"):
+		header_pairs	= key_value_pair_request
 	else:
 		print("Incorrect option selected, kill "
 			"program with Ctrl + C if does not exit")
@@ -129,7 +134,7 @@ while(1):
 	file_data = fin.read()
 	file_len = len(file_data)
 
-	if (data_entered != "A"):
+	if (data_entered != "A" and data_entered != "B"):
 		magic_packet += file_len
 
 	header_keys = header_pairs
