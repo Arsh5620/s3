@@ -17,6 +17,7 @@ print("")
 class PacketResponseReader:
 	dictionary	= dict()
 	return_data	= ""
+	data_length = 0
 
 	def __init__(self):
 		recv_packet_header	= sock.recv(8)	
@@ -33,6 +34,7 @@ class PacketResponseReader:
 		recv_data_size_int	= int.from_bytes(recv_data_size, byteorder='little')
 		recv_header_keys	= sock.recv(recv_header_size)
 		recv_data 			= sock.recv(recv_data_size_int)
+		self.data_length	= recv_data_size_int
 
 		header_data	= recv_header_keys.decode("ascii").rstrip(' \0')
 		self.return_data	= recv_data.decode("ascii")
@@ -49,6 +51,9 @@ class PacketResponseReader:
 
 	def getData(self):
 		return(self.return_data)
+	
+	def getDataLength(self):
+		return(self.data_length)
 
 while(1):
 	magic0	= 0xD008000000000000
@@ -56,7 +61,7 @@ while(1):
 	magic_invalid0	= 0x0008000000000000
 	magic_invalid1	= 0x00D1000000000000
 
-	file_name_1 = "this/will/be./whole./.../lot/directories/filename"
+	file_name_1 = "root/sdcard/storage/DCIM/Arshdeep.Jpeg"
 
 	key_value_pairs	= ("action=create\n"
 		"filename=\"" + file_name_1 + "\"\n"
@@ -129,7 +134,7 @@ while(1):
 		sock.recv(1) # just to check if the sock is open
 		exit()
 
-	fin = open('one.pdf', 'rb') # open file one.pdf to send 
+	fin = open('Arshdeep.Jpeg', 'rb') # open file one.pdf to send 
 
 	file_data = fin.read()
 	file_len = len(file_data)
@@ -164,7 +169,13 @@ while(1):
 			print("Server accepted the data that was sent")
 		else:
 			print("Server rejected the data that was sent")
+	elif (response_data_code == "\"3\""):
+		sock.send(0XD0FFFFFFFFFFFFFF.to_bytes(8, byteorder="little"))
+		print("Server is sending data now:")
+		packet_data	= PacketResponseReader()
+		data_response_code	= packet_data.getDictionary()["response"]
+		print("Response code for data sent : " + data_response_code)
+		print("Response data for data sent : " + packet_data.getData())
 	else:
-		print("Server rejected data")
-	
+		print("Server did not reply proper.")
 	print("****")
