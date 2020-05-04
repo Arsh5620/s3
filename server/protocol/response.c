@@ -130,3 +130,20 @@ ulong dbp_response_make_magic(dbp_response_s *response)
 	i |= (response->header_info.data_length & 0x0000FFFFFFFFFF);
 	return(i);
 }
+
+int dbp_response_accept_status(dbp_response_s *response)
+{
+	network_s *connection	= 
+		&((dbp_protocol_s*)response->instance)->connection;
+
+	if (connection)
+	{
+		network_data_atom_s data_read	= network_read_long(connection);
+
+		if (data_read.u.long_t == 0XD0FFFFFFFFFFFFFF)
+		{
+			return (SUCCESS);
+		}
+	}
+	return (FAILED);
+}

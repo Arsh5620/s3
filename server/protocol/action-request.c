@@ -54,5 +54,6 @@ int dbp_prehook_request(dbp_request_s *request)
 	{
 		return (DBP_RESPONSE_DATA_NONE_NEEDED);
 	}
+	request->data_write_confirm	= TRUE;
 	return (SUCCESS);
 }

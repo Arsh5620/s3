@@ -56,6 +56,7 @@ enum dbp_response_code {
 	DBP_RESPONSE_SUCCESS
 	, DBP_RESPONSE_DATA_SEND	= 1
 	, DBP_RESPONSE_PACKET_OK
+	, DBP_RESPONSE_PACKET_DATA_MORE
 	, DBP_RESPONSE_PACKET_DATA
 	/* warnings but we can continue the connection */
 	, DBP_RESPONSE_WARNINGS	 = 32
@@ -69,6 +70,7 @@ enum dbp_response_code {
 	, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS
 	, DBP_RESPONSE_NOTIFY_TOOBIG
 	, DBP_RESPONSE_DATA_NONE_NEEDED
+	, DBP_RESPONSE_DATA_NOT_ACCEPTED
 	/* errors and the connection will need to be closed */
 	, DBP_RESPONSE_ERRORS	= 128
 	, DBP_RESPONSE_CORRUPTED_PACKET
@@ -140,7 +142,13 @@ typedef struct {
 	char *additional_data; // action level data that can be set and used.
 
 	data_result_s data_result; // both the list and the hash of the header values
-
+	/*
+	 * for big file writes, we have to first confirm that the client
+	 * accepts the file before we can continue, the prehook function 
+	 * must set this value to TRUE for the protocol to wait for client
+	 * confirmation.
+	 */
+	boolean data_write_confirm;
 	filemgmt_file_name_s file_info;
 
 	/*

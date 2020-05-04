@@ -346,6 +346,20 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		}
 	}
 
+	if (request->data_write_confirm == TRUE)
+	{
+		if (dbp_handle_response(response, DBP_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
+		{
+			return(DBP_RESPONSE_ERROR_WRITE);
+		}
+		// client must reply with 0XD0FFFFFFFFFFFFFF to accept data
+		int status	= dbp_response_accept_status(response);
+		if (status == FAILED)
+		{
+			return (DBP_RESPONSE_DATA_NOT_ACCEPTED);
+		}		
+	}
+
 	result	= dbp_action_posthook(request, response);
 	
 	if (result != DBP_RESPONSE_SUCCESS)
