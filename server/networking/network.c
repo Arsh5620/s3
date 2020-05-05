@@ -12,6 +12,7 @@
 #include "./network.h"
 #include "../memdbg/memory.h"
 #include "../output/output.h"
+#include "../logger/logs.h"
 
 /*
  * On any unrecoverable failure exit() will be called
@@ -27,6 +28,22 @@ void assert(int c1, char *fn, int err)
 	}
 }
 
+void assert_ssl(int c1, int c2, char *fn, int err)
+{
+	if (c1 == c2) 
+	{
+		ulong buff_len	= 1024;
+		char *buffer	= m_calloc(buff_len, MEMORY_FILE_LINE);
+		ERR_error_string_n(ERR_get_error(), buffer, buff_len);
+		
+		output_handle(OUTPUT_HANDLE_BOTH
+			, LOG_EXIT_SET(LOGGER_LEVEL_CATASTROPHIC, err)
+			, NETWORK_ASSERT_SSL_MESSAGE, fn
+			, errno, buffer);
+		free(buffer); // unreachable code
+	}
+}
+
 /*
  * this function will initialize a new socket, bind it, and then 
  * setup listening on the port, it will not accept a connection.
@@ -34,15 +51,49 @@ void assert(int c1, char *fn, int err)
 network_s network_connect_init_sync(int port)
 {
 	network_s connection = {0};
+	int result = 0;
 
-	connection.server =  socket(AF_INET, SOCK_STREAM, 0);
+	// check for certificate and private-key should already be done.
+	result	= SSL_library_init();
+	assert_ssl(result, NULL_ZERO, "SSL_library_init"
+		, SERVER_TLS_LIB_INIT_FAILED);
+
+	result	= SSL_load_error_strings();
+	assert_ssl(result, NULL_ZERO, "SSL_load_error_strings"
+		, SERVER_TLS_LIB_INIT_FAILED);
+
+	connection.ssl_method	= (SSL_METHOD*)TLS_server_method();
+	connection.ssl_context	= SSL_CTX_new(connection.ssl_method);
+
+	assert_ssl(result, NULL_ZERO, "SSL_library_init"
+		, SERVER_TLS_LIB_INIT_FAILED);
+
+	if (SSL_CTX_use_certificate_file(connection.ssl_context
+		, RSA_SERVER_CERT, SSL_FILETYPE_PEM) != SSL_SUCCESS) 
+	{
+		assert_ssl(NULL_ZERO, NULL_ZERO, "SSL_CTX_use_certificate_file"
+			, SERVER_TLS_LOAD_CERT_FAILED);
+	}
+
+	if (SSL_CTX_use_PrivateKey_file(connection.ssl_context
+		, RSA_SERVER_KEY, SSL_FILETYPE_PEM) != SSL_SUCCESS) 
+	{
+		assert_ssl(NULL_ZERO, NULL_ZERO, "SSL_CTX_use_PrivateKey_file"
+			, SERVER_TLS_LOAD_KEY_FAILED);
+	}
+
+	if (SSL_CTX_check_private_key(connection.ssl_context) != SSL_SUCCESS)
+	{
+		assert_ssl(NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key"
+			, SERVER_TLS_CERT_KEY_CHK_FAILED);
+	}
+
+	connection.server =  socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	assert(connection.server, "socket", SERVER_SOCK_INIT_FAILED);
 
 	connection.server_socket.sin_addr.s_addr    = INADDR_ANY;
 	connection.server_socket.sin_family         = AF_INET;
 	connection.server_socket.sin_port           = htons(port);
-
-	int result = 0;
 
 #ifndef RELEASE_BUILD
 	int enable	= 1;
@@ -78,6 +129,30 @@ void network_connect_accept_sync(network_s *connection)
 	connection->client	= accept(connection->server
 		, (struct sockaddr*) &connection->client_socket, &len);
 	assert(connection->client, "accept", SERVER_ACCEPT_FAILED);
+
+	connection->ssl_tls = SSL_new(connection->ssl_context);
+	if (connection->ssl_tls == NULL)
+	{
+		assert_ssl(NULL_ZERO, NULL_ZERO
+			, "SSL_new", SERVER_TLS_SSL_NEW_FAILED);
+	}
+
+	int result	= SSL_set_fd(connection->ssl_tls, connection->client);
+	assert_ssl(result, NULL_ZERO
+		, "SSL_set_fd", SERVER_TLS_SET_FILE_DESCRIPTOR_FAILED);
+
+	result = SSL_accept(connection->ssl_tls);
+	if (result != SSL_SUCCESS)
+	{
+		assert_ssl(NULL_ZERO, NULL_ZERO
+			, "SSL_accept", SERVER_TLS_SSL_ACCEPT_FAILED);
+	}
+
+	output_handle(OUTPUT_HANDLE_LOGS
+			, LOGGER_LEVEL_INFO
+			, NETWORK_ASSERT_SSL_LEVEL_MESSAGE
+			, SSL_get_cipher(connection->ssl_tls));
+
 }
 
 /*
@@ -99,7 +174,7 @@ network_data_s network_read_stream(network_s *connection, ulong size)
 	size_t data_read = 0;
 	for (; data_read < size;)
 	{
-		ulong length  = read(connection->client
+		ulong length  = SSL_read(connection->ssl_tls
 			, memory + data_read, (size - data_read));
 
 		if (length == 0) 
@@ -144,7 +219,7 @@ int network_write_stream(network_s *network, char *buffer, ulong buffer_length)
 	ulong bytes_written	= 0;
 	for (ulong length = 0;bytes_written < buffer_length;)
 	{
-		length = write(network->client, buffer, buffer_length);
+		length = SSL_write(network->ssl_tls, buffer, buffer_length);
 		if (length > 0)
 		{
 			bytes_written += length;
