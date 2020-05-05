@@ -112,6 +112,12 @@
 #define NETWORK_ASSERT_MESSAGE \
 	"network function \"%s\" error: %s, errno: %d"
 
+#define NETWORK_ASSERT_SSL_MESSAGE \
+	"tls ssl function \"%s\" failed errno: %d, more information:\n%s"
+
+#define NETWORK_ASSERT_SSL_LEVEL_MESSAGE \
+	"tls ssl negotiation connected to client over \"%s\" cipher"
+
 #define NETWORK_PORT_LISTENING \
 	"network initialization complete on port number (%d), " \
 	"server now listening with a queque length of (%d)"

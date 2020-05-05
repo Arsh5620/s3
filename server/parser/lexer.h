@@ -12,7 +12,7 @@ typedef struct{
 
 typedef struct{
 	long status; // status can only be noerror or eof
-	long errno; // if any error occurs, first one is recorded
+	long err_no; // if any error occurs, first one is recorded
 	long warnno; // if any warn occurs, first one is recorded
 	long lineno; // the line number we are working on right now.
 	long base_index;

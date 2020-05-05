@@ -32,7 +32,7 @@ int dbp_posthook_request(dbp_request_s *request, dbp_response_s *response)
 		return (DBP_RESPONSE_FILE_NOT_FOUND);
 	}
 
-	response->response_code	= DBP_RESPONSE_PACKET_DATA;
+	response->response_code	= DBP_RESPONSE_PACKET_DATA_READY;
 
 	if (dbp_response_write(response, dbp_action_request_writer) != SUCCESS)
 	{

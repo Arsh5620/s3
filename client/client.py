@@ -2,13 +2,24 @@
 
 import socket
 import time
+import ssl
 
 sock = socket.socket()
+
+hostname = "127.0.0.1"
+
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+sock	= socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+context.check_hostname	= False
+context.verify_mode = ssl.CERT_NONE
+ssock	= context.wrap_socket(sock, server_hostname=hostname) 
+
 print("Client started, and will try to connect to dbp server")
 
-sock.connect((socket.gethostname(), 4096))
+ssock.connect((hostname, 4096))
 
-print("The sock port number is : " + str(sock.getsockname()[1]))
+print("The sock port number is : " + str(ssock.getsockname()[1]))
 print("")
 print("Connected to the server")
 print("")
@@ -20,7 +31,7 @@ class PacketResponseReader:
 	data_length = 0
 
 	def __init__(self):
-		recv_packet_header	= sock.recv(8)	
+		recv_packet_header	= ssock.recv(8)	
 
 		recv_packet_magic	= recv_packet_header[7]
 		recv_header_size	= recv_packet_header[6] * 16
@@ -32,8 +43,8 @@ class PacketResponseReader:
 		print("Server response received")
 
 		recv_data_size_int	= int.from_bytes(recv_data_size, byteorder='little')
-		recv_header_keys	= sock.recv(recv_header_size)
-		recv_data 			= sock.recv(recv_data_size_int)
+		recv_header_keys	= ssock.recv(recv_header_size)
+		recv_data 			= ssock.recv(recv_data_size_int)
 		self.data_length	= recv_data_size_int
 
 		header_data	= recv_header_keys.decode("ascii").rstrip(' \0')
@@ -131,7 +142,7 @@ while(1):
 	else:
 		print("Incorrect option selected, kill "
 			"program with Ctrl + C if does not exit")
-		sock.recv(1) # just to check if the sock is open
+		ssock.recv(1) # just to check if the sock is open
 		exit()
 
 	fin = open('Arshdeep.Jpeg', 'rb') # open file one.pdf to send 
@@ -145,8 +156,8 @@ while(1):
 	header_keys = header_pairs
 	header_keys += ' ' * (128 - len(header_keys))
 
-	sock.send(magic_packet.to_bytes(8, byteorder = "little"))
-	sock.send(header_keys.encode())
+	ssock.send(magic_packet.to_bytes(8, byteorder = "little"))
+	ssock.send(header_keys.encode())
 
 	# now we have send the request to the server, and must wait for the server response
 
@@ -156,8 +167,8 @@ while(1):
 	print("Server response said : " + packet_response.getData())
 	if (response_data_code == "\"1\""):
 		magic_data += file_len
-		sock.send(magic_data.to_bytes(8, byteorder = "little"))
-		sock.send(file_data)
+		ssock.send(magic_data.to_bytes(8, byteorder = "little"))
+		ssock.send(file_data)
 		print("Server data sent")
 		packet_response2	= PacketResponseReader()
 		print("")
@@ -170,7 +181,7 @@ while(1):
 		else:
 			print("Server rejected the data that was sent")
 	elif (response_data_code == "\"3\""):
-		sock.send(0XD0FFFFFFFFFFFFFF.to_bytes(8, byteorder="little"))
+		ssock.send(0XD0FFFFFFFFFFFFFF.to_bytes(8, byteorder="little"))
 		print("Server is sending data now:")
 		packet_data	= PacketResponseReader()
 		data_response_code	= packet_data.getDictionary()["response"]

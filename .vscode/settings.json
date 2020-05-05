@@ -69,5 +69,6 @@
 		"memory": "c",
 		"thread": "c",
 		"data.h": "c"
-	}
+	},
+	"python.pythonPath": "/sbin/python"
 }
