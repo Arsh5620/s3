@@ -3,10 +3,11 @@
 #include <assert.h>
 #include "data.h"
 
-int data_get_and_convert(data_result_s result, long key
-	, enum data_type type, char *memory, long length)
+int data_get_and_convert(my_list_s result_list, hash_table_s result_table
+	, long key, enum data_type type, char *memory, long length)
 {
-	key_value_pair_s *pair	= data_get_key_value(result, key);
+	key_value_pair_s *pair	= 
+		data_get_key_value(result_list, result_table, key);
 	if (pair == NULL)
 	{
 		return (DATA_KEY_NOT_FOUND);
@@ -23,12 +24,12 @@ int data_convert(key_value_pair_s *pair, enum data_type type
 {
 	switch (type)
 	{
-	case CONFIG_TYPE_CHAR_PCOPY:
+	case DATA_TYPE_CHAR_PCOPY:
 		{
 			*(char**)(out)	= pair->value;
 		}
 		break;
-	case CONFIG_TYPE_STRING_S:
+	case DATA_TYPE_STRING_S:
 		{
 			if (length < sizeof(string_s))
 			{
@@ -41,7 +42,7 @@ int data_convert(key_value_pair_s *pair, enum data_type type
 			memcpy(out, &str, sizeof(string_s));
 		}
 		break;
-	case CONFIG_TYPE_INT:
+	case DATA_TYPE_INT:
 		{
 			if (length < sizeof(int))
 			{
@@ -51,7 +52,7 @@ int data_convert(key_value_pair_s *pair, enum data_type type
 			*(int*)(out) = (int) strtol(pair->value, NULL, 10);
 		}
 		break;
-	case CONFIG_TYPE_LONG:
+	case DATA_TYPE_LONG:
 		{
 			if (length < sizeof(long))
 			{
@@ -61,7 +62,7 @@ int data_convert(key_value_pair_s *pair, enum data_type type
 			*(long*)(out) = (long) strtol(pair->value, NULL, 10);
 		}
 		break;
-	case CONFIG_TYPE_SHORT:
+	case DATA_TYPE_SHORT:
 		{
 			if (length < sizeof(short))
 			{
@@ -71,7 +72,7 @@ int data_convert(key_value_pair_s *pair, enum data_type type
 			*(short*)(out) = (short) strtol(pair->value, NULL, 10);
 		}
 		break;
-	case CONFIG_TYPE_DOUBLE:
+	case DATA_TYPE_DOUBLE:
 		{
 			if (length < sizeof(double))
 			{
@@ -81,7 +82,7 @@ int data_convert(key_value_pair_s *pair, enum data_type type
 			*(double*)(out) = strtod(pair->value, NULL);
 		}
 		break;
-	case CONFIG_TYPE_BOOLEAN:
+	case DATA_TYPE_BOOLEAN:
 		{
 			if (length < sizeof(boolean))
 			{
@@ -99,16 +100,16 @@ int data_convert(key_value_pair_s *pair, enum data_type type
 	return (SUCCESS);
 }
 
-key_value_pair_s *data_get_key_value(data_result_s result, long key)
+key_value_pair_s *data_get_key_value(my_list_s result_list
+	, hash_table_s result_table, long key)
 {
 	hash_input_u key_u = {.number = key};
-	hash_table_bucket_s bucket	= hash_table_get(result.hash, key_u, 0);
+	hash_table_bucket_s bucket	= hash_table_get(result_table, key_u, 0);
 	if (bucket.is_occupied == 1)
 	{
 		return ((key_value_pair_s*)
-			my_list_get(result.list, bucket.value.number));
+			my_list_get(result_list, bucket.value.number));
 	}
-	
 	return (NULL);
 }
 

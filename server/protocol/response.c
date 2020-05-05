@@ -24,7 +24,7 @@ int dbp_response_write(dbp_response_s *response
 	}
 	my_list_push(&response->header_list, (char*)&pair);
 
-	int result	= dbp_response_write_header(response
+	long result	= dbp_response_write_header(response
 		, memory + DBP_PROTOCOL_MAGIC_LEN
 		, NETWORK_WRITE_BUFFER - DBP_PROTOCOL_MAGIC_LEN);
 
@@ -39,8 +39,11 @@ int dbp_response_write(dbp_response_s *response
 	// , and last 4 bits are ZEROED. If the last 4 bits are '1111', adding
 	// 15 means '11110', and last 4 bits are ZEROED again)
 	// and then we ZERO the last 4 of the bits.
-	result	= result & 0XF ? (result + 0XF) & ~0XF : result;
+	long byte_align	= result & 0XF ? (result + 0XF) & ~0XF : result;
+	memset(response->writer.address + response->writer.length + result
+		, 0, byte_align - result);
 
+	result	= byte_align;
 	response->writer.length += result;
 
 	response->header_info.magic	= DBP_PROTOCOL_MAGIC;

@@ -4,23 +4,34 @@
 #include <string.h>
 #include "./filemgmt.h"
 #include "../output/output.h"
-#include "../databases/database.h"
 #include "../files/path.h"
+
+database_table_bind_s filemgmt_binds = {0};
+
+int filemgmt_binds_setup(MYSQL *mysql)
+{
+	filemgmt_binds	= database_bind_setup(mysql, FILEMGMT_BIND);
+	if (filemgmt_binds.error)
+	{
+		return (FAILED);
+	}
+	return (SUCCESS);
+}
 
 int filemgmt_bind_fileinfo(database_table_bind_s *bind
 	, string_s file_name, boolean new_bind)
 {
 	string_s strings[] = {
-		TABLE_FI_COLUMN_FILE_NAME
+		FILEMGMT_COLUMN_FILE_NAME
 	};
 
 	database_table_bind_s bind_in	= new_bind
-		? database_bind_select_copy(database_get_global_bind(), strings, 1)
+		? database_bind_select_copy(filemgmt_binds, strings, 1)
 		: *bind;
 		
 	database_bind_clean(bind_in);
 
-	if(database_bind_add_data(bind_in, TABLE_FI_COLUMN_FILE_NAME
+	if(database_bind_add_data(bind_in, FILEMGMT_COLUMN_FILE_NAME
 		, file_name) == MYSQL_ERROR)
 	{
 		return(FILEMGMT_SQL_COULD_NOT_BIND);
@@ -33,7 +44,7 @@ int filemgmt_bind_fileinfo(database_table_bind_s *bind
 int filemgmt_file_exists(string_s file_name
 	, string_s real_name,  struct stat *file_stats)
 {
-	database_table_bind_s bind_out	= database_get_global_bind();
+	database_table_bind_s bind_out	= filemgmt_binds;
 	database_table_bind_s bind_in	= {0};
 
 	int result	= filemgmt_bind_fileinfo(&bind_in, file_name, TRUE);
@@ -43,7 +54,7 @@ int filemgmt_file_exists(string_s file_name
 	}
 
 	result = database_table_query(database_table_row_exists
-		, STRING(FILEMGMT_QUERY_FILEFOLDEREXISTS)
+		, STRING(FILEMGMT_QUERY_EXISTS)
 		, bind_in.bind_params
 		, 1
 		, bind_out.bind_params);
@@ -81,7 +92,7 @@ int filemgmt_file_exists(string_s file_name
 
 int filemgmt_file_add(string_s file_name)
 {
-	database_table_bind_s bind_in	= database_get_global_bind();
+	database_table_bind_s bind_in	= filemgmt_binds;
 
 	int result	= filemgmt_bind_fileinfo(&bind_in, file_name, FALSE);
 	if (result != SUCCESS)

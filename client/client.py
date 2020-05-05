@@ -3,6 +3,7 @@
 import socket
 import time
 import ssl
+import os
 
 sock = socket.socket()
 
@@ -47,7 +48,7 @@ class PacketResponseReader:
 		recv_data 			= ssock.recv(recv_data_size_int)
 		self.data_length	= recv_data_size_int
 
-		header_data	= recv_header_keys.decode("ascii").rstrip(' \0')
+		header_data			= recv_header_keys.decode("ascii").rstrip(' \0')
 		self.return_data	= recv_data.decode("ascii")
 
 		header_list	= header_data.split("\r\n")
@@ -67,16 +68,17 @@ class PacketResponseReader:
 		return(self.data_length)
 
 while(1):
-	magic0	= 0xD008000000000000
+	magic0	= 0xD010000000000000
 	magic1	= 0xD0D1000000000000
 	magic_invalid0	= 0x0008000000000000
 	magic_invalid1	= 0x00D1000000000000
 
 	file_name_1 = "root/sdcard/storage/DCIM/Arshdeep.Jpeg"
+	auth	= "username=arshdeep\nsecret=\"SomeSecretKeyWhichIsReallyLong\"\n"
 
 	key_value_pairs	= ("action=create\n"
 		"filename=\"" + file_name_1 + "\"\n"
-		"crc=00565423\n")
+		"crc=00565423\n" + auth)
 	key_value_pair_nonparseable	= ("action.==create\n"
 		"filename~\"" + file_name_1 + "\"\n"
 		"folder\n"
@@ -88,11 +90,11 @@ while(1):
 	key_value_pair_update	= ("action=update\n"
 		"filename=\"" + file_name_1 + "\"\n"
 		"updateat=20000\n"
-		"trim=\"0\"\n")
+		"trim=\"0\"\n" + auth)
 	key_value_pair_delete	= ("action=delete\n"
-		"filename=\"" + file_name_1 + "\"\n")
+		"filename=\"" + file_name_1 + "\"\n" + auth)
 	key_value_pair_request	= ("action=request\n"
-		"filename=\"" + file_name_1 + "\"\n")
+		"filename=\"" + file_name_1 + "\"\n" + auth)
 
 	key_value_pair_thin		= ("action=create\n")
 	key_value_pair_invalidaction	= ("action=whatever\n")
@@ -145,16 +147,16 @@ while(1):
 		ssock.recv(1) # just to check if the sock is open
 		exit()
 
-	fin = open('Arshdeep.Jpeg', 'rb') # open file one.pdf to send 
+	filename = '/home/arshdeep/chat/client/Arshdeep.Jpeg'
+	fin = open(filename, 'rb') # open file one.pdf to send 
 
-	file_data = fin.read()
-	file_len = len(file_data)
+	file_len = os.stat(filename).st_size
 
 	if (data_entered != "A" and data_entered != "B"):
 		magic_packet += file_len
 
 	header_keys = header_pairs
-	header_keys += ' ' * (128 - len(header_keys))
+	header_keys += ' ' * (256 - len(header_keys))
 
 	ssock.send(magic_packet.to_bytes(8, byteorder = "little"))
 	ssock.send(header_keys.encode())
@@ -168,6 +170,8 @@ while(1):
 	if (response_data_code == "\"1\""):
 		magic_data += file_len
 		ssock.send(magic_data.to_bytes(8, byteorder = "little"))
+		file_data = fin.read()
+
 		ssock.send(file_data)
 		print("Server data sent")
 		packet_response2	= PacketResponseReader()

@@ -71,6 +71,17 @@ int dbp_request_read_action(dbp_request_s *request)
 	return(DBP_RESPONSE_SUCCESS);
 }
 
+// returns TRUE on success and FALSE otherwise
+int dbp_attrib_contains(hash_table_s table, int attrib)
+{
+	hash_input_u key	= {.number = attrib};
+	hash_table_bucket_s bucket	= hash_table_get(table, key, NULL_ZERO);
+	if (bucket.is_occupied == 0 && attrib != NULL_ZERO)
+	{
+		return(FALSE);
+	}
+	return (TRUE);
+}
 
 // this function should be called before dispatching the request
 // to make sure that the header contains all the required key:value 
@@ -81,11 +92,9 @@ int dbp_attribs_assert(hash_table_s table,
 	for (long i=0; i<count; i++)
 	{
 		enum dbp_attribs_enum attrib	= match[i];
-		hash_input_u key	= {.number = attrib};
-		hash_table_bucket_s bucket	= hash_table_get(table, key, NULL_ZERO);
-		if (bucket.is_occupied == 0 && attrib != NULL_ZERO)
+		if (dbp_attrib_contains(table, attrib) == FALSE)
 		{
-			return(FALSE);
+			return (FALSE);
 		}
 	}
 	return(TRUE);

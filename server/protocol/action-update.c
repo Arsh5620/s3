@@ -18,14 +18,16 @@ int dbp_prehook_update(dbp_request_s *request)
 	dbp_action_update_s *update_attribs = 
 		(dbp_action_update_s*) request->additional_data;
 
-	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATEAT
-		, CONFIG_TYPE_LONG, (char*)&update_attribs->update_at, sizeof(long)))
+	if (data_get_and_convert(request->header_list, request->header_table
+		, DBP_ATTRIB_UPDATEAT
+		, DATA_TYPE_LONG, (char*)&update_attribs->update_at, sizeof(long)))
 	{
 		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 	}
 
-	if (data_get_and_convert(request->data_result, DBP_ATTRIB_UPDATETRIM
-		, CONFIG_TYPE_BOOLEAN, (char*)&update_attribs->trim, sizeof(boolean)))
+	if (data_get_and_convert(request->header_list, request->header_table
+		, DBP_ATTRIB_UPDATETRIM
+		, DATA_TYPE_BOOLEAN, (char*)&update_attribs->trim, sizeof(boolean)))
 	{
 		return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
 	}
