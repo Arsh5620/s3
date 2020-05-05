@@ -80,55 +80,40 @@ typedef struct database_table_bind {
 	database_bind_fields_s *fields;
 } database_table_bind_s;
 
-#define MYSQL_SUCCESS	0
-#define MYSQL_ERROR		1
+enum database_status_enum 
+{
+	MYSQL_SUCCESS
+	, MYSQL_ERROR
+	, MYSQL_TABLE_NOT_FOUND
+};
 
 #define DATABASE_DB_NAME		"dbp"
-#define DATABASE_TABLE_FI_NAME	"file_information"
 
-#define TABLE_FI_COLUMN_FILE_NAME	STRING("file_name")
-#define TABLE_FI_COLUMN_FILE_CD		STRING("file_cd")
-#define TABLE_FI_COLUMN_FILE_UD		STRING("file_ud")
-#define TABLE_FI_COLUMN_FILE_LA		STRING("file_la")
-#define TABLE_FI_COLUMN_FILE_LM		STRING("file_lm")
-#define TABLE_FI_COLUMN_FILE_DD		STRING("file_dd")
-#define TABLE_FI_COLUMN_FILE_SIZE	STRING("file_size")
-#define TABLE_FI_COLUMN_FILE_MD5	STRING("file_md5")
-#define TABLE_FI_COLUMN_PERMISSIONS	STRING("permission")
-#define TABLE_FI_COLUMN_OWNER		STRING("owner")
+#define DATABASE_COMMON_BIND_STMT(x) \
+	"SELECT * FROM " x " LIMIT 1"
 
-#define DATABASE_TABLE_FI_CREATE \
-	"CREATE TABLE IF NOT EXISTS " DATABASE_TABLE_FI_NAME \
-	" (file_name VARCHAR(256)" \
-	", file_cd DATE" \
-	", file_ud DATE" \
-	", file_la DATE" \
-	", file_lm DATE" \
-	", file_dd DATE" \
-	", file_size BIGINT" \
-	", file_md5 VARCHAR(32)" \
-	", permission BIGINT" \
-	", owner VARCHAR(32));"
-
-#define DATABASE_TABLE_FI_BIND \
-	"SELECT * FROM " DATABASE_TABLE_FI_NAME " LIMIT 1"
-
-#define DATABASE_TABLE_FI_CHECKEXISTS \
-	"SELECT COUNT(*) AS 'A' FROM " DATABASE_TABLE_FI_NAME
+#define DATABASE_COMMON_TABLE_EXISTS(x) \
+	"SELECT COUNT(*) AS 'table' FROM " x
 
 #define DATABASE_CREATE_DATABASE \
 	"CREATE DATABASE IF NOT EXISTS " DATABASE_DB_NAME
+
+#define DATABASE_CREATE_TABLE(x, y) \
+	"CREATE TABLE IF NOT EXISTS " x " ( " y " );"
 
 #define FLAG_ISSET(x, y) ((x & y) > 0)
 
 int database_init();
 
 int database_verify_integrity();
-int database_check_tables();
-int database_create_tables();
+int database_create_tables(char *statement, char *table);
+int database_check_tables(char *statment, char *table);
+int database_table_verify(char *check_table_query
+	, char *create_table_query
+	, char *table_name
+	, int (*binds_setup)(MYSQL*));
 
 MYSQL *database_get_handle();
-database_table_bind_s database_get_global_bind();
 
 /*
  * database_function is the function that will be called

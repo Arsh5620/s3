@@ -8,7 +8,6 @@
 #include "../output/output.h"
 
 static MYSQL *sql_connection;
-static database_table_bind_s binds;
 
 data_keys_s configs[] = {
 	DBP_KEY("database", CONFIG_DATABASE)
@@ -23,23 +22,19 @@ MYSQL *database_get_handle()
 	return(sql_connection);
 }
 
-database_table_bind_s database_get_global_bind()
+int database_setup_login(my_list_s list, hash_table_s table
+	, database_connection_s *conninfo)
 {
-	return(binds);
-}
-
-int database_setup_login(data_result_s result, database_connection_s *conninfo)
-{
-	IFELSERETURN(data_get_and_convert(result, CONFIG_USERNAME
-		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->user, sizeof(char*)));
-	IFELSERETURN(data_get_and_convert(result, CONFIG_PASSWORD
-		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->passwd, sizeof(char*)));
-	IFELSERETURN(data_get_and_convert(result, CONFIG_DATABASE
-		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->db, sizeof(char*)));
-	IFELSERETURN(data_get_and_convert(result, CONFIG_MACHINE
-		, CONFIG_TYPE_CHAR_PCOPY, (char*)&conninfo->host, sizeof(char*)));
-	IFELSERETURN(data_get_and_convert(result, CONFIG_PORT
-		, CONFIG_TYPE_SHORT, (char*)&conninfo->port, sizeof(short)));
+	ASSERT(data_get_and_convert(list, table, CONFIG_USERNAME
+		, DATA_TYPE_CHAR_PCOPY, (char*)&conninfo->user, sizeof(char*)));
+	ASSERT(data_get_and_convert(list, table, CONFIG_PASSWORD
+		, DATA_TYPE_CHAR_PCOPY, (char*)&conninfo->passwd, sizeof(char*)));
+	ASSERT(data_get_and_convert(list, table, CONFIG_DATABASE
+		, DATA_TYPE_CHAR_PCOPY, (char*)&conninfo->db, sizeof(char*)));
+	ASSERT(data_get_and_convert(list, table, CONFIG_MACHINE
+		, DATA_TYPE_CHAR_PCOPY, (char*)&conninfo->host, sizeof(char*)));
+	ASSERT(data_get_and_convert(list, table, CONFIG_PORT
+		, DATA_TYPE_SHORT, (char*)&conninfo->port, sizeof(short)));
 
 	return (SUCCESS);
 }	
@@ -54,7 +49,7 @@ int database_init(char *config_file)
 	data_result_s result	= data_parse_files(config_file
 		, configs, sizeof(configs)/sizeof(data_keys_s));
 
-	database_setup_login(result, &connect);
+	database_setup_login(result.list, result.hash, &connect);
 
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG
 		, PROTOCOL_MYSQL_LOGIN_INFO
@@ -106,7 +101,6 @@ int database_init(char *config_file)
 			, DATABASE_INTEGRITY_FAILED);
 	}
 
-	binds = database_bind_setup(sql_connection, DATABASE_TABLE_FI_BIND);
 	return (MYSQL_SUCCESS);
 }
 
@@ -143,13 +137,13 @@ int database_verify_integrity()
 		{
 			output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 				, DATABASE_INT_DB_CREATED, DATABASE_DB_NAME);
-			return (database_create_tables());
+			return (MYSQL_SUCCESS);
 		} 
 		else 
 		{
 			output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 				, DATABASE_INT_DB_CREATE_FAILED, DATABASE_DB_NAME);
-			return (database_check_tables());
+			return (MYSQL_SUCCESS);
 		}
 	} 
 	else 
@@ -160,12 +154,12 @@ int database_verify_integrity()
 	return(MYSQL_ERROR);
 }
 
-int database_create_tables()
+int database_create_tables(char *statement, char *table)
 {
-	if (MYSQL_SUCCESS == mysql_query(sql_connection, DATABASE_TABLE_FI_CREATE))
+	if (MYSQL_SUCCESS == mysql_query(sql_connection, statement))
 	{
 		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
-			, DATABASE_INT_TABLE_CREATED, DATABASE_TABLE_FI_NAME);
+			, DATABASE_INT_TABLE_CREATED, table);
 	}
 	else
 	{
@@ -178,9 +172,9 @@ int database_create_tables()
 	return(MYSQL_SUCCESS);
 }
 
-int database_check_tables()
+int database_check_tables(char *statment, char *table)
 {
-	int query	= mysql_query(sql_connection, DATABASE_TABLE_FI_CHECKEXISTS);
+	int query	= mysql_query(sql_connection, statment);
 	MYSQL_RES *result = mysql_store_result(sql_connection);
 	mysql_free_result(result); 
 
@@ -189,15 +183,35 @@ int database_check_tables()
 	if (query == MYSQL_SUCCESS) 
 	{
 		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
-			, DATABASE_INT_TABLE_FOUND, DATABASE_TABLE_FI_NAME);
+			, DATABASE_INT_TABLE_FOUND, table);
 	} 
 	else 
 	{
 		output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
-			, DATABASE_INT_TABLE_NOT_FOUND, DATABASE_TABLE_FI_NAME);
-		return(database_create_tables());
+			, DATABASE_INT_TABLE_NOT_FOUND, table);
+		return(MYSQL_TABLE_NOT_FOUND);
 	}
 	return(MYSQL_SUCCESS);
+}
+
+int database_table_verify(char *check_table_query
+	, char *create_table_query
+	, char *table_name
+	, int (*binds_setup)(MYSQL*))
+{
+	if (database_check_tables(check_table_query
+		, table_name) != MYSQL_SUCCESS
+		&& database_create_tables(create_table_query
+		, table_name) != MYSQL_SUCCESS)
+	{
+		return (FAILED);
+	}
+
+	if (binds_setup(sql_connection))
+	{
+		return (FAILED);
+	}
+	return (SUCCESS);
 }
 
 int database_table_call1(MYSQL_STMT *stmt, string_s query
@@ -266,7 +280,7 @@ int database_table_insert(int (*database_function)(MYSQL_STMT *)
 int database_table_row_exists(MYSQL_STMT *stmt)
 {   
 	boolean row_exists	= FALSE;
-	while (mysql_stmt_fetch(stmt) == 0)
+	while (mysql_stmt_fetch(stmt) == MYSQL_SUCCESS)
 	{
 		row_exists	= TRUE;
 	}
