@@ -4,8 +4,6 @@
 
 int dbp_prehook_update(dbp_request_s *request)
 {
-	string_s file_name	= request->file_info.real_file_name;
-	
 	struct stat file_stats = {0};
 	
 	if (!filemgmt_file_exists(request->file_info.file_name

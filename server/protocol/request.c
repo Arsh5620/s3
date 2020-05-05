@@ -28,7 +28,7 @@ ulong dbp_request_read_headers(dbp_protocol_s protocol, dbp_request_s *request)
 	my_list_s header_list	= 
 		parser_parse(&status, header_raw.data_address, header_raw.data_length);
 	
-	if (status.errno != 0) 
+	if (status.err_no != 0) 
 	{
 		/* this means that an error occured while processing the input */
 		return(DBP_RESPONSE_PARSE_ERROR);

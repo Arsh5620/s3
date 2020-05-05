@@ -13,3 +13,5 @@ client/*
 server/backup
 server/backup-sha1
 server/profiler
+.~*
+gmon.out

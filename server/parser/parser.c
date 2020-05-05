@@ -15,7 +15,7 @@ my_list_s parser_parse(lexer_status_s *status_r, char *buffer, int length)
 	do
 	{
 		status.warnno   = 0;
-		status.errno    = 0;
+		status.err_no    = 0;
 		status.status   = 0;
 		key_value_pair_s pair = parser_parse_next(&lexer, &status);
 		if (pair.key != NULL && pair.value != NULL)
@@ -24,7 +24,7 @@ my_list_s parser_parse(lexer_status_s *status_r, char *buffer, int length)
 		}
 		parser_print_status(lexer, status);
 	} 
-	while (status.status != PARSER_EOF && status.errno == 0);
+	while (status.status != PARSER_EOF && status.err_no == 0);
 				
 	*status_r	= status;
 	return(list);
@@ -90,7 +90,7 @@ my_list_s parser_parse_file(FILE *file)
 	{
 		// clear warnings and errors before calling parse next
 		status.warnno   = 0;
-		status.errno    = 0;
+		status.err_no    = 0;
 		status.status   = 0;
 		pair = parser_parse_next(&lexer, &status);
 		
@@ -106,7 +106,7 @@ my_list_s parser_parse_file(FILE *file)
 			if (status.base_index == 0 
 				&& reader.readlength == reader.maxlength) 
 			{
-				status.errno  = PARSER_ERROR_UNEXPECTED_TOOLONG;
+				status.err_no  = PARSER_ERROR_UNEXPECTED_TOOLONG;
 				parser_print_lineinfo(lexer, status, 1, PARSER_EMPTY_STRING);
 				return(list);
 			}
@@ -127,7 +127,7 @@ my_list_s parser_parse_file(FILE *file)
 		}
 	} 
 	while ((reader.eof  == 0 || reader.readlength > 0)
-				&& status.errno == 0);
+				&& status.err_no == 0);
 	
 	if (status.status == PARSER_EOF && pair.is_valid)
 	{
@@ -160,7 +160,7 @@ void parser_print_lineinfo(lexer_s lexer,
 
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_WARN
 		, PARSER_STDOUT_ERROR_STRING
-		, error ? status.errno : status.warnno
+		, error ? status.err_no : status.warnno
 		, status.lineno 
 		, error ? status.e_charno : status.w_charno
 		, length);
@@ -179,7 +179,7 @@ void parser_print_lineinfo(lexer_s lexer,
 
 void parser_print_err(lexer_s lexer, lexer_status_s status) 
 {
-	long int errnum = status.errno - PARSER_ERRORS - 1;
+	long int errnum = status.err_no - PARSER_ERRORS - 1;
 
 	if (errnum >= 0 && errnum < sizeof(errors)/sizeof(char*))
 	{
@@ -204,7 +204,7 @@ void parser_print_status(lexer_s lexer, lexer_status_s status)
 		parser_print_warn(lexer, status);
 	}
 
-	if (status.errno)
+	if (status.err_no)
 	{
 		parser_print_err(lexer, status);
 	}
@@ -222,7 +222,7 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
 		//only report the first error or warning.
 		if(lstatus->warnno == 0)
 			lstatus->w_charno   = lexer->index - lstatus->base_index;
-		if(lstatus->errno == 0)
+		if(lstatus->err_no == 0)
 			lstatus->e_charno   = lexer->index - lstatus->base_index;
 
 		token = lexer_next_token(lexer);
@@ -231,7 +231,7 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
 		case TOKEN_ILLEGAL:
 		{
 			pair.is_valid   = FALSE;
-			lstatus->errno  = PARSER_ERROR_UNEXPECTED_ILLEGAL;
+			lstatus->err_no  = PARSER_ERROR_UNEXPECTED_ILLEGAL;
 		}
 		break;
 
@@ -248,7 +248,7 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
 				&& status != PARSER_WAIT_NONE)
 			{
 				pair.is_valid	= FALSE;
-				lstatus->errno	= PARSER_ERROR_UNEXPECTED_NEWLINE;
+				lstatus->err_no	= PARSER_ERROR_UNEXPECTED_NEWLINE;
 			}
 			// else if entire statement has been read, flag the end
 			else if (status == PARSER_WAIT_NONE)
@@ -271,7 +271,7 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
 			if(status != PARSER_WAIT_KEY
 				&& status != PARSER_WAIT_NONE)
 			{
-				lstatus->errno	= PARSER_ERROR_UNEXPECTED_COMMENT;
+				lstatus->err_no	= PARSER_ERROR_UNEXPECTED_COMMENT;
 			}
 			else  if (lexer_skip_line(lexer) == TRUE)
 			{
@@ -285,7 +285,7 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
 			if (status != PARSER_WAIT_ASSIGN)
 			{
 				pair.is_valid   = FALSE;
-				lstatus->errno  = PARSER_ERROR_UNEXPECTED_ASSIGN;
+				lstatus->err_no  = PARSER_ERROR_UNEXPECTED_ASSIGN;
 			}
 			else 
 			{
@@ -315,7 +315,7 @@ key_value_pair_s parser_parse_next(lexer_s *lexer, lexer_status_s *lstatus)
 			{
 				// illegal cannot have string when expected operator
 				pair.is_valid   = FALSE;
-				lstatus->errno  = PARSER_ERROR_UNEXPECTED_STRING;
+				lstatus->err_no  = PARSER_ERROR_UNEXPECTED_STRING;
 			} 
 			else if (status == PARSER_WAIT_VALUE) 
 			{
