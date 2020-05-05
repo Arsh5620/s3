@@ -34,8 +34,8 @@ enum exit_codes_enum
 	, SERVER_TLS_SSL_ACCEPT_FAILED
 };
 
-#define IFELSERETURN(x) if ((x) != SUCCESS) { return (FAILED); }
-#define MFREEIFNOTNULL(x) if ((x) != NULL) { m_free(x, MEMORY_FILE_LINE);}
+#define ASSERT(x) if ((x) != SUCCESS) { return (FAILED); }
+#define M_FREE(x) if ((x) != NULL) { m_free(x, MEMORY_FILE_LINE);}
 
 typedef char boolean;
 typedef unsigned char uchar;

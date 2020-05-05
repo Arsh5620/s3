@@ -6,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "./auth.h"
 #include "../networking/network.h"
 #include "../output/output.h"
 #include "../files/file.h"
@@ -29,6 +30,16 @@
 #define DBP_RESPONSE_FORMAT_LONG	"%.*s=\"%ld\"\r\n"
 #define DBP_RESPONSE_KEY_NAME	"response"
 
+// attribute name keys
+#define DBP_ATTRIBNAME_ACTION	"action"
+#define DBP_ATTRIBNAME_CRC		"crc"
+#define DBP_ATTRIBNAME_FILENAME	"filename"
+#define DBP_ATTRIBNAME_UPDATEAT	"updateat"
+#define DBP_ATTRIBNAME_UPDATETRIM	"trim"
+#define DBP_ATTRIBNAME_USERNAME	"username"
+#define DBP_ATTRIBNAME_SECRET	"secret"
+
+
 // one-to-one mapping to the actions_supported
 enum dbp_actions_enum {
 	DBP_ACTION_CREATE = 128
@@ -45,6 +56,8 @@ enum dbp_attribs_enum {
 	, DBP_ATTRIB_CRC
 	, DBP_ATTRIB_UPDATEAT
 	, DBP_ATTRIB_UPDATETRIM
+	, DBP_ATTRIB_USERNAME
+	, DBP_ATTRIB_SECRET
 };
 
 enum dbp_shutdown_enum {
@@ -71,6 +84,9 @@ enum dbp_response_code {
 	, DBP_RESPONSE_NOTIFY_TOOBIG
 	, DBP_RESPONSE_DATA_NONE_NEEDED
 	, DBP_RESPONSE_DATA_NOT_ACCEPTED
+	, DBP_RESPONSE_MIX_AUTH_ERROR
+	, DBP_RESPONSE_SERVER_ERROR_NOAUTH
+	, DBP_RESPONSE_FAILED_AUTHENTICATION
 	/* errors and the connection will need to be closed */
 	, DBP_RESPONSE_ERRORS	= 128
 	, DBP_RESPONSE_CORRUPTED_PACKET
@@ -79,6 +95,8 @@ enum dbp_response_code {
 	, DBP_RESPONSE_GENERAL_SERVER_ERROR
 	, DBP_RESPONSE_GENERAL_DIR_ERROR
 	, DBP_RESPONSE_GENERAL_FILE_ERROR
+	, DBP_RESPONSE_SQL_INTERNAL_ERROR
+	, DBP_RESPONSE_SQL_NOT_AVAIL
 	, DBP_RESPONSE_ERROR_WRITE
 	, DBP_RESPONSE_ERROR_READ
 	, DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE
@@ -99,7 +117,7 @@ typedef struct {
 } dbp_protocol_attribs_s;
 
 #define DBP_ACTIONS_COUNT	5
-#define DBP_ATTRIBS_COUNT	5
+#define DBP_ATTRIBS_COUNT	7
 #define DBP_ATTRIBS_STRUCT_COUNT	DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME	"file_name"
 
@@ -141,7 +159,6 @@ typedef struct {
 
 	char *additional_data; // action level data that can be set and used.
 
-	data_result_s data_result; // both the list and the hash of the header values
 	/*
 	 * for big file writes, we have to first confirm that the client
 	 * accepts the file before we can continue, the prehook function 
@@ -219,6 +236,8 @@ int dbp_prehook_request(dbp_request_s *request);
 
 int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);
+int dbp_attrib_contains(hash_table_s table, int attrib);
+
 int dbp_file_setup_environment();
 int dbp_file_download(dbp_request_s *request);
 
@@ -235,7 +254,12 @@ int dbp_response_write(dbp_response_s *response
 long dbp_response_write_header(dbp_response_s *response
 	, char *buffer, ulong buffer_length);
 ulong dbp_response_make_magic(dbp_response_s *response);
+int dbp_response_accept_status(dbp_response_s *response);
 
 int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request);
 int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request);
+
+int auth_binds_setup(MYSQL *mysql);
+int dbp_auth_query(dbp_request_s *request);
+int dbp_auth_transaction(dbp_request_s *request);
 #endif //PROTOCOL_INCLUDE_GAURD

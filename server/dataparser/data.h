@@ -1,5 +1,5 @@
-#ifndef CONFIG_INCLUDE_GAURD
-#define CONFIG_INCLUDE_GAURD
+#ifndef DATA_INCLUDE_GAURD
+#define DATA_INCLUDE_GAURD
 
 // refer to CONFIGFORMAT for further information
 
@@ -10,13 +10,13 @@
 #include "../general/binarysearch.h"
 
 enum data_type {
-	CONFIG_TYPE_STRING_S
-	, CONFIG_TYPE_INT
-	, CONFIG_TYPE_LONG
-	, CONFIG_TYPE_SHORT
-	, CONFIG_TYPE_BOOLEAN
-	, CONFIG_TYPE_DOUBLE
-	, CONFIG_TYPE_CHAR_PCOPY // use this if you want only string. 
+	DATA_TYPE_STRING_S
+	, DATA_TYPE_INT
+	, DATA_TYPE_LONG
+	, DATA_TYPE_SHORT
+	, DATA_TYPE_BOOLEAN
+	, DATA_TYPE_DOUBLE
+	, DATA_TYPE_CHAR_PCOPY // use this if you want only string. 
 };
 
 enum data_errors
@@ -46,13 +46,15 @@ typedef struct {
 
 int data_convert(key_value_pair_s *pair, enum data_type type
 	, char *out, ulong length);
-key_value_pair_s *data_get_key_value(data_result_s result, long key);
+key_value_pair_s *data_get_key_value(my_list_s result_list
+	, hash_table_s result_table, long key);
 data_result_s data_parse_files(char *filename
 	, data_keys_s *keys, int key_count);
 hash_table_s data_make_table(my_list_s list
 	, data_keys_s *data, ulong length);
 size_t data_key_compare(void *memory, char *str, size_t strlen);
 void data_free(data_result_s result);
-int data_get_and_convert(data_result_s result, long key
-	, enum data_type type, char *memory, long length);
+int data_get_and_convert(my_list_s result_list, hash_table_s result_table
+	, long key, enum data_type type, char *memory, long length);
+
 #endif // CONFIG_INCLUDE_GAURD

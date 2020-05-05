@@ -18,7 +18,12 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 	output_handle(OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO
 		, PROTOCOL_NETWORK_SBS_INIT);
 		
-	if (database_init(DBP_CONFIG_FILENAME) == MYSQL_SUCCESS) 
+	if (database_init(DBP_CONFIG_FILENAME) == MYSQL_SUCCESS
+		&& database_table_verify(AUTH_TABLE_CHECK
+			, AUTH_TABLE_CHECK, AUTH_TABLE_NAME, auth_binds_setup)	== SUCCESS
+		&&  database_table_verify(FILEMGMT_TABLE_CHECK
+			, FILEMGMT_TABLE_CHECK, FILEMGMT_TABLE_NAME
+			, filemgmt_binds_setup)	== SUCCESS)
 	{
 		protocol.init_complete = TRUE;
 	} 
@@ -97,11 +102,11 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 		m_free(request->additional_data, MEMORY_FILE_LINE);
 		request->additional_data	= NULL_ZERO;
 	}
-	MFREEIFNOTNULL(request->file_info.file_name.address);
-	MFREEIFNOTNULL(request->file_info.real_hash_file_name.address);
-	MFREEIFNOTNULL(request->file_info.real_file_name.address);
-	MFREEIFNOTNULL(request->file_info.temp_file_name.address);
-	MFREEIFNOTNULL(request->file_info.temp_hash_file_name.address);
+	M_FREE(request->file_info.file_name.address);
+	M_FREE(request->file_info.real_hash_file_name.address);
+	M_FREE(request->file_info.real_file_name.address);
+	M_FREE(request->file_info.temp_file_name.address);
+	M_FREE(request->file_info.temp_hash_file_name.address);
 }
 
 long dbp_handle_response_string(dbp_response_s *response)
@@ -155,6 +160,9 @@ long dbp_handle_response_string(dbp_response_s *response)
 
 	DBP_ASSIGN(link, DBP_RESPONSE_DATA_NONE_NEEDED
 		, DBP_RESPONSE_STRING_DATA_NONE_NEEDED);
+
+	DBP_ASSIGN(link, DBP_RESPONSE_FAILED_AUTHENTICATION
+		, DBP_RESPONSE_STRING_FAILED_AUTHENTICATION);
 
 	default:
 		link = (string_s){0};
@@ -241,9 +249,10 @@ int dbp_setupenv(dbp_request_s *request)
 		return (DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE);
 	}
 
-	int result	= data_get_and_convert(request->data_result
+	int result	= data_get_and_convert(request->header_list
+		, request->header_table
 		, DBP_ATTRIB_FILENAME
-		, CONFIG_TYPE_STRING_S
+		, DATA_TYPE_STRING_S
 		, (char*)&client_filename
 		, sizeof(string_s));
 
@@ -314,11 +323,15 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 	{
 		return(DBP_RESPONSE_THIN_ATTRIBS);
 	}
-	
+
+	result	= dbp_auth_transaction(request);
+
+	if (result != DBP_RESPONSE_SUCCESS)
+	{
+		return (result);
+	}
 	// TODO
-	request->data_result.list	= request->header_list;
-	request->data_result.hash	= request->header_table;
-	
+
 	result	= dbp_setupenv(request);
 	if (result != SUCCESS)
 	{
