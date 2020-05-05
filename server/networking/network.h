@@ -4,10 +4,17 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #include "../general/define.h"
 
 #define NETWORK_READ_BUFFER	MB(1)
 #define NETWORK_WRITE_BUFFER	MB(1)
+#define RSA_SERVER_KEY	"certificates/CA-key.pem"
+#define RSA_SERVER_CERT	"certificates/CA-cert.pem"
+#define SSL_SUCCESS	1 
 
 enum network_errors_enum {
 	NETWORK_ERROR_SUCCESS	= 0
@@ -31,6 +38,12 @@ typedef struct network_connection
 	struct sockaddr_in server_socket;
 	struct sockaddr_in client_socket;
 	uint error_code;
+
+	// tls data that we need
+	SSL_CTX *ssl_context;
+	SSL *ssl_tls;
+	SSL_METHOD *ssl_method;
+	X509 *ssl_certificate;
 } network_s;
 
 
