@@ -14,6 +14,7 @@
 #include "../output/output.h"
 #include "../logger/logs.h"
 
+
 /*
  * On any unrecoverable failure exit() will be called
  */
@@ -53,6 +54,8 @@ network_s network_connect_init_sync(int port)
 	network_s connection = {0};
 	int result = 0;
 
+#ifndef DEBUG
+
 	// check for certificate and private-key should already be done.
 	result	= SSL_library_init();
 	assert_ssl(result, NULL_ZERO, "SSL_library_init"
@@ -87,6 +90,8 @@ network_s network_connect_init_sync(int port)
 		assert_ssl(NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key"
 			, SERVER_TLS_CERT_KEY_CHK_FAILED);
 	}
+
+#endif
 
 	connection.server =  socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	assert(connection.server, "socket", SERVER_SOCK_INIT_FAILED);
@@ -130,6 +135,8 @@ void network_connect_accept_sync(network_s *connection)
 		, (struct sockaddr*) &connection->client_socket, &len);
 	assert(connection->client, "accept", SERVER_ACCEPT_FAILED);
 
+#ifndef DEBUG
+
 	connection->ssl_tls = SSL_new(connection->ssl_context);
 	if (connection->ssl_tls == NULL)
 	{
@@ -153,6 +160,8 @@ void network_connect_accept_sync(network_s *connection)
 			, NETWORK_ASSERT_SSL_LEVEL_MESSAGE
 			, SSL_get_cipher(connection->ssl_tls));
 
+#endif
+
 }
 
 /*
@@ -174,9 +183,13 @@ network_data_s network_read_stream(network_s *connection, ulong size)
 	size_t data_read = 0;
 	for (; data_read < size;)
 	{
+#ifndef DEBUG
 		ulong length  = SSL_read(connection->ssl_tls
 			, memory + data_read, (size - data_read));
-
+#else
+		ulong length  = read(connection->client
+			, memory + data_read, (size - data_read));
+#endif
 		if (length == 0) 
 		{
 			if (data_read != size)
@@ -219,7 +232,11 @@ int network_write_stream(network_s *network, char *buffer, ulong buffer_length)
 	ulong bytes_written	= 0;
 	for (ulong length = 0;bytes_written < buffer_length;)
 	{
+#ifndef DEBUG
 		length = SSL_write(network->ssl_tls, buffer, buffer_length);
+#else
+		length = write(network->client, buffer, buffer_length);
+#endif
 		if (length > 0)
 		{
 			bytes_written += length;

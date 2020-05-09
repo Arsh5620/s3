@@ -65,7 +65,7 @@ typedef struct filemgmt_file_name
 	DATABASE_COMMON_TABLE_EXISTS(FILEMGMT_TABLE_NAME)
 
 #define FILEMGMT_FOLDER_NAME	"backup/"
-#define FILEMGMT_HASH_FOLDER	"backup-sha1/"
+#define FILEMGMT_HASH_FOLDER	"backup-sha/"
 #define FILEMGMT_TEMP_FORMAT	"%s/download-fn(%ld).tmp"
 #define FILEMGMT_TEMP_DIR		"temp"
 #define FILEMGMT_HASH_FORMAT	"%s/temp-(%d).sha1"

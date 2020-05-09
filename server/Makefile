@@ -28,7 +28,7 @@ build-file: $(OBJFILES)
 	$(CC) -pg -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
 
 clean: 
-	git clean -xid -e "backup"
+	git clean -xid -e "backup*"
 
 clean-logs:
 	@cd ./logs/ && rm * -I || echo "No logs to clear";
