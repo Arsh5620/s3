@@ -68,7 +68,8 @@
 		"vector": "c",
 		"memory": "c",
 		"thread": "c",
-		"data.h": "c"
+		"data.h": "c",
+		"build": "cpp"
 	},
 	"python.pythonPath": "/sbin/python"
 }

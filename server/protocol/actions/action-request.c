@@ -1,4 +1,4 @@
-#include "protocol.h"
+#include "../protocol.h"
 
 long dbp_action_request_writer(dbp_response_s *in)
 {

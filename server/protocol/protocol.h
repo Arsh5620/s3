@@ -46,6 +46,7 @@ enum dbp_actions_enum {
 	, DBP_ACTION_DELETE
 	, DBP_ACTION_NOTIFICATION
 	, DBP_ACTION_REQUEST
+	, DBP_ACTION_SERVER
 	, DBP_ACTION_UPDATE
 	, DBP_ACTION_NOTVALID	= -1
 };
@@ -66,11 +67,11 @@ enum dbp_shutdown_enum {
 };
 
 enum dbp_response_code {
-	DBP_RESPONSE_SUCCESS
+	DBP_RESPONSE_SUCCESS // internal no response to send to client
 	, DBP_RESPONSE_DATA_SEND	= 1
 	, DBP_RESPONSE_PACKET_OK
-	, DBP_RESPONSE_PACKET_DATA_MORE
-	, DBP_RESPONSE_PACKET_DATA_READY
+	, DBP_RESPONSE_PACKET_DATA_MORE // when requesting permission to send data
+	, DBP_RESPONSE_PACKET_DATA_READY	// when actually sending data
 	/* warnings but we can continue the connection */
 	, DBP_RESPONSE_WARNINGS	 = 32
 	, DBP_RESPONSE_ACTION_INVALID
@@ -116,7 +117,7 @@ typedef struct {
 	boolean trim; // 0 means false, every other value is true
 } dbp_protocol_attribs_s;
 
-#define DBP_ACTIONS_COUNT	5
+#define DBP_ACTIONS_COUNT	6
 #define DBP_ATTRIBS_COUNT	7
 #define DBP_ATTRIBS_STRUCT_COUNT	DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME	"file_name"
@@ -226,6 +227,7 @@ int dbp_posthook_create(dbp_request_s *request, dbp_response_s *response);
 int dbp_posthook_update(dbp_request_s *request, dbp_response_s *response);
 int dbp_posthook_delete(dbp_request_s *request, dbp_response_s *response);
 int dbp_posthook_request(dbp_request_s *request, dbp_response_s *response);
+int dbp_posthook_serverinfo(dbp_request_s *request, dbp_response_s *response);
 
 int dbp_prehook_notification(dbp_request_s *request);
 int dbp_prehook_create(dbp_request_s *request);
@@ -233,6 +235,7 @@ int dbp_prehook_action(dbp_request_s *request);
 int dbp_prehook_update(dbp_request_s *request);
 int dbp_prehook_delete(dbp_request_s *request);
 int dbp_prehook_request(dbp_request_s *request);
+int dbp_prehook_serverinfo(dbp_request_s *request);
 
 int dbp_attribs_assert(hash_table_s table, 
 	enum dbp_attribs_enum *match, int count);
@@ -255,6 +258,7 @@ long dbp_response_write_header(dbp_response_s *response
 	, char *buffer, ulong buffer_length);
 ulong dbp_response_make_magic(dbp_response_s *response);
 int dbp_response_accept_status(dbp_response_s *response);
+int dbp_response_writer_update(dbp_response_s *response, string_s write);
 
 int dbp_request_data(dbp_protocol_s *protocol, dbp_request_s *request);
 int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request);

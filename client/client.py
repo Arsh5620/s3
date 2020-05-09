@@ -9,12 +9,20 @@ sock = socket.socket()
 
 hostname = "127.0.0.1"
 
-context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+print("Do you want to enable ssl?")
 
+ssl	= input()
+
+ssock	= 0
 sock	= socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-context.check_hostname	= False
-context.verify_mode = ssl.CERT_NONE
-ssock	= context.wrap_socket(sock, server_hostname=hostname) 
+
+if (ssl	== "Y"):
+	context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+	context.check_hostname	= False
+	context.verify_mode = ssl.CERT_NONE
+	ssock	= context.wrap_socket(sock, server_hostname=hostname) 
+else:
+	ssock	= sock
 
 print("Client started, and will try to connect to dbp server")
 
@@ -99,6 +107,7 @@ while(1):
 	key_value_pair_thin		= ("action=create\n")
 	key_value_pair_invalidaction	= ("action=whatever\n")
 	key_value_pair_empty	= ("\n")
+	key_value_pair_server	= "action=server\n"
 
 	print("Please select of the options to continue: ")
 	print("1. Send corrupted packet with incorrect magic\n"
@@ -111,7 +120,8 @@ while(1):
 		"8. Send packet with keys only, and no values\n"
 		"9. Send file update packet\n"
 		"A. Delete the file\n"
-		"B. Request the file\n")
+		"B. Request the file\n"
+		"C. Request server info\n")
 
 	data_entered	= input() # wait for the client to press enter before sending the packet
 
@@ -141,6 +151,8 @@ while(1):
 		header_pairs	= key_value_pair_delete
 	elif (data_entered == "B"):
 		header_pairs	= key_value_pair_request
+	elif (data_entered == "C"):
+		header_pairs	= key_value_pair_server
 	else:
 		print("Incorrect option selected, kill "
 			"program with Ctrl + C if does not exit")
@@ -152,7 +164,7 @@ while(1):
 
 	file_len = os.stat(filename).st_size
 
-	if (data_entered != "A" and data_entered != "B"):
+	if (data_entered != "A" and data_entered != "B" and data_entered !="C"):
 		magic_packet += file_len
 
 	header_keys = header_pairs

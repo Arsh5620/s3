@@ -20,6 +20,7 @@ data_keys_s actions[] =
 	, DBP_KEY("delete", DBP_ACTION_DELETE)
 	, DBP_KEY("notification", DBP_ACTION_NOTIFICATION)
 	, DBP_KEY("request", DBP_ACTION_REQUEST)
+	, DBP_KEY("server", DBP_ACTION_SERVER)
 	, DBP_KEY("update", DBP_ACTION_UPDATE)
 };
 
@@ -42,6 +43,7 @@ enum dbp_attribs_enum dbp_call_asserts
 		, DBP_ATTRIB_USERNAME
 		, DBP_ATTRIB_SECRET 
 	} // ACTION_REQUEST
+	, { DBP_ATTRIB_ACTION } // ACTION_SERVER
 	, {
 		DBP_ATTRIB_ACTION
 		, DBP_ATTRIB_FILENAME

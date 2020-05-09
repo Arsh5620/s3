@@ -1,5 +1,27 @@
 #include "protocol.h"
 
+int dbp_response_writer_update(dbp_response_s *response, string_s write)
+{
+	string_s writer	= response->writer;
+
+	response->header_info.data_length	= write.length;
+	
+	long avail_write	= writer.max_length - writer.length;
+	long required_write	= write.length - response->data_written;
+	long actual_write	= required_write > avail_write 
+		? avail_write : required_write;
+
+	if (actual_write > 0)
+	{
+		memcpy(writer.address + writer.length
+			, write.address + response->data_written, actual_write);
+		response->data_written	+= actual_write;
+		response->writer.length	+= actual_write;
+	}
+
+	return (actual_write);
+}
+
 int dbp_response_write(dbp_response_s *response
 	, long (*writer)(dbp_response_s *in))
 {
