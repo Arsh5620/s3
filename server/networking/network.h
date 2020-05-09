@@ -39,11 +39,13 @@ typedef struct network_connection
 	struct sockaddr_in client_socket;
 	uint error_code;
 
+#ifndef DEBUG
 	// tls data that we need
 	SSL_CTX *ssl_context;
 	SSL *ssl_tls;
 	SSL_METHOD *ssl_method;
 	X509 *ssl_certificate;
+#endif
 } network_s;
 
 
