@@ -112,7 +112,6 @@ void dbp_handle_close(dbp_request_s *request, dbp_response_s *response)
 long dbp_handle_response_string(dbp_response_s *response)
 {
 	string_s link	= {0};
-	string_s writer	= response->writer;
 
 	switch (response->response_code)
 	{
@@ -168,21 +167,7 @@ long dbp_handle_response_string(dbp_response_s *response)
 		link = (string_s){0};
 	}
 
-	response->header_info.data_length	= link.length;
-	
-	long avail_write	= writer.max_length - writer.length;
-	long required_write	= link.length - response->data_written;
-	long to_write	= required_write > avail_write 
-		? avail_write : required_write;
-
-	if (to_write > 0)
-	{
-		memcpy(writer.address + writer.length
-			, link.address + response->data_written, to_write);
-		response->data_written	+= to_write;
-		response->writer.length	+= to_write;
-	}
-	return (to_write);
+	return (dbp_response_writer_update(response, link));
 }
 
 int dbp_handle_response(dbp_response_s *response, enum dbp_response_code code)
@@ -409,6 +394,9 @@ int dbp_action_posthook(dbp_request_s *request, dbp_response_s *response)
 		case DBP_ACTION_REQUEST:
 			result	= dbp_posthook_request(request, response);
 			break;
+		case DBP_ACTION_SERVER:
+			result	= dbp_posthook_serverinfo(request, response);
+			break;
 	}
 	return(result);
 }
@@ -432,6 +420,9 @@ int dbp_action_prehook(dbp_request_s *request)
 			break;
 		case DBP_ACTION_REQUEST:
 			result	= dbp_prehook_request(request);
+			break;
+		case DBP_ACTION_SERVER:
+			result	= dbp_prehook_serverinfo(request);
 			break;
 	}
 	return(result);
