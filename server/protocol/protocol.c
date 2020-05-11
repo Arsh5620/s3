@@ -365,7 +365,8 @@ ulong dbp_next_request(dbp_protocol_s *protocol)
 		return(result);
 	}
 	
-	if (dbp_handle_response(response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
+	if (response->response_code != DBP_RESPONSE_PACKET_DATA_READY
+		&& dbp_handle_response(response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
 	{
 		return(DBP_RESPONSE_ERROR_WRITE);
 	}

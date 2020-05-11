@@ -1,6 +1,6 @@
 *.o
 *.gch
-main
+server/main
 server/logs/*
 server/temp/*
 build
