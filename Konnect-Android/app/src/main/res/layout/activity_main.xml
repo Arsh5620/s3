@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:id="@+id/root_view">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="300dp"
+        android:minHeight="380dp"
+        android:layout_marginTop="32dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/username_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/string_username"
+            app:layout_constraintLeft_toLeftOf="@+id/username_edittext"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </TextView>
+
+        <EditText
+            android:id="@+id/username_edittext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:width="220dp"
+            android:hint="@string/string_username_hint"
+            android:text="u"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/username_textview">
+
+        </EditText>
+
+        <TextView
+            android:id="@+id/password_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/string_password"
+            android:layout_marginTop="32dp"
+            app:layout_constraintLeft_toLeftOf="@+id/password_edittext"
+            app:layout_constraintTop_toBottomOf="@+id/username_edittext">
+
+        </TextView>
+
+        <EditText
+            android:id="@+id/password_edittext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:width="220dp"
+            android:hint="@string/string_password_hint"
+            android:inputType="textPassword"
+            android:text="p"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/password_textview">
+
+        </EditText>
+
+        <TextView
+            android:id="@+id/hostname_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/string_hostname"
+            android:layout_marginTop="32dp"
+            app:layout_constraintLeft_toLeftOf="@+id/hostname_edittext"
+            app:layout_constraintTop_toBottomOf="@+id/password_edittext">
+
+        </TextView>
+
+        <EditText
+            android:id="@+id/hostname_edittext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:width="220dp"
+            android:hint="@string/string_hostname_hint"
+            android:text="192.168.2.15"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/hostname_textview">
+
+        </EditText>
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:background="@color/colorAccentLight"
+            android:minWidth="210dp"
+            android:onClick="submitButtonClick"
+            android:text="@string/button_submit_text"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintLeft_toLeftOf="@+id/hostname_edittext"
+            app:layout_constraintRight_toRightOf="@+id/hostname_edittext"
+            app:layout_constraintTop_toBottomOf="@+id/hostname_edittext">
+
+        </Button>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
