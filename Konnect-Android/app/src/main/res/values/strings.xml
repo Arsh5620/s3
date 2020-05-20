@@ -121,8 +121,12 @@
     <string name="button_submit_text">Login</string>
     <string name="string_hostname">Host address:</string>
     <string name="string_hostname_hint">192.168.0.1</string>
-    <string name="string_password_hint">password</string>
-    <string name="string_username_hint">username</string>
+    <string name="string_password_hint">Password</string>
+    <string name="string_username_hint">Username</string>
     <string name="main_activity_server_not_connected">Cannot connect to the server, please try again.</string>
     <string name="action_about">About</string>
+    <string name="activity_main_username">Username</string>
+    <string name="activity_main_password">Password</string>
+    <string name="activity_main_address">192.168.2.15</string>
+    <string name="none" />
 </resources>

@@ -1,0 +1,8 @@
+Reed Solomon Codes:
+
+Reed Solomon codes is a family of codes where every code is characterized by three parameters 
+Alphabet size (q), here q is the numbers of different alphabets in the code (such as {0,1} is a binary code with alphabet size of 2), ({0, 1, 2, 3, 4} would be a code with alphabet size of 5). 
+
+Block length (n), block length would be the size of the message itself, such as a message {01111} would be of a block length 5. 
+
+IK ONKAR, WAHEGURU JI KI FATEH. 
