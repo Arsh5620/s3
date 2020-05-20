@@ -1,0 +1,40 @@
+Reed Solomon codes are block codes meaning that the message has to be divided into separate blocks of data. Each block then has a parity protection information added to it to form a self-contained code word. 
+It is also a generally systematic code meaning that the encoding process does not modify the data but adds additional information to the end of the data. 
+Also, a Reed-Solomon code is a linear code meaning that adding two code words produces another code word and it is cyclic meaning that shifting the symbols of a code word produces another code word. This is trivial, but the main point here is that a code-word means a "Valid code-word that is present in our finite field, not a random code-word"
+Reed Solomon is good at dealing with burst of errors, rather than random off by bit errors. 
+Although a symbol may have all of its bits in error, this counts as only one symbol error in terms of correction capacity of the code. 
+Choosing different parameters for the code provides with different level of error correction and affects the complexicity of the implementation (in hardware terms). 
+Thus a Reed Solomon code can be described as an (n, k) code, where n is the block length in symbols and k is the number of information symbols in the message where n <= 2^m - 1 with m being the number of bits in a symbol. A more generalized equality would be n <= 255. In practical implementations of Reed Solomon code we mostly keep n == 255
+With this code the number of errors that can be corrected follows the formula floor((n-k)/2)
+
+Finite Fields: 
+Finite Fields consists a set of elements based on a primitive element. Following FF(p ^ m), here p is a prime number and m is a positive integer and elements in said field are usually denoted by α and take the following values:
+{ 0, α ^ 0, α ^ 1, α ^ 2, ..., α ^ N-1}
+Here N = 2 ^ m - 1
+
+There is another notation that can be used to describe the values in the field which is polynomial notation, and the expression is of the form: 
+a (sub: m-1) x (sup: m-1) + .... + a (sub: 1) x + a (sub: 0)
+
+Field generator polynomial: 
+A field generator polynomial is required in the process of multiplication, because unlike regular polynomial multiplication, multiplication in FF must result in a polynomial that is present in the FF. 
+Example: if in FF(2^3), so FF(8) all elements are {0, a^0, a^1, a^2, a^3, a^4, a^5, a^6}
+So if I multiply polynomial vector(7) poly(x^2 + x^1 + x^0) and vector(6) poly(x^2 + x^1 + 0x^0), the result will be vector(42) poly (x^5 + x^3 + x^1)
+This element is not present in our FF, so we must divide this element by the FGP(Field generator polynomial) For a FF(4) first FGP is a^3 + a^1 + a^0
+
+Using the fact that FGP(a) = 0
+a^3 + a^1 + a^0 = 0
+a^3 = a^1 + a^0 // since addition substraction is the same. 
+and also since a = 2, which is the root of the FF
+
+Using this to generate the entire field values will be: 
+Index	Poly			Vector	Decimal
+0	0			000	0
+a ^ 0	a ^ 0			001	1
+a ^ 1	a ^ 1			010	2
+a ^ 2	a ^ 2			100	4
+a ^ 3	a ^ 1 + a ^ 0		011	3
+a ^ 4	(a ^ 1 + a ^ 0) (a ^ 1) 110	6
+a ^ 5	(a ^ 2 + a ^ 1 + a ^ 0)	111	7
+a ^ 6	a ^ 2 + a ^ 0		101	5
+
+

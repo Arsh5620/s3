@@ -1,0 +1,40 @@
+Groups
+1. The group operation is closed, that is a, b belongs to the group. Any operation performed on this group  such as a O b = c must also exist in the group. 
+2. The group operation is associative. That is the order of operations does not matter a O b O c = (a O b) O c = a O (b O c)
+There is an element 1 in G, called the neutral element such that a O 1 = 1 O a = a for all a in G. 
+^- this basically means that operation applied to the element must result in the integer to which the operation was applied. 
+Also in this group there exists an inverse for a such that a O a^-1 = a ^-1 O a = 1
+In mathematics, an abelian group, also called a commutative group, is a group in which the result of applying the group operation to two group elements does not depend on the order in which they are written. That is, the group operation is commutative.
+Basically if I add 1 + 2 = 3, and 2 + 1 = 3 this is abelian. But if I write 1 / 2 /= 2 / 1 this is not abelian
+
+*******
+
+Ring structure, not all elements have an inverse for multiplication. 
+
+******
+Field is a structure in which we have a multiplicative and additive inverse. 
+Field is an extension to Ring where additive inverse exists but no multiplicative inverse exists, which itself is an extension to Group where multiplicative operation is not available. 
+
+Field F is a set of elements with following properties. 
+1. All elements of F form an additive group with the group operation "+" and the neutral element 0
+2. All elements of F except for "0" form a multiplicative group with the group operation "*" and neutral element 1
+3. When two group operations are mixed, the distributive law holds that is for all a,b,c in F: a (b + c) = ab + ac
+
+Very informally a Field is a set of elements in a group where we have four basic arithmetic operations such as addition, substraction, multiplication and inversion (not division)"
+Examples: 
+Real numbers, and complex numbers. Here we are not discussing Finite fields, we are only discussing Fields and fields can contain any numbers. 
+Natural numbers (0, 1, 2 .... n) are not Fields as no additive inverse is available
+
+In Cryptography we are only interested in Finite sets. 
+
+**** FINITE FIELDS **** 
+a finite field can only exists if it have p ^ m elements. 
+here p is a prime number, and m is a natural number 
+Most important in-practise Galois Field is GF(256) = GF(2^8)
+GF(p^m) is always the notation to use, and if m = 1 then use GF(p) and where m=1 this is called prime fields. In the case where m > 1 any such field is called extension field. 
+
+Let a,b in GF(p)	= {0, 1, ...., p -1 }
+the inverse can be computed using extended euclidean algorithm. 
+
+**** GALOIS FIELD 2 ^ m ****
+The elements of such field will be polynomials {a(m-1)*x^(m-1), ..., a1x^1, a0x^0} = A(x) in GF(2^m)
