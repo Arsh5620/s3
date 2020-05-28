@@ -125,3 +125,42 @@ Finding the coff of the error locator polynomial:
 The direct method: 
 For each error there is a corresponding root Xj^(-1) that makes (inv-V)(x) equal to zero. 
 
+******
+Equation 14: S i
+= R(α i )
+= R n-1 (α i ) n-1 + R n-2 (α i ) n-2 + .... + R 1 α i + R 0
+
+Equation 15: 
+R(α i ) = E(α i ) = S i
+
+******
+
+SYNDROME EQUATIONS: 
+As we have already mentioned that 
+Syndrome i = R(x) and 
+Received Polynomial (x) = Transmitted Polynomial (x) + Error Polynomial (x). 
+Here Error Polynomial is a polynomial which contains all the error that are to be corrected: E(n-1) x ^ (n-1) + ... + E (1) x + E(0)
+Here each of the coff E(n-1) ... E(0) indicates an error value.
+
+NOW CALCULATING THE SYNDROMES: 
+As already mentioned that the transmitted word is always divisible by the generator, so is each factor of the generator. 
+Therefore first step in decoding process will be to divide the received polynomial by each of the factors (x + alpha ^ i) of the generator polynomial. 
+
+Remainder (x) / (factor of generator x + alpha ^ i) = Quotient (x) + Syndromes (i) / (x + alpha ^ i)
+
+So the Syndrome (i) = Remainder (x) + Quotient(x) * (x + alpha ^ i)
+and the reason that we are introducing x = alpha ^ i is the same reason x would be in equation (x - 2 = 0)
+And when we introduce x = alpha ^ i
+Syndrome (i) = Remainder ( alpha ^ i )
+= R n-1 (α i ) n-1 + R n-2 (α i ) n-2 + .... + R 1 α i + R 0
+
+To produce a set of equations that can be solved to find the errors, we must assume that v errors have occured, where v <= t
+Thus the Equation E(x) = Y(1) x ^ (e1) + .... + Y(v) x ^ (ev)
+Here e1, e1, ...., ev are to identify the locations of the error in the code word as powers of x. 
+while Y(1), ... , Y(v) represent the error values at those locations. 
+
+Substituing in EQ(15) becomes: 
+Syndrome (i) = Error (alpha ^ i)
+ = Y(1) alpha ^ (i * e1) + ... + Y(v) alpha ^ (i * ev)
+Sydrome (i) = Y(1) X(1) ^ i + Y(2) X(2) ^ i + ... + Y(v) X(v) ^ i
+Here X(1), ..., X(v) are the error locators. 

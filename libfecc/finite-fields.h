@@ -38,5 +38,9 @@ ff_t ff_multiply_lut(ff_table_s table, ff_t x, ff_t y);
 ff_polynomial_s ff_append_polynomials(ff_polynomial_s poly_a
 	, ff_polynomial_s poly_b);
 ff_t ff_evaluate_polynomial(ff_table_s table, ff_polynomial_s poly, short x);
-
+ff_polynomial_s ff_polynomial_multiply_scalar(ff_table_s table
+	, ff_polynomial_s poly, ff_t scalar);
+ff_t ff_inverse_lut(ff_table_s table, ff_t x);
+ff_polynomial_s ff_polynomial_add(ff_table_s table
+	, ff_polynomial_s poly_a, ff_polynomial_s poly_b);
 #endif //FINITE_FIELDS_INCLUDE_GAURD
