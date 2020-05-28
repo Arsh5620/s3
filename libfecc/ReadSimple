@@ -75,7 +75,6 @@ If more than t = (n-k)/2 of the E values are non-zero, then the correction capac
 THE SYNDROMES. 
 We know already as the transmitted code word is always divisible by the generator without having any remainder. (The reason that the remainder works and not (generator - remainder) is because in FF addition is the same as subtraction, so generator + remainder is same as generator - remainder. 
 And the property of the transmitted message being divisible by generator polynomial extends to the individual factors of the generator polynomial. 
-THE REASON THE PROPERTY EXTENDS TO INDIVIDUAL FACTORS IS BECAUSE IF I DIVIDE 3528 BY (3)*(7)*(21)*(8), then in simple mathematics 3528 will be divisible by all of the factors in the equations (trivial but can be confusing sometimes)
 
 So the first step of decoding process is to divide the received polynomial by each of the factors (x + α^i) of the generator polynomial. 
 Received polynomial (x) / (x + α^i) = Qi(x) + Si / (x + α^i)
@@ -165,5 +164,3 @@ Syndrome (i) = Error (alpha ^ i)
  = Y(1) alpha ^ (i * e1) + ... + Y(v) alpha ^ (i * ev)
 Sydrome (i) = Y(1) X(1) ^ i + Y(2) X(2) ^ i + ... + Y(v) X(v) ^ i
 Here X(1), ..., X(v) are the error locators. 
-
-
