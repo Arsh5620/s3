@@ -109,6 +109,7 @@ ff_polynomial_s rs_encode(ff_table_s table
 	return (final_message);
 }
 
+/* using horner's theorm */
 ff_polynomial_s rs_calculate_syndromes(ff_table_s table, ff_polynomial_s msg
 	, short number_ecc_symbols)
 {
@@ -123,4 +124,87 @@ ff_polynomial_s rs_calculate_syndromes(ff_table_s table, ff_polynomial_s msg
 	}
 	
 	return (syndromes);
+}
+
+/*
+ * In rs_calculate_delta what we are doing here is 
+ * we are calculate the value of delta for berlekamp-massey algorithm
+ * and we do that by multiplying the error locator by syndromes and 
+ * calculating the addition value into delta
+ */
+ff_t rs_calculate_delta(ff_table_s table
+	, short syndrome_i
+	, ff_polynomial_s syndromes
+	, ff_polynomial_s error_locator_poly)
+{
+	ff_t delta	= syndromes.memory[syndrome_i];
+	for (long i = 1; i < error_locator_poly.size; ++i)
+	{
+		ff_t temp	= ff_multiply_lut(table
+			, error_locator_poly.memory[error_locator_poly.size - 1 - i]
+			, syndromes.memory[syndrome_i - i]);
+
+		delta	= ff_addition(delta, temp);
+	}
+	return (delta);
+}
+
+/**
+ * Berlekamp-Massey Algorithm
+ */
+ff_polynomial_s rs_make_error_location_poly(ff_table_s table
+	, ff_polynomial_s syndromes, short number_ecc_symbols)
+{
+	ff_polynomial_s error_location_poly1	= rs_polynomial_new(1, 1);
+	ff_polynomial_s error_location_poly2	= rs_polynomial_new(1, 1);
+
+	for (long i=0; i<syndromes.size; ++i)
+	{
+		error_location_poly2	= rs_polynomial_append(error_location_poly2, 0);
+		ff_t delta	= syndromes.memory[i];
+
+		delta	= rs_calculate_delta(table, i, syndromes, error_location_poly1);
+
+		printf("Delta is %d\n", delta);
+		if (delta != 0)
+		{
+			if (error_location_poly2.size > error_location_poly1.size)
+			{
+				ff_polynomial_s temp_poly	= 
+					ff_polynomial_multiply_scalar(table, error_location_poly2, delta);
+				error_location_poly2	= 
+					ff_polynomial_multiply_scalar(table, error_location_poly1
+					, ff_inverse_lut(table, delta));
+				error_location_poly1	= temp_poly;
+			}
+			ff_polynomial_s scalar_mult1	= 
+				ff_polynomial_multiply_scalar(table, error_location_poly2, delta);
+			error_location_poly1	= 
+				ff_polynomial_add(table, error_location_poly1
+				, scalar_mult1);
+			
+			for (size_t i = 0; i < scalar_mult1.size; i++)
+			{
+				printf("POLY: %x, ", scalar_mult1.memory[i]);
+			}
+		}
+	}
+	return (error_location_poly1);
+}
+
+ff_polynomial_s rs_polynomial_append(ff_polynomial_s polynomial, ff_t monomial)
+{
+	polynomial.memory	= realloc(polynomial.memory, polynomial.size + sizeof(ff_t));
+	polynomial.memory[polynomial.size]	= monomial;
+	polynomial.size++;
+	return (polynomial);
+}
+
+ff_polynomial_s rs_polynomial_new(short size, ff_t def)
+{
+	ff_polynomial_s poly1 = {0};
+	poly1.memory	= malloc(size * sizeof(ff_t));
+	memset(poly1.memory, def, size);
+	poly1.size	= size;
+	return (poly1);
 }
