@@ -18,3 +18,4 @@ gmon.out
 venv
 __pycache__
 .idea
+libfecc/main

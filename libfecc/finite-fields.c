@@ -89,7 +89,10 @@ ff_t ff_divide_lut(ff_table_s lut, ff_t x, ff_t y, char *error)
 
 ff_t ff_raise_lut(ff_table_s table, ff_t x, short power)
 {
-	return table.antilogs[(table.logs[x] * power) % 255];
+	ff_t alog	= (table.logs[x] * power) % 255;
+	if (power < 0)
+		alog--;
+	return table.antilogs[alog];
 }
 
 ff_t ff_inverse_lut(ff_table_s table, ff_t x)
@@ -127,18 +130,19 @@ ff_polynomial_s ff_polynomial_multiply_scalar(ff_table_s table
 ff_polynomial_s ff_polynomial_add(ff_table_s table
 	, ff_polynomial_s poly_a, ff_polynomial_s poly_b)
 {
-	if (poly_a.size != poly_b.size)
-	{
-		return (ff_polynomial_s){0};
-	}
-
+	size_t result_length = sizeof(ff_t) * (poly_a.size > poly_b.size ? poly_a.size : poly_b.size);
 	ff_polynomial_s result;
-	result.memory	= calloc(poly_a.size, sizeof(ff_t));
-	result.size	= poly_a.size;
-	
+	result.memory	= calloc(result_length, sizeof(ff_t));
+	result.size	= result_length;
+
 	for (size_t i = 0; i < poly_a.size; i++)
 	{
-		result.memory[i]	= ff_addition(poly_a.memory[i], poly_b.memory[i]);
+		result.memory[i + result_length - poly_a.size]	= poly_a.memory[i];
+	}
+	
+	for (size_t i = 0; i < poly_b.size; i++)
+	{
+		result.memory[i + result_length - poly_b.size]	^= poly_b.memory[i];
 	}
 	
 	return result;
