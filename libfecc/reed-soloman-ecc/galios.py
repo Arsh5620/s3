@@ -83,14 +83,12 @@ def gf_poly_multiply_scalar(p, x):
 
 
 def gf_poly_add(p, q):
-	if len(p) != len(q):
-		raise Exception("Array size is not the same")
 
-	length = len(p)
-	r = [0] * length
-	for i in range(0, length):
-		r[i] = gf_add(p[i], q[i])
-
+	r = [0] * max(len(p), len(q))
+	for i in range(0, len(p)):
+		r[i + len(r) - len(p)] = p[i]
+	for i in range(0, len(q)):
+		r[i + len(r) - len(q)] ^= q[i]
 	return r
 
 
@@ -143,7 +141,6 @@ def rs_encode_msg(msg_in, nsym):
 	if (len(msg_in) + nsym) > 255: raise ValueError("Message is too long (%i when max is 255)" % (len(msg_in) + nsym))
 	gen = rs_generator_poly(nsym)
 
-	print(str(gen))
 	# Init msg_out with the values inside msg_in and pad with len(gen)-1 bytes (which is the number of ecc symbols).
 	msg_out = [0] * (len(msg_in) + len(gen) - 1)
 	# Initializing the Synthetic Division with the dividend (= input message polynomial)
