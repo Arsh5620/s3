@@ -1,22 +1,5 @@
 #include "finite-fields.h"
 
-/*
- * In Finite Fields addition for p = 2, m = 8 is simple XOR
- */
-inline ff_t ff_addition(ff_t a, ff_t b)
-{
-	// refer to FF.odt for more information
-	return (a ^ b);
-}
-
-/*
- * In Finite Fields subtraction is same as addition when p = 2, m = 8
- */
-inline ff_t ff_subtraction(ff_t a, ff_t b)
-{
-	return (a ^ b);
-}
-
 inline ff_t ff_multiply(ff_t a, ff_t b, short irr_p)
 {
 	/* 
@@ -31,12 +14,12 @@ inline ff_t ff_multiply(ff_t a, ff_t b, short irr_p)
 	{
 		if (b & 1)
 		{
-			result	= ff_addition(result, a);
+			result	= FF_ADDITION(result, a);
 		}
 
 		if (a & 0x80)
 		{
-			a	= ff_subtraction(a << 1, irr_p);
+			a	= FF_SUBSTRACTION(a << 1, irr_p);
 		}
 		else 
 		{
@@ -58,12 +41,12 @@ ff_table_s ff_generate_table(short irr_p)
 	for (size_t i = 0; i < FF_SIZE; i++)
 	{
 		table.antilogs[i]	= x;
-		table.logs[(unsigned int)x]	= i;
+		table.logs[x]	= i;
 
 		x	= ff_multiply(x, 2, irr_p);
 	}
-	memcpy(table.antilogs + 255, table.antilogs, 256);
 
+	memcpy(table.antilogs + 255, table.antilogs, 256);
 	return (table);
 }
 
@@ -100,7 +83,7 @@ ff_t ff_inverse_lut(ff_table_s table, ff_t x)
 	return table.antilogs[255 - table.logs[x]];
 }
 
-ff_t ff_multiply_lut(ff_table_s table, ff_t x, ff_t y)
+inline ff_t ff_multiply_lut(ff_table_s table, ff_t x, ff_t y)
 {
 	/*
 	 * https://en.wikipedia.org/wiki/Finite_field_arithmetic#Implementation_tricks
@@ -109,7 +92,7 @@ ff_t ff_multiply_lut(ff_table_s table, ff_t x, ff_t y)
 	{
 		return 0;
 	}
-	return table.antilogs[table.logs[x] + table.logs[y]];
+	return *(table.antilogs + (*(table.logs + x) + *(table.logs + y)));
 }
 
 ff_polynomial_s ff_polynomial_multiply_scalar(ff_table_s table
@@ -159,7 +142,7 @@ ff_polynomial_s ff_polynomial_multiply(ff_table_s table
 	{
 		for (size_t j = 0; j < poly_b.size; j++)
 		{
-			result.memory[i + j]	= ff_addition(result.memory[i + j], 
+			result.memory[i + j]	= FF_ADDITION(result.memory[i + j], 
 				ff_multiply_lut(table, poly_a.memory[i], poly_b.memory[j]));
 		}
 		
@@ -168,28 +151,79 @@ ff_polynomial_s ff_polynomial_multiply(ff_table_s table
 	return result;
 }
 
+inline ff_polynomial_s ff_polynomial_new(short size)
+{
+	ff_polynomial_s poly1 = {0};
+	poly1.memory	= calloc(size, sizeof(ff_t));
+	poly1.size	= size;
+	return (poly1);
+}
+
+// ff_polynomial_s ff_polynomial_extend(ff_polynomial_s poly, short extend_by)
+// {
+// 	short new_size	= poly.size + (extend_by  * sizeof(ff_t));
+// 	ff_t *memory	= realloc(poly.memory, new_size);
+// 	if (memory == NULL)
+// 	{	
+// 		memory	= calloc(new_size, 1);
+// 		memcpy(memory, poly.memory, poly.size);
+// 		free(poly.memory);
+// 	}
+// 	poly.memory	= memory;
+// 	poly.size	= new_size;
+
+// 	return(poly);
+// }
+
+ff_polynomial_s ff_polynomial_extend(ff_polynomial_s poly, short extend_by)
+{
+	short new_size	= poly.size + (extend_by  * sizeof(ff_t));
+	ff_polynomial_s poly2	= ff_polynomial_new(new_size);
+	memcpy(poly2.memory, poly.memory, poly.size);
+	
+	return(poly2);
+}
+
+// ff_polynomial_s ff_append_polynomials(ff_polynomial_s poly_a
+// 	, ff_polynomial_s poly_b)
+// {
+// 	ff_polynomial_s poly_result	= ff_polynomial_new(poly_a.size + poly_b.size);
+
+// 	long poly_a_size	= poly_a.size * sizeof(ff_t)
+// 		, poly_b_size	= poly_b.size * sizeof(ff_t);
+// 	memcpy(poly_result.memory, poly_a.memory, poly_a_size);
+// 	memcpy(poly_result.memory + poly_a_size, poly_b.memory, poly_b_size);
+
+// 	return (poly_result);
+// }
+
+
 ff_polynomial_s ff_append_polynomials(ff_polynomial_s poly_a
 	, ff_polynomial_s poly_b)
 {
-	ff_polynomial_s poly_result	= {0};
-	poly_result.size	= poly_a.size + poly_b.size;
-	poly_result.memory	= calloc(poly_result.size, sizeof(ff_t));
+	if (poly_b.size > poly_a.size)
+	{
+		return (ff_polynomial_s){0};
+	}
+	memcpy(poly_a.memory + poly_a.size - poly_b.size, poly_b.memory, poly_b.size);
 
-	long poly_a_size	= poly_a.size * sizeof(ff_t)
-		, poly_b_size	= poly_b.size * sizeof(ff_t);
-	memcpy(poly_result.memory, poly_a.memory, poly_a_size);
-	memcpy(poly_result.memory + poly_a_size, poly_b.memory, poly_b_size);
-
-	return (poly_result);
+	return (poly_a);
 }
 
-ff_t ff_evaluate_polynomial(ff_table_s table, ff_polynomial_s poly, short x)
+inline ff_t ff_evaluate_polynomial(ff_table_s table, ff_polynomial_s poly, short x)
 {
-	ff_t y	= poly.memory[0];
+	ff_t *memory	= poly.memory;
+	ff_t y	= memory[0];
 
 	for (size_t i = 1; i < poly.size; i++)
 	{
-		y	= ff_addition(ff_multiply_lut(table, y, x), poly.memory[i]);
+		ff_t lookup	= ff_multiply_lut(table, y, x);
+		y	= FF_ADDITION(lookup, *(memory + i));
 	}
 	return (y);
+}
+
+ff_polynomial_s ff_polynomial_free(ff_polynomial_s poly)
+{
+	free(poly.memory);
 }

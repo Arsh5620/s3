@@ -2,7 +2,8 @@
 
 CC=gcc # C language compiler
 COMMONFLAGS=-Wall -std=gnu99
-CFLAGS =-ggdb3
+CFLAGS =-pg -ggdb -O0
+# CFLAGS = -O3
 
 HEADERFILES=$(shell find . -type f -name "*.h")
 SOURCEFILES=$(shell find . -type f -name "*.c")
@@ -13,7 +14,10 @@ EXECUTABLE=main
 all: build-file
 
 $(OBJFILES): %.o: %.c $(HEADERFILES)
-	$(CC) -c $< -o $@ $(COMMONFLAGS) $(CFLAGS)
+	$(CC) -c $< -o $@  $(CFLAGS)
 
 build-file: $(OBJFILES)
-	$(CC) -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
+	gcc $(CFLAGS) -o $(EXECUTABLE) $(OBJFILES)
+
+clean:
+	rm forwardecc.o finite-fields.o rs.o

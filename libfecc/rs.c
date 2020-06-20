@@ -3,14 +3,10 @@
 ff_polynomial_s rs_make_generator_polynomial(ff_table_s table
 	, short number_ecc_symbols)
 {
-	ff_polynomial_s poly	= {0};
-	poly.memory	= calloc(1, sizeof(ff_t));
-	poly.size	= 1;
+	ff_polynomial_s poly	= ff_polynomial_new(1);
 	poly.memory[0]	= 1;
 
-	ff_polynomial_s init	= {0};
-	init.memory	= calloc(2, sizeof(ff_t));
-	init.size	= 2;
+	ff_polynomial_s init	= ff_polynomial_new(2);
 	init.memory[0]	= 1;
 	
 	for (size_t i = 0; i < number_ecc_symbols; i++)
@@ -22,6 +18,7 @@ ff_polynomial_s rs_make_generator_polynomial(ff_table_s table
 		free(poly.memory);
 		poly	= temp;
 	}
+
 	return (poly);
 }
 
@@ -50,7 +47,7 @@ ff_polynomial_s ff_polynomial_division(ff_table_s table
 				if (divisor.memory[j] != 0)
 				{
 					dividend_copy.memory[i + j] = 
-						ff_subtraction(dividend_copy.memory[i + j]
+						FF_SUBSTRACTION(dividend_copy.memory[i + j]
 						, ff_multiply_lut(table, divisor.memory[j], coef));
 				}
 			}
@@ -84,29 +81,18 @@ ff_polynomial_s ff_polynomial_division(ff_table_s table
  */
 
 ff_polynomial_s rs_encode(ff_table_s table
-	, ff_polynomial_s message_poly, short number_ecc_symbols)
+	, ff_polynomial_s message_poly, ff_polynomial_s generator)
 {
-	ff_polynomial_s generator	= 
-		rs_make_generator_polynomial(table, number_ecc_symbols);
-
-
-	ff_polynomial_s empty	= {0};
-	empty.memory	= calloc(generator.size - 1, sizeof(ff_t));
-	empty.size	= generator.size - 1;
-
-	ff_polynomial_s message_poly_b = ff_append_polynomials(message_poly, empty);
+	ff_polynomial_s message_poly_b	= 
+		ff_polynomial_extend(message_poly, generator.size - 1);
 
 	ff_polynomial_s remainder	= 
 		ff_polynomial_division(table, message_poly_b, generator);
 
 	ff_polynomial_s final_message	= 
-		ff_append_polynomials(message_poly, remainder);
+		ff_append_polynomials(message_poly_b, remainder);
 	
-	free(empty.memory);
-	free(generator.memory);
-	free(message_poly_b.memory);
-	free(remainder.memory);
-
+	ff_polynomial_free(remainder);
 	return (final_message);
 }
 
@@ -145,7 +131,7 @@ ff_t rs_calculate_delta(ff_table_s table
 			, error_locator_poly.memory[error_locator_poly.size - (i + 1)]
 			, syndromes.memory[syndrome_i - i]);
 
-		delta	= ff_addition(delta, temp);
+		delta	= FF_ADDITION(delta, temp);
 	}
 	/**
 	 * 		for j in range(1, len(err_loc)):
@@ -170,12 +156,14 @@ void rs_print_poly(char *string, ff_polynomial_s poly)
 ff_polynomial_s rs_make_error_location_poly(ff_table_s table
 	, ff_polynomial_s syndromes, short number_ecc_symbols)
 {
-	ff_polynomial_s error_locator_poly	= rs_polynomial_new(1, 1);
-	ff_polynomial_s old_error_locator_poly	= rs_polynomial_new(1, 1);
+	ff_polynomial_s error_locator_poly	= ff_polynomial_new(1);
+	error_locator_poly.memory[0]	= 1;
+	ff_polynomial_s old_error_locator_poly	= ff_polynomial_new(1);
+	old_error_locator_poly.memory[0]	= 1;
 
-	for (long i=0; i<syndromes.size; ++i)
+	for (long i=0; i < syndromes.size; ++i)
 	{
-		ff_t delta = rs_calculate_delta(table, i, syndromes, error_locator_poly);
+		ff_t delta	= rs_calculate_delta(table, i, syndromes, error_locator_poly);
 		old_error_locator_poly	= rs_polynomial_append(old_error_locator_poly, 0);
 
 		if (delta != 0)
@@ -208,15 +196,6 @@ ff_polynomial_s rs_polynomial_append(ff_polynomial_s polynomial, ff_t monomial)
 	return (polynomial);
 }
 
-ff_polynomial_s rs_polynomial_new(short size, ff_t def)
-{
-	ff_polynomial_s poly1 = {0};
-	poly1.memory	= calloc(size, sizeof(ff_t));
-	memset(poly1.memory, def, size);
-	poly1.size	= size;
-	return (poly1);
-}
-
 ff_polynomial_s rs_make_error_evaluator_poly(ff_table_s table
 	, ff_polynomial_s syndromes
 	, ff_polynomial_s error_locations
@@ -224,7 +203,7 @@ ff_polynomial_s rs_make_error_evaluator_poly(ff_table_s table
 {
 	// Omega(x) = Synd(x) * Error_loc(x) mod x ^ (n-k+1)
 	ff_polynomial_s temp_poly	= ff_polynomial_multiply(table, syndromes, error_locations);
-	ff_polynomial_s divisor	= rs_polynomial_new(ecc_symbols + 2, 0);
+	ff_polynomial_s divisor	= ff_polynomial_new(ecc_symbols + 2);
 	divisor.memory[0]	= 1;
 	ff_polynomial_s remainder	= ff_polynomial_division(table, temp_poly, divisor);
 	free(divisor.memory);
@@ -240,6 +219,8 @@ ff_polynomial_s rs_find_error_locations(ff_table_s table
 
 	ff_polynomial_s invert_poly	= {0};
 	invert_poly	= rs_invert_poly(error_locator_poly);
+	if (error_locations.size > 0){
+		
 	for (size_t i = 0, j = 0; i < message_in_length; i++)
 	{
 		if (ff_evaluate_polynomial(table, invert_poly, ff_raise_lut(table, 2, i)) == 0)
@@ -248,12 +229,13 @@ ff_polynomial_s rs_find_error_locations(ff_table_s table
 		}
 	}
 	
+	}
 	return (error_locations);
 }
 
 ff_polynomial_s rs_invert_poly(ff_polynomial_s poly)
 {
-	ff_polynomial_s poly2 = rs_polynomial_new(poly.size, 0);
+	ff_polynomial_s poly2 = ff_polynomial_new(poly.size);
 
 	for (size_t i = 1; i <= poly.size; i++)
 	{
@@ -271,7 +253,11 @@ ff_polynomial_s rs_correct_errors(ff_table_s table
 	ff_polynomial_s reverse1	= rs_invert_poly(syndromes);
 	ff_polynomial_s error_evaluator	= rs_make_error_evaluator_poly(table, reverse1, error_locator_poly, error_locator_poly.size - 1);
 	
-	ff_polynomial_s X_poly	= rs_polynomial_new(error_positions.size, 0);
+	if (error_evaluator.size <=0 )
+	{
+		return (message_in);
+	}
+	ff_polynomial_s X_poly	= ff_polynomial_new(error_positions.size);
 
 	for (size_t i = 0; i < error_positions.size; i++)
 	{
@@ -280,7 +266,7 @@ ff_polynomial_s rs_correct_errors(ff_table_s table
 		X_poly.memory[i]	= ff_raise_lut(table, 2, -l);
 	}
 
-	ff_polynomial_s error_magnitude_poly	= rs_polynomial_new(message_in.size, 0);
+	ff_polynomial_s error_magnitude_poly	= ff_polynomial_new(message_in.size);
 	short message_len	= message_in.size;
 
 
@@ -296,11 +282,9 @@ ff_polynomial_s rs_correct_errors(ff_table_s table
 				// in case of i = j then the inverse will cancel out the X and the final 
 				// result will be 1. 
 				err_loc_prime = ff_multiply_lut(table, err_loc_prime, 
-					ff_subtraction(1, ff_multiply_lut(table, X_inv, X_poly.memory[j])));
+					FF_SUBSTRACTION(1, ff_multiply_lut(table, X_inv, X_poly.memory[j])));
 			}
 		}
-		rs_print_poly("evaluator", error_evaluator);
-		printf("xinv: %d\n", X_inv);
 
 		ff_t polynomial_eval	= ff_evaluate_polynomial(table, (error_evaluator), X_inv);
 		polynomial_eval	= ff_multiply_lut(table, X_poly.memory[i], polynomial_eval);
