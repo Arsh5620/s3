@@ -1,9 +1,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "test.h"
+#include "tests.h"
 
 int main()
 {
-	test_fecc();
+	int result	= test_fecc();
+	exit(result);
 }

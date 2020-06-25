@@ -1,8 +1,8 @@
-#include "test.h"
+#include "tests.h"
 #include "../libfecc/rs.h"
 #include "../libfecc/finite-fields.h"
 
-void test_fecc()
+int test_fecc()
 {
 	short prime_poly	= 285;
 	// We assume that the ff_generate_table is flawless for now. 
@@ -83,4 +83,6 @@ void test_fecc()
 		, sizeof(actual_encode), corrected.size, "rs error correction test");
 
 	END_TEST;
+
+	return (global_tests.failed_tests);
 }

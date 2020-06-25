@@ -83,4 +83,5 @@
 		ASSERT_UTEST_UPDATE(result, x_len, y_len, test_name); \
 		ASSERT_UTEST_PRINTMEM(x_mem, y_mem, x_len, y_len); \
 	}	
-void test_fecc();
+	
+int test_fecc();
