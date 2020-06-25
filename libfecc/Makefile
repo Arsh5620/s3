@@ -1,9 +1,9 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
-COMMONFLAGS=-Wall -std=gnu99
-CFLAGS =-pg -ggdb -O0
-# CFLAGS = -O3
+# COMMONFLAGS=-Wall -std=gnu99
+# CFLAGS =-pg -ggdb -Og
+CFLAGS = -Ofast
 
 HEADERFILES=$(shell find . -type f -name "*.h")
 SOURCEFILES=$(shell find . -type f -name "*.c")

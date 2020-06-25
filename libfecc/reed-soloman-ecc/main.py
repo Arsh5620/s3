@@ -168,20 +168,25 @@ def rs_correct_errata(msg_in, synd, err_pos):  # err_pos is a list of the positi
 	return msg_in
 
 
-msg_in = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
-fecc = 10
+msg_in = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+fecc = 8
 
 message = galios.rs_encode_msg(msg_in, fecc)
 
-message[0] = 0
-message[4] = 0
+print(str(message))
+message[3] = 0
 message[7] = 0
-message[9] = 0
+message[8] = 0
 
 syndrome = galios.rs_calc_syndromes(message, fecc)
-
+print(str(syndrome))
 error_locator_poly = rs_find_error_locator(syndrome, fecc)
-
+rs_print_poly("error locator", error_locator_poly)
 error_poly = rs_find_errors(error_locator_poly[::-1], len(message))
 
 actual = rs_correct_errata(message, syndrome, error_poly)
+
+a=[0, 1, 2, 3, 4, 5]
+b=[7, 8, 9, 10, 11, 12]
+
+rs_print_poly("remainder", galios.gf_poly_div(b, a))

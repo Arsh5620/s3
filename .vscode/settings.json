@@ -69,7 +69,8 @@
 		"memory": "c",
 		"thread": "c",
 		"data.h": "c",
-		"build": "cpp"
+		"build": "cpp",
+		"initializer_list": "c"
 	},
 	"python.pythonPath": "/sbin/python"
 }

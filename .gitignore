@@ -5,7 +5,6 @@ server/logs/*
 server/temp/*
 build
 tests
-unit-testing
 /uml/*
 !/uml/chat.vpp
 client/*

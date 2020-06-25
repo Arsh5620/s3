@@ -1,5 +1,27 @@
 #include "rs.h"
 
+rs_information_s rs_init(ff_t n, ff_t k, short irr_p)
+{
+	rs_information_s info	= {0};
+	ff_t data_length	= k
+		, ecc_length	= (n-k);
+	info.message_in	= ff_polynomial_new(data_length);
+	info.message_out	= ff_polynomial_new(n);
+	info.field_ecc_length	= ecc_length;
+	info.field_message_length	= data_length;
+	info.field_table	=	ff_generate_table(irr_p);
+	info.generator	= 
+		rs_make_generator_polynomial(info.field_table, ecc_length);
+	info.syndromes	= ff_polynomial_new(ecc_length + 1);
+
+	info.error_evaluator	= ff_polynomial_new(ecc_length + 1);
+	info.error_locator	= ff_polynomial_new(ecc_length + 1);
+	info.error_locator_temp	= ff_polynomial_new(ecc_length + 1);
+	info.error_locator_old	= ff_polynomial_new(ecc_length + 1);
+	info.error_locations	= ff_polynomial_new(ecc_length + 1);
+	return (info);
+}
+
 ff_polynomial_s rs_make_generator_polynomial(ff_table_s table
 	, short number_ecc_symbols)
 {
@@ -22,19 +44,19 @@ ff_polynomial_s rs_make_generator_polynomial(ff_table_s table
 	return (poly);
 }
 
-ff_polynomial_s ff_polynomial_division(ff_table_s table
+ff_polynomial_s ff_polynomial_copy(ff_polynomial_s poly)
+{
+	ff_polynomial_s copy	= ff_polynomial_new(poly.size);
+	memcpy(copy.memory, poly.memory, sizeof(ff_t) * poly.size);
+	return (copy);
+}
+
+ff_polynomial_s ff_polynomial_mod(ff_table_s table
 	, ff_polynomial_s dividend, ff_polynomial_s divisor)
 {
 	long diff	= dividend.size - (divisor.size - 1);
-
-	ff_polynomial_s dividend_copy	= dividend;
-	dividend_copy.memory	= calloc(dividend.size, sizeof(ff_t));
-	memcpy(dividend_copy.memory, dividend.memory
-		, sizeof(ff_t) * dividend.size);
-
-	ff_polynomial_s remainder;
-	remainder.memory	= calloc(divisor.size -1, sizeof(ff_t));
-	remainder.size	= divisor.size - 1;
+	ff_polynomial_s dividend_copy	= ff_polynomial_copy(dividend);
+	ff_polynomial_s remainder	= ff_polynomial_new(divisor.size - 1);
 
 	for (size_t i = 0; i < diff; i++)
 	{
@@ -59,6 +81,7 @@ ff_polynomial_s ff_polynomial_division(ff_table_s table
 		 + dividend_copy.size - remainder.size;
 	memcpy(remainder.memory, remainder_address, remainder.size);
 
+	ff_polynomial_free(dividend_copy);
 	return (remainder);
 }
 
@@ -80,56 +103,55 @@ ff_polynomial_s ff_polynomial_division(ff_table_s table
  * https://en.wikipedia.org/wiki/Synthetic_division
  */
 
-ff_polynomial_s rs_encode(ff_table_s table
-	, ff_polynomial_s message_poly, ff_polynomial_s generator)
+void rs_encode(rs_information_s *rs_info)
 {
-	ff_polynomial_s message_poly_b	= 
-		ff_polynomial_extend(message_poly, generator.size - 1);
+	memcpy(rs_info->message_out.memory
+		, rs_info->message_in.memory, rs_info->message_in.size);
+	memset(rs_info->message_out.memory + rs_info->message_in.size
+		, 0, rs_info->field_ecc_length);
 
 	ff_polynomial_s remainder	= 
-		ff_polynomial_division(table, message_poly_b, generator);
+		ff_polynomial_mod(rs_info->field_table, rs_info->message_out, rs_info->generator);
 
-	ff_polynomial_s final_message	= 
-		ff_append_polynomials(message_poly_b, remainder);
+	ff_append_polynomials(rs_info->message_out, remainder);
 	
 	ff_polynomial_free(remainder);
-	return (final_message);
 }
 
 /* using horner's theorm */
-ff_polynomial_s rs_calculate_syndromes(ff_table_s table, ff_polynomial_s msg
-	, short number_ecc_symbols)
+inline void rs_calculate_syndromes(ff_polynomial_s *syndromes
+	, ff_table_s table, ff_polynomial_s message_in, short field_ecc_length)
 {
-	ff_polynomial_s syndromes	= {0};
-	syndromes.memory	= calloc(number_ecc_symbols + 1, sizeof(ff_t));
-	syndromes.size	= number_ecc_symbols + 1;
-
-	for (size_t i = 0; i < number_ecc_symbols; i++)
+	for (size_t i = 0; i < field_ecc_length; i++)
 	{
-		syndromes.memory[i + 1]	= 
-			ff_evaluate_polynomial(table, msg, ff_raise_lut(table, 2, i));
+		syndromes->memory[i + 1]	= 
+			ff_evaluate_polynomial(table
+				, message_in, ff_raise_lut(table, 2, i));
 	}
-	
-	return (syndromes);
 }
 
+// for (size_t i = 0; i < rs_info->field_ecc_length; i++)
+// 	{
+// 		rs_info->syndromes.memory[i + 1]	= 
+// 			ff_evaluate_polynomial(rs_info->field_table
+// 				, rs_info->message_in, ff_raise_lut(rs_info->field_table, 2, i));
+// 	}
+	
+// 	return (rs_info->syndromes);
 /*
  * In rs_calculate_delta what we are doing here is 
  * we are calculate the value of delta for berlekamp-massey algorithm
  * and we do that by multiplying the error locator by syndromes and 
  * calculating the addition value into delta
  */
-ff_t rs_calculate_delta(ff_table_s table
-	, short syndrome_i
-	, ff_polynomial_s syndromes
-	, ff_polynomial_s error_locator_poly)
+ff_t rs_calculate_delta(rs_information_s *rs_info , short syndrome_i)
 {
-	ff_t delta	= syndromes.memory[syndrome_i];
-	for (long i = 1; i < error_locator_poly.size; ++i)
+	ff_t delta	= rs_info->syndromes.memory[syndrome_i];
+	for (long i = 1; i < rs_info->error_locator.size; ++i)
 	{
-		ff_t temp	= ff_multiply_lut(table
-			, error_locator_poly.memory[error_locator_poly.size - (i + 1)]
-			, syndromes.memory[syndrome_i - i]);
+		ff_t temp	= ff_multiply_lut(rs_info->field_table
+			, rs_info->error_locator.memory[rs_info->error_locator.size - (i + 1)]
+			, rs_info->syndromes.memory[syndrome_i - i]);
 
 		delta	= FF_ADDITION(delta, temp);
 	}
@@ -150,50 +172,60 @@ void rs_print_poly(char *string, ff_polynomial_s poly)
 	}
 	puts("");
 }
+
+void rs_copy_poly(ff_polynomial_s *dest, ff_polynomial_s *source)
+{
+	memcpy(dest->memory, source->memory, source->size);
+	dest->size	= source->size;
+}
 /**
  * Berlekamp-Massey Algorithm
  */
-ff_polynomial_s rs_make_error_location_poly(ff_table_s table
-	, ff_polynomial_s syndromes, short number_ecc_symbols)
+void rs_make_error_location_poly(rs_information_s *rs_info)
 {
-	ff_polynomial_s error_locator_poly	= ff_polynomial_new(1);
-	error_locator_poly.memory[0]	= 1;
-	ff_polynomial_s old_error_locator_poly	= ff_polynomial_new(1);
-	old_error_locator_poly.memory[0]	= 1;
+	ff_polynomial_s *error_locator_poly	= &rs_info->error_locator;
+	error_locator_poly->memory[0]	= 1;
+	error_locator_poly->size	= 1;
+	ff_polynomial_s *old_error_locator_poly	=  &rs_info->error_locator_old;
+	old_error_locator_poly->memory[0]	= 1;
+	old_error_locator_poly->size	= 1;
+	ff_polynomial_s *temp_poly	= &rs_info->error_locator_temp;
 
-	for (long i=0; i < syndromes.size; ++i)
+	for (long i=0; i < rs_info->syndromes.size; ++i)
 	{
-		ff_t delta	= rs_calculate_delta(table, i, syndromes, error_locator_poly);
-		old_error_locator_poly	= rs_polynomial_append(old_error_locator_poly, 0);
+		ff_t delta	= rs_calculate_delta(rs_info, i);
+		rs_polynomial_append(old_error_locator_poly, 0);
 
 		if (delta != 0)
 		{
-			if (old_error_locator_poly.size > error_locator_poly.size)
+			if (old_error_locator_poly->size > error_locator_poly->size)
 			{
-				ff_polynomial_s temp_poly	= 
-					ff_polynomial_multiply_scalar(table, old_error_locator_poly, delta);
-				old_error_locator_poly	= 
-					ff_polynomial_multiply_scalar(table, error_locator_poly
-					, ff_inverse_lut(table, delta));
-				error_locator_poly	= temp_poly;
+				rs_copy_poly(temp_poly, old_error_locator_poly);
+				ff_polynomial_multiply_scalar(rs_info->field_table, temp_poly, delta);
+				ff_t poly_inverse	= ff_inverse_lut(rs_info->field_table, delta);
+				rs_copy_poly(old_error_locator_poly, error_locator_poly);
+				ff_polynomial_multiply_scalar(rs_info->field_table, old_error_locator_poly
+					, poly_inverse);
+				rs_copy_poly(error_locator_poly, temp_poly);
 			}
-			ff_polynomial_s scalar_mult1	= 
-				ff_polynomial_multiply_scalar(table, old_error_locator_poly, delta);
+			rs_copy_poly(temp_poly, old_error_locator_poly);
+			ff_polynomial_multiply_scalar(rs_info->field_table, temp_poly, delta);
 	
-			error_locator_poly	= 
-				ff_polynomial_add(table, error_locator_poly
-				, scalar_mult1);
+			ff_polynomial_s	t1	= 
+				ff_polynomial_add(rs_info->field_table, *error_locator_poly
+				, *temp_poly);
+			
+			rs_copy_poly(error_locator_poly, &t1);
+			free(t1.memory);
 		}
 	}
-	return (error_locator_poly);
 }
 
-ff_polynomial_s rs_polynomial_append(ff_polynomial_s polynomial, ff_t monomial)
+void rs_polynomial_append(ff_polynomial_s *polynomial, ff_t monomial)
 {
-	polynomial.memory	= realloc(polynomial.memory, polynomial.size + sizeof(ff_t));
-	polynomial.memory[polynomial.size]	= monomial;
-	polynomial.size++;
-	return (polynomial);
+	assert(polynomial->size <= polynomial->max_size);
+	polynomial->memory[polynomial->size]	= monomial;
+	polynomial->size++;
 }
 
 ff_polynomial_s rs_make_error_evaluator_poly(ff_table_s table
@@ -205,7 +237,7 @@ ff_polynomial_s rs_make_error_evaluator_poly(ff_table_s table
 	ff_polynomial_s temp_poly	= ff_polynomial_multiply(table, syndromes, error_locations);
 	ff_polynomial_s divisor	= ff_polynomial_new(ecc_symbols + 2);
 	divisor.memory[0]	= 1;
-	ff_polynomial_s remainder	= ff_polynomial_division(table, temp_poly, divisor);
+	ff_polynomial_s remainder	= ff_polynomial_mod(table, temp_poly, divisor);
 	free(divisor.memory);
 	return (remainder);
 }
@@ -289,7 +321,7 @@ ff_polynomial_s rs_correct_errors(ff_table_s table
 		ff_t polynomial_eval	= ff_evaluate_polynomial(table, (error_evaluator), X_inv);
 		polynomial_eval	= ff_multiply_lut(table, X_poly.memory[i], polynomial_eval);
 
-		ff_t magnitude	= ff_divide_lut(table, polynomial_eval, err_loc_prime, NULL);
+		ff_t magnitude	= ff_divide_lut(table, polynomial_eval, err_loc_prime);
 
 
 		error_magnitude_poly.memory[error_positions.memory[i]] = magnitude;
