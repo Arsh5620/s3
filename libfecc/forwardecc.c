@@ -3,28 +3,30 @@
 
 int main()
 {
-	rs_information_s inf	= rs_init(255, 223, 285);
+	rs_encode_s inf	= rs_init_encoder(255, 223, 285);
 
-	for(int i=0; i< inf.message_in.size; ++i)
+	for(int i=0; i< inf.message_in_buffer.size; ++i)
 	{
-		inf.message_in.memory[i] = i;
+		inf.message_in_buffer.memory[i] = i;
 	}
 
 	rs_encode(&inf);
-	rs_print_poly("encoded", inf.message_out);
-	inf.message_out.memory[3]=0;
-	inf.message_out.memory[7]=0;
-	inf.message_out.memory[8]=0;
+	poly_print("encoded", inf.message_out_buffer);
+	inf.message_out_buffer.memory[3]=0;
+	inf.message_out_buffer.memory[7]=0;
+	inf.message_out_buffer.memory[8]=0;
 
+	rs_decode_s decode	= rs_init_decoder(255, 233, 285);
+	decode.message_in_buffer	= inf.message_out_buffer;
 	for (int kl=0; kl < 1000000; kl++)
 	{	
-		rs_calculate_syndromes(&inf.syndromes, inf.field_table, inf.message_out, inf.field_ecc_length);
-		rs_make_error_location_poly(&inf);
-		inf.error_locator.memory ++;
-		inf.error_locator.size --;
-		ff_polynomial_s error_positions	= rs_find_error_locations(inf.field_table, inf.error_locator, inf.message_out.size);
-		ff_polynomial_s corrected = rs_correct_errors(inf.field_table, inf.message_out, inf.syndromes, inf.error_locator, error_positions);	
-		// rs_print_poly("corrected", corrected);
+		rs_calculate_syndromes(&decode);
+		rs_make_error_location_poly(&decode);
+		decode.error_locator.memory ++;
+		decode.error_locator.size --;
+		rs_find_error_locations(&decode);
+		rs_correct_errors(&decode);
+		// poly_print("corrected", decode.message_out_buffer);
 	}
 	return (0);
 }
