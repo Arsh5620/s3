@@ -50,12 +50,26 @@ void ff_table_close(ff_table_s table)
 	}
 }
 
+/**
+ * Here we would expect for table_stdmap to atleast be of size 
+ * SIMD_VECTOR_SIZE * 2
+ */
+void ff_table_stdmap(ff_t *memory, ff_t y, short irr_p)
+{
+	for (size_t i = 0; i < SIMD_VECTOR_SIZE; i++)
+	{
+		*(memory + i)	= ff_multiply(y, BYTE_ML(i), irr_p);
+		*(memory + i + SIMD_VECTOR_SIZE)	= ff_multiply(y, BYTE_MH(i), irr_p);
+	}
+}
+
 ff_table_s ff_table_new(short irr_p)
 {
 	ff_table_s table	= {0};
 	table.full_table	= calloc(FF_SIZE * FF_SIZE, sizeof(ff_t));
 	table.logs	= calloc(FF_SIZE, sizeof(ff_t));
 	table.exponents	= calloc(FF_SIZE * 2, sizeof(ff_t));
+	table.stdmap	= calloc(FF_SIZE * SIMD_VECTOR_SIZE * 2, sizeof(ff_t));
 
 	ff_t x	= 1;
 	for (size_t i = 0; i < FF_SIZE; i++)
@@ -64,6 +78,7 @@ ff_table_s ff_table_new(short irr_p)
 		{
 			table.full_table[FF_TABLE_LOOKUP(i, j)] = ff_multiply(i, j, irr_p);
 		}
+		ff_table_stdmap(table.stdmap + (i * SIMD_VECTOR_SIZE * 2), i, irr_p);
 		
 		table.exponents[i]	= x;
 		table.logs[x]	= i;
@@ -111,7 +126,7 @@ ff_t ff_inverse_lut(ff_table_s table, ff_t x)
 	return table.exponents[255 - table.logs[x]];
 }
 
-inline ff_t ff_multiply_lut(ff_table_s table, ff_t x, ff_t y)
+inline ff_t ff_multiply_lut(ff_t *full_table, ff_t x, ff_t y)
 {
 	/*
 	 * https://en.wikipedia.org/wiki/Finite_field_arithmetic#Implementation_tricks
@@ -120,5 +135,25 @@ inline ff_t ff_multiply_lut(ff_table_s table, ff_t x, ff_t y)
 	{
 		return 0;
 	}
-	return table.full_table[FF_TABLE_LOOKUP(x, y)];
+	return full_table[FF_TABLE_LOOKUP(x, y)];
+}
+
+inline __m128i ff_multiply_lut_sse(ff_table_s table, __m128i x, ff_t y)
+{
+	__m128i mask1	= _mm_set1_epi8(0x0F);
+	__m128i mask2	= _mm_set1_epi8(0xF0);
+
+	__m128i *table_stdmap	= (__m128i*)(table.stdmap + (y * (SIMD_VECTOR_SIZE * 2)));
+
+	__m128i v1	= *table_stdmap;
+	// For now extra casts just to make sure we know what we are doing.
+	__m128i v2	= *(__m128i*)((char*)table_stdmap + SIMD_VECTOR_SIZE);
+
+	__m128i x1	= _mm_and_si128(mask1, x);
+	__m128i x2	= _mm_and_si128(mask2, x);
+	__m128i lookup1	= _mm_shuffle_epi8(v1, x1);
+	x2	= _mm_srli_epi64(x2, 4);
+	__m128i lookup2	= _mm_shuffle_epi8(v2, x2);
+	__m128i xor	= _mm_xor_si128(lookup1, lookup2);
+	return (xor);
 }

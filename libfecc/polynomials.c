@@ -21,23 +21,55 @@ inline void poly_multiply(ff_table_s table, poly_s *result
 		for (size_t j = 0; j < poly_b.size; j++)
 		{
 			FF_ADDITION_INPLACE(result->memory[i + j], 
-				ff_multiply_lut(table, poly_a.memory[i], poly_b.memory[j]));
+				ff_multiply_lut(table.full_table, poly_a.memory[i], poly_b.memory[j]));
 		}	
 	}
 }
 
 // This is using Horner's Scheme for evaluating a polynomial, 
 // read more about this @ https://en.wikipedia.org/wiki/Horner%27s_method
-inline ff_t poly_evaluate(ff_table_s table, poly_s poly, short evaluate_at)
+inline ff_t poly_evaluate(ff_t *full_table, poly_s poly, short evaluate_at)
 {
 	ff_t eval	= poly.memory[0];
 
 	for (size_t i = 1; i < poly.size; i++)
 	{
-		ff_t lookup	= ff_multiply_lut(table, eval, evaluate_at);
+		ff_t lookup	= ff_multiply_lut(full_table, eval, evaluate_at);
 		eval	= FF_ADDITION(lookup, *(poly.memory + i));
 	}
 	return (eval);
+}
+
+ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root)
+{
+	ff_t root_powers[SIMD_VECTOR_SIZE]	= {0};
+	for (long i = 0; i < SIMD_VECTOR_SIZE; i++)
+	{
+		root_powers[i]	= ff_raise_lut(*table, root, i);
+	}
+	__m128i eval_results	= _mm_load_si128((__m128i*)(poly.memory));
+
+	for (size_t i = SIMD_VECTOR_SIZE; i < poly.size; i+=SIMD_VECTOR_SIZE)
+	{
+		ff_t mult_x	= ff_raise_lut(*table, root, i);
+		eval_results	= ff_multiply_lut_sse(*table, eval_results, mult_x);
+		eval_results	= _mm_xor_si128(eval_results, _mm_load_si128((__m128i*)(poly.memory + i)));
+	}
+
+	ff_t *eval_results_v	= (ff_t*)&eval_results;
+	ff_t sim_size	= MIN(SIMD_VECTOR_SIZE, poly.size);
+
+	for (size_t i = 0; i < SIMD_VECTOR_SIZE; i++)
+	{
+		root_powers[sim_size - i - 1]	= ff_multiply_lut(table->full_table, eval_results_v[i], root_powers[sim_size - i - 1]);
+	}
+
+	ff_t eval_value	= 0;
+	for (size_t i = 0; i < sim_size; i++)
+	{
+		FF_ADDITION_INPLACE(eval_value, root_powers[i]);
+	}
+	return (eval_value);
 }
 
 // This function will return the length of the data written, but result must have 
@@ -86,7 +118,7 @@ void poly_multiply_scalar(ff_table_s table, poly_s *poly, ff_t scalar)
 {
 	for (size_t i = 0; i < poly->size; i++)
 	{
-		poly->memory[i]	= ff_multiply_lut(table, poly->memory[i], scalar);
+		poly->memory[i]	= ff_multiply_lut(table.full_table, poly->memory[i], scalar);
 	}
 }
 
@@ -132,7 +164,7 @@ poly_s ff_polynomial_mod(ff_table_s table, poly_s dividend, poly_s divisor)
 			for (size_t j = 1; j < divisor.size; j++)
 			{
 				FF_SUBSTRACTION_INPLACE(dividend_copy.memory[i + j]
-					, ff_multiply_lut(table, divisor.memory[j], coef));
+					, ff_multiply_lut(table.full_table, divisor.memory[j], coef));
 			}
 		}
 	}
@@ -144,38 +176,12 @@ poly_s ff_polynomial_mod(ff_table_s table, poly_s dividend, poly_s divisor)
 	return (remainder);
 }
 
-/*
-__m128i zero;
-
-void poly_init_sse()
-{
-	zero	= _mm_setzero_si128();
-}
-
-__m128i ff_multiply_lut_sse(ff_table_s table, __m128i x, __m128i y)
-{
-	__m128i v1	= _mm_unpacklo_epi8(y, zero);
-	__m128i v2	= _mm_add_epi16(x, v1);
-
-	char temp[8];
-	size_t i = 0;
-	for (; i < 8; i++)
-	{
-		temp[i]	= table.full_table[*((short*)&v2 + i)];
-	}
-	return *(__m128i*)(temp);
-}
-
 void poly_multiply_scalar_sse(ff_table_s table, poly_s *poly, ff_t scalar)
 {
-	short scalar_extension	= scalar * FF_SIZE;
-	__m128i scalar_v1	= _mm_set1_epi16(scalar_extension);
-	__m128i mem	= _mm_setzero_si128();
-
-	for (size_t i = 0; i < poly->size; i+=MEMORY_ALIGNMENT)
+	for (size_t i = 0; i < poly->size; i+=SIMD_VECTOR_SIZE)
 	{
-		memcpy(&mem + 8, poly->memory + i, 8);
-		ff_multiply_lut_sse(table, mem, scalar_v1);
+		__m128i filter = _mm_load_si128((__m128i*)((char*)poly->memory + i));
+		__m128i temp = ff_multiply_lut_sse(table, filter, scalar);
+		*(__m128i*)((char*)poly->memory + i) = temp;
 	}
 }
-*/

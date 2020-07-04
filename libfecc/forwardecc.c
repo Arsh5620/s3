@@ -3,7 +3,8 @@
 
 int main()
 {
-	rs_encode_s inf	= rs_init_encoder(255, 223, 285);
+	short n = 255, k = 223;
+	rs_encode_s inf	= rs_init_encoder(n, k, 285);
 
 	for(int i=0; i< inf.message_in_buffer.size; ++i)
 	{
@@ -13,12 +14,12 @@ int main()
 	rs_encode(&inf);
 	poly_print("encoded", inf.message_out_buffer);
 	inf.message_out_buffer.memory[3]=0;
-	inf.message_out_buffer.memory[7]=0;
-	inf.message_out_buffer.memory[8]=0;
+	inf.message_out_buffer.memory[110]=0;
+	inf.message_out_buffer.memory[212]=0;
 
-	rs_decode_s decode	= rs_init_decoder(255, 233, 285);
+	rs_decode_s decode	= rs_init_decoder(n, k, 285);
 	decode.message_in_buffer	= inf.message_out_buffer;
-	for (int kl=0; kl < 1000000; kl++)
+	for (int kl=0; kl < 100000; kl++)
 	{	
 		rs_calculate_syndromes(&decode);
 		rs_make_error_location_poly(&decode);

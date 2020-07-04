@@ -11,13 +11,13 @@ int test_fecc()
 
 	BEGIN_TEST;
 	ASSERT_TEST_EQUALS(ff_multiply(129, 129, prime_poly), 18, "ff multiply 129 * 129");
-	ASSERT_TEST_EQUALS(ff_multiply_lut(table, 129, 129), 18, "ff multiply lut assist 129 * 129");
+	ASSERT_TEST_EQUALS(ff_multiply_lut(table.full_table, 129, 129), 18, "ff multiply lut assist 129 * 129");
 	ASSERT_TEST_EQUALS(ff_divide_lut(table, 129, 127), 3, "ff divide lut assist 129 / 127");
 	ASSERT_TEST_EQUALS(ff_divide_lut(table, 12, 115), 197, "ff divide lut assist 12 / 115");
 	ASSERT_TEST_EQUALS(ff_raise_lut(table, 2, 8), 29, "ff raise lut assist 2 ^ 8");
 	ASSERT_TEST_EQUALS(ff_raise_lut(table, 2, 8), 29, "ff raise lut assist 2 ^ 8");
 	ASSERT_TEST_EQUALS(ff_raise_lut(table, 2, 8), 29, "ff raise lut assist 2 ^ 8");
-	ff_t a_src[]	= {0, 1, 2, 3, 4, 5};
+	ff_t a_src[]	= {0, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	ff_t b_src[]	= {7, 8, 9, 10, 11, 12};
 	ff_t ab_src[]	= {7, 9, 11, 9, 15, 9};
 	poly_s a	= {.memory = a_src, 6, 6};
@@ -32,13 +32,23 @@ int test_fecc()
 	poly_multiply(table, &c, a, b);
 	ASSERT_MEMTEST_EQUALS(ac_src, c.memory, sizeof(ac_src), c.size, "polynomial multiplication test");
 
-	ff_t acpy_src[]	= {0, 1, 2, 3, 4, 5};
-	poly_s a_cpy	= {.memory = acpy_src, 6, 6};
-	ff_t ad_src[]	= {0, 12, 24, 20, 48, 60};
+	ff_t *acopy_src	= aligned_alloc(16, 16);
+	for (size_t i = 0; i < 16; i++)
+	{
+		*(acopy_src + i)	= i;
+	}
+
+	poly_s a_cpy	= {.memory = acopy_src, 16, 16};
+	ff_t ad_src[]	= {0, 12, 24, 20, 48, 60, 40, 36, 96, 108, 120, 116, 80, 92, 72, 68};
 	poly_multiply_scalar(table, &a_cpy, 12);
 	ASSERT_MEMTEST_EQUALS(ad_src, a_cpy.memory, sizeof(ad_src), a_cpy.size, "polynomial scalar mult test");
 
-	ASSERT_TEST_EQUALS(poly_evaluate(table, a, 32), 225, "evaluate polynomial a @ 32");
+	ff_t nsrc[]	= {7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9};
+	poly_s nsrc_poly	= {.memory = nsrc, 160, 160};
+	ASSERT_TEST_EQUALS(195, poly_evaluate(table.full_table, nsrc_poly, 32),"evaluate polynomial a @ 32");
+
+	ff_t retvalue = poly_evaluate_sse(&table, nsrc_poly, 32);
+	ASSERT_TEST_EQUALS(195, retvalue, "poly evaluate sse");
 
 	ff_t gen_poly_val[]	= {1, 29, 196, 111, 163, 112, 74, 10, 105, 105, 139, 132, 151, 32, 134, 26};
 	poly_s generator	= rs_make_generator_polynomial(table, 15);

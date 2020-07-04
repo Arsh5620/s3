@@ -22,11 +22,21 @@ typedef unsigned char ff_t;
 #define FF_SIZE	256
 #define FF_TABLE_LOOKUP(x, y) ((x * FF_SIZE) + y)
 
+#define SIMD_VECTOR_SIZE	sizeof(__m128)
+#define MEMORY_ALIGNMENT	SIMD_VECTOR_SIZE
+#define ALLOCATE_ALIGNMENT(x)	((x & MEMORY_ALIGNMENT) ? (x + 16) & ~(MEMORY_ALIGNMENT - 1): x)
+#define SIMD_MULTIPLY_COMBINE(high, low) (high ^ low)
+// byte mask high
+#define BYTE_MH(x) (x << 4) & 0xF0
+// byte mask low
+#define BYTE_ML(x) (x & 0x0F)
+
 typedef struct ff_table
 {
 	ff_t *full_table;
 	ff_t *logs;
 	ff_t *exponents;
+	ff_t *stdmap;
 } ff_table_s;
 
 /*
@@ -47,7 +57,8 @@ typedef struct ff_table
 ff_t ff_multiply(ff_t a, ff_t b, short irr_p);
 ff_t ff_divide_lut(ff_table_s table, ff_t x, ff_t y);
 ff_t ff_raise_lut(ff_table_s table, ff_t x, short power);
-ff_t ff_multiply_lut(ff_table_s table, ff_t x, ff_t y);
+ff_t ff_multiply_lut(ff_t *table, ff_t x, ff_t y);
+__m128i ff_multiply_lut_sse(ff_table_s table, __m128i x, ff_t y);
 ff_t ff_inverse_lut(ff_table_s table, ff_t x);
 
 ff_table_s ff_table_new(short irr_p);

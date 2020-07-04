@@ -136,7 +136,7 @@ inline void rs_calculate_syndromes(rs_decode_s *rs_info)
 	{
 		rs_info->syndromes.memory[i + 1]	= 
 			poly_evaluate
-				(rs_info->field_table
+				(rs_info->field_table.full_table
 				, rs_info->message_in_buffer
 				, ff_raise_lut(rs_info->field_table, 2, i));
 	}
@@ -156,7 +156,7 @@ ff_t rs_calculate_delta(rs_decode_s *rs_info , short i)
 
 	for (long j = 1; j < rs_info->error_locator.size; ++j)
 	{
-		ff_t temp	= ff_multiply_lut(rs_info->field_table
+		ff_t temp	= ff_multiply_lut(rs_info->field_table.full_table
 			, rs_info->error_locator.memory[rs_info->error_locator.size - (j + 1)]
 			, rs_info->syndromes.memory[i - j]);
 		FF_ADDITION_INPLACE(delta, temp);
@@ -198,7 +198,7 @@ void rs_make_error_location_poly(rs_decode_s *rs_info)
 	
 			poly_s	t1	= poly_new(MAX(err_poly->size, temp_poly->size));
 			poly_add(rs_info->field_table, &t1, *err_poly, *temp_poly);
-			
+						
 			poly_copy(err_poly, &t1);
 			free(t1.memory);
 		}
@@ -231,16 +231,25 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 {
 	poly_s invert_poly	= rs_invert_poly(rs_info->error_locator);
 	rs_info->error_locations.size	= rs_info->error_locator.size - 1;
-	if (rs_info->error_locations.size > 0){
+	// printf("error locations size is %d\n", rs_info->error_locations.size);
+	if (rs_info->error_locations.size > 0)
+	{
 		
 	for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
 	{
-		if (poly_evaluate(rs_info->field_table, invert_poly, ff_raise_lut(rs_info->field_table, 2, i)) == 0)
+		if (poly_evaluate(rs_info->field_table.full_table, invert_poly, ff_raise_lut(rs_info->field_table, 2, i)) == 0)
 		{
 			rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;
+			
+	// printf("j is %d, and i is %d\n", j, i);
+			if(j == rs_info->error_locations.size)
+			{
+				// printf("break entered");
+				break;
+			}
 		}
 	}
-	
+	poly_free(invert_poly);
 	}
 }
 
@@ -259,7 +268,7 @@ void rs_correct_errors(rs_decode_s *rs_info)
 {
 	poly_s reverse1	= rs_invert_poly(rs_info->syndromes);
 	poly_s error_evaluator	= rs_make_error_evaluator_poly(rs_info->field_table, reverse1, rs_info->error_locator, rs_info->error_locator.size - 1);
-	
+	// poly_free(reverse1);
 	if (error_evaluator.size <=0 )
 	{
 		return ;
@@ -288,13 +297,13 @@ void rs_correct_errors(rs_decode_s *rs_info)
 			{
 				// in case of i = j then the inverse will cancel out the X and the final 
 				// result will be 1. 
-				err_loc_prime = ff_multiply_lut(rs_info->field_table, err_loc_prime, 
-					FF_SUBSTRACTION(1, ff_multiply_lut(rs_info->field_table, X_inv, X_poly.memory[j])));
+				err_loc_prime = ff_multiply_lut(rs_info->field_table.full_table, err_loc_prime, 
+					FF_SUBSTRACTION(1, ff_multiply_lut(rs_info->field_table.full_table, X_inv, X_poly.memory[j])));
 			}
 		}
 
-		ff_t polynomial_eval	= poly_evaluate(rs_info->field_table, (error_evaluator), X_inv);
-		polynomial_eval	= ff_multiply_lut(rs_info->field_table, X_poly.memory[i], polynomial_eval);
+		ff_t polynomial_eval	= poly_evaluate(rs_info->field_table.full_table, (error_evaluator), X_inv);
+		polynomial_eval	= ff_multiply_lut(rs_info->field_table.full_table, X_poly.memory[i], polynomial_eval);
 
 		ff_t magnitude	= ff_divide_lut(rs_info->field_table, polynomial_eval, err_loc_prime);
 

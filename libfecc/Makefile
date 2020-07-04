@@ -2,8 +2,8 @@
 
 CC=gcc # C language compiler
 # COMMONFLAGS=-Wall -std=gnu99
-# CFLAGS =-pg -ggdb -Og
-CFLAGS = -Ofast
+CFLAGS =-pg -ggdb
+# CFLAGS = -Ofast
 
 HEADERFILES=$(shell find . -type f -name "*.h")
 SOURCEFILES=$(shell find . -type f -name "*.c")
@@ -14,7 +14,7 @@ EXECUTABLE=main
 all: run-unit-tests build-file
 
 $(OBJFILES): %.o: %.c $(HEADERFILES)
-	$(CC) -c $< -o $@  $(CFLAGS)
+	$(CC) -c $< -o $@  $(CFLAGS) -msse4
 
 build-file: $(OBJFILES)
 	gcc $(CFLAGS) -o $(EXECUTABLE) $(OBJFILES)
@@ -25,4 +25,4 @@ run-unit-tests:
 	../unit-testing/main
 
 clean:
-	rm forwardecc.o finite-fields.o rs.o
+	rm forwardecc.o finite-fields.o rs.o polynomials.o
