@@ -48,10 +48,9 @@ ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root)
 		root_powers[i]	= ff_raise_lut(*table, root, i);
 	}
 	__m128i eval_results	= _mm_load_si128((__m128i*)(poly.memory));
-
+	ff_t mult_x	= ff_raise_lut(*table, root, SIMD_VECTOR_SIZE);
 	for (size_t i = SIMD_VECTOR_SIZE; i < poly.size; i+=SIMD_VECTOR_SIZE)
 	{
-		ff_t mult_x	= ff_raise_lut(*table, root, i);
 		eval_results	= ff_multiply_lut_sse(*table, eval_results, mult_x);
 		eval_results	= _mm_xor_si128(eval_results, _mm_load_si128((__m128i*)(poly.memory + i)));
 	}

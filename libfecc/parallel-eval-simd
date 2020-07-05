@@ -1,0 +1,34 @@
+a0x0 + a1x1 + a2x2 + a3x3 + a4x4 + a5x5 + a6x6 + a7x7 + a8x8 + a9x9 + a10x10 + a11x11
+
+[
+x0
+x1
+x2
+x3
+x4
+x5
+x6
+x7
+]
+
+(a0x0 + a8x8) 
++ x(a1x1 + a9x9) 
++ x2(a2x2 + a10x10) 
++ x3(a3x3 + a11x11) 
++ x4(a4x4 + a12x12) 
++ x5(a5x5 + a13x13) 
++ x6(a6x6 + a14x14) 
++ x7(a7x7 + a15x15)
+
+(a0x0 + a8x8) 
++ x(a1x1 + a9x9) 
++ x2(a2x2 + a10x10) 
++ x3(a3x3 + a11x11) 
++ x4(a4x4 + 0x12) 
++ x5(a5x5 + 0x13) 
++ x6(a6x6 + 0x14) 
++ x7(a7x7 + 0x15)
+
+Now in terms of polynomials, polynomial representation is actually reversed so it is (a11x11 + a10x10 + ... + a1x1 + a0x0)
+But we are already working on an inverted polynomial which is we have corrected the representation to the one we need for evaluation. 
+

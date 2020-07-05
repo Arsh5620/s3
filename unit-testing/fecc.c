@@ -43,12 +43,20 @@ int test_fecc()
 	poly_multiply_scalar(table, &a_cpy, 12);
 	ASSERT_MEMTEST_EQUALS(ad_src, a_cpy.memory, sizeof(ad_src), a_cpy.size, "polynomial scalar mult test");
 
-	ff_t nsrc[]	= {7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9};
-	poly_s nsrc_poly	= {.memory = nsrc, 160, 160};
-	ASSERT_TEST_EQUALS(195, poly_evaluate(table.full_table, nsrc_poly, 32),"evaluate polynomial a @ 32");
+	ff_t nsrc[]	= {7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9
+	, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 
+	9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7,
+	 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7
+	 , 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 
+	 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9,
+	  11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 
+	  9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 
+	  7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 11, 11, 11, 11, 11, 0, 0, 0, 0};
+	poly_s nsrc_poly	= {.memory = nsrc, 255, 255};
+	ASSERT_TEST_EQUALS(33, poly_evaluate(table.full_table, nsrc_poly, 42),"evaluate polynomial a @ 32");
 
-	ff_t retvalue = poly_evaluate_sse(&table, nsrc_poly, 32);
-	ASSERT_TEST_EQUALS(195, retvalue, "poly evaluate sse");
+	ff_t retvalue = poly_evaluate_sse(&table, nsrc_poly, 42);
+	ASSERT_TEST_EQUALS(33, retvalue, "poly evaluate sse");
 
 	ff_t gen_poly_val[]	= {1, 29, 196, 111, 163, 112, 74, 10, 105, 105, 139, 132, 151, 32, 134, 26};
 	poly_s generator	= rs_make_generator_polynomial(table, 15);
@@ -97,6 +105,23 @@ int test_fecc()
 		, sizeof(actual_encode), decode.message_out_buffer.size, "rs error correction test");
 
 	END_TEST;
+	#include <time.h>
+	#define COUNT_ITERATE 10000000
+	clock_t time1 = clock();
+	for (size_t i = 0; i < COUNT_ITERATE; i++)
+	{
+			volatile ff_t in1 = poly_evaluate(table.full_table, nsrc_poly, 42);
+	}
+
+	clock_t time2	= clock();
+	printf("Time elapsed regular loop: %ld\n", time2 - time1);
+	for (size_t i = 0; i < COUNT_ITERATE; i++)
+	{
+			volatile ff_t jn1 = poly_evaluate_sse(&table, nsrc_poly, 42);
+	}
+
+	clock_t time3	= clock();
+	printf("Time elapsed SSE loop: %ld\n", time3 - time2);
 
 	return (global_tests.failed_tests);
 }
