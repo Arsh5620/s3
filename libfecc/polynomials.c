@@ -52,19 +52,18 @@ ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root)
 	for (size_t i = SIMD_VECTOR_SIZE; i < poly.size; i+=SIMD_VECTOR_SIZE)
 	{
 		eval_results	= ff_multiply_lut_sse(*table, eval_results, mult_x);
-		eval_results	= _mm_xor_si128(eval_results, _mm_load_si128((__m128i*)(poly.memory + i)));
+		__m128i temp_vector	= _mm_load_si128((__m128i*)(poly.memory + i));
+		eval_results	= _mm_xor_si128(eval_results, temp_vector);
 	}
 
 	ff_t *eval_results_v	= (ff_t*)&eval_results;
-	ff_t sim_size	= MIN(SIMD_VECTOR_SIZE, poly.size);
-
 	for (size_t i = 0; i < SIMD_VECTOR_SIZE; i++)
 	{
-		root_powers[sim_size - i - 1]	= ff_multiply_lut(table->full_table, eval_results_v[i], root_powers[sim_size - i - 1]);
+		root_powers[SIMD_VECTOR_SIZE - i - 1]	= ff_multiply_lut(table->full_table, eval_results_v[i], root_powers[SIMD_VECTOR_SIZE - i - 1]);
 	}
 
 	ff_t eval_value	= 0;
-	for (size_t i = 0; i < sim_size; i++)
+	for (size_t i = 0; i < SIMD_VECTOR_SIZE; i++)
 	{
 		FF_ADDITION_INPLACE(eval_value, root_powers[i]);
 	}

@@ -264,6 +264,19 @@ poly_s rs_invert_poly(poly_s poly)
 	return(poly2);
 }
 
+poly_s rs_setup_eval_poly_sse(poly_s poly)
+{
+	short alignment	= ALLOCATE_ALIGNMENT(poly.size);
+	short diff	= alignment - poly.size;
+	poly_s poly2	= poly_new(alignment);
+
+	for (size_t i = 1; i <= poly.size; i++)
+	{
+		poly2.memory[diff + poly.size - i]	= poly.memory[i - 1];
+	}
+	return (poly2);
+}
+
 void rs_correct_errors(rs_decode_s *rs_info)
 {
 	poly_s reverse1	= rs_invert_poly(rs_info->syndromes);
