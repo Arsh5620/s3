@@ -40,16 +40,25 @@ inline ff_t poly_evaluate(ff_t *full_table, poly_s poly, short evaluate_at)
 	return (eval);
 }
 
-ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root)
+/**
+ * For polynomials size under 16 degrees, poly_evaluate_sse **MUST NOT** be used
+ * for two reasons, first the performance tanks when the polynomials are not large
+ * enough, and second is that the evaluation result will be incorrect. 
+ * The extra setup required for evaluating using SSE is usable at degree 36. 
+ */
+__attribute__((optimize("unroll-loops")))
+inline ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root)
 {
 	ff_t root_powers[SIMD_VECTOR_SIZE]	= {0};
 	for (long i = 0; i < SIMD_VECTOR_SIZE; i++)
 	{
 		root_powers[i]	= ff_raise_lut(*table, root, i);
 	}
+
 	__m128i eval_results	= _mm_load_si128((__m128i*)(poly.memory));
 	ff_t mult_x	= ff_raise_lut(*table, root, SIMD_VECTOR_SIZE);
-	for (size_t i = SIMD_VECTOR_SIZE; i < poly.size; i+=SIMD_VECTOR_SIZE)
+
+	for (size_t i = SIMD_VECTOR_SIZE; i < poly.size; i += SIMD_VECTOR_SIZE)
 	{
 		eval_results	= ff_multiply_lut_sse(*table, eval_results, mult_x);
 		__m128i temp_vector	= _mm_load_si128((__m128i*)(poly.memory + i));
@@ -57,15 +66,22 @@ ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root)
 	}
 
 	ff_t *eval_results_v	= (ff_t*)&eval_results;
-	for (size_t i = 0; i < SIMD_VECTOR_SIZE; i++)
+	for (size_t i = 0, j = SIMD_VECTOR_SIZE - i - 1; i < SIMD_VECTOR_SIZE; i++, j--)
 	{
-		root_powers[SIMD_VECTOR_SIZE - i - 1]	= ff_multiply_lut(table->full_table, eval_results_v[i], root_powers[SIMD_VECTOR_SIZE - i - 1]);
+		root_powers[i]	= ff_multiply_lut(table->full_table, eval_results_v[j], root_powers[i]);
 	}
 
 	ff_t eval_value	= 0;
-	for (size_t i = 0; i < SIMD_VECTOR_SIZE; i++)
+	long int v1	= 0;
+	long int *v2	= (long int*) root_powers;
+	for (size_t i = 0; i < SIMD_VECTOR_SIZE / sizeof(v1); i++)
 	{
-		FF_ADDITION_INPLACE(eval_value, root_powers[i]);
+		FF_ADDITION_INPLACE(v1, v2[i]);
+	}
+	
+	for (size_t i = 0; i < sizeof(v1); i++)
+	{
+		FF_ADDITION_INPLACE(eval_value, ((ff_t*)(&v1))[i]);
 	}
 	return (eval_value);
 }
