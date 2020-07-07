@@ -107,7 +107,7 @@ int test_fecc()
 
 	END_TEST;
 	#include <time.h>
-	#define COUNT_ITERATE 10000000
+	#define COUNT_ITERATE 100000
 	clock_t time1 = clock();
 	for (size_t i = 0; i < COUNT_ITERATE; i++)
 	{

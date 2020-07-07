@@ -126,15 +126,15 @@ ff_t ff_inverse_lut(ff_table_s table, ff_t x)
 	return table.exponents[255 - table.logs[x]];
 }
 
-inline ff_t ff_multiply_lut(ff_t *full_table, ff_t x, ff_t y)
+inline __attribute__((always_inline)) ff_t ff_multiply_lut(ff_t *full_table, ff_t x, ff_t y)
 {
 	/*
 	 * https://en.wikipedia.org/wiki/Finite_field_arithmetic#Implementation_tricks
 	 */
-	if (x == 0 || y == 0)
-	{
-		return 0;
-	}
+	// if (x == 0 || y == 0)
+	// {
+	// 	return 0;
+	// }
 	return full_table[FF_TABLE_LOOKUP(x, y)];
 }
 

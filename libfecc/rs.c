@@ -132,12 +132,13 @@ void rs_encode(rs_encode_s *rs_info)
  */
 inline void rs_calculate_syndromes(rs_decode_s *rs_info)
 {
+	poly_s msg_in	= rs_setup_eval_poly_sse_noinvert(rs_info->message_in_buffer);
 	for (size_t i = 0; i < rs_info->field_ecc_length; i++)
 	{
 		rs_info->syndromes.memory[i + 1]	= 
-			poly_evaluate
-				(rs_info->field_table.full_table
-				, rs_info->message_in_buffer
+			poly_evaluate_sse
+				(&rs_info->field_table
+				, msg_in
 				, ff_raise_lut(rs_info->field_table, 2, i));
 	}
 }
@@ -237,7 +238,8 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 		
 	for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
 	{
-		if (poly_evaluate(rs_info->field_table.full_table, invert_poly, ff_raise_lut(rs_info->field_table, 2, i)) == 0)
+		ff_t val1 =	poly_evaluate(rs_info->field_table.full_table, invert_poly, ff_raise_lut(rs_info->field_table, 2, i));
+		if (val1 == 0)
 		{
 			rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;
 			
@@ -274,6 +276,16 @@ poly_s rs_setup_eval_poly_sse(poly_s poly)
 	{
 		poly2.memory[diff + poly.size - i]	= poly.memory[i - 1];
 	}
+	return (poly2);
+}
+
+poly_s rs_setup_eval_poly_sse_noinvert(poly_s poly)
+{
+	short alignment	= ALLOCATE_ALIGNMENT(poly.size);
+	short diff	= alignment - poly.size;
+	poly_s poly2	= poly_new(alignment);
+
+	memcpy(poly2.memory + diff, poly.memory, poly.size);
 	return (poly2);
 }
 

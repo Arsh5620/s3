@@ -20,7 +20,8 @@
 typedef unsigned char ff_t;
 
 #define FF_SIZE	256
-#define FF_TABLE_LOOKUP(x, y) ((x * FF_SIZE) + y)
+#define FF_SIZE_RSHIFT	8
+#define FF_TABLE_LOOKUP(x, y) ((x << FF_SIZE_RSHIFT) | y)
 
 #define SIMD_VECTOR_SIZE	sizeof(__m128)
 #define MEMORY_ALIGNMENT	SIMD_VECTOR_SIZE

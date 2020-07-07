@@ -49,6 +49,7 @@ void rs_correct_errors(rs_decode_s *rs_info);
 void rs_find_error_locations(rs_decode_s *rs_info);
 poly_s rs_invert_poly(poly_s poly);
 poly_s rs_setup_eval_poly_sse(poly_s poly);
+poly_s rs_setup_eval_poly_sse_noinvert(poly_s poly);
 poly_s ff_polynomial_mod(ff_table_s table
 	, poly_s dividend, poly_s divisor);
 ff_t rs_calculate_delta(rs_decode_s *rs_info , short syndrome_i);
