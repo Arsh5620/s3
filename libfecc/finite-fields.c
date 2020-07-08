@@ -70,6 +70,7 @@ ff_table_s ff_table_new(short irr_p)
 	table.logs	= calloc(FF_SIZE, sizeof(ff_t));
 	table.exponents	= calloc(FF_SIZE * 2, sizeof(ff_t));
 	table.stdmap	= calloc(FF_SIZE * SIMD_VECTOR_SIZE * 2, sizeof(ff_t));
+	table.power2	= calloc(FF_SIZE * 2, sizeof(ff_t));
 
 	ff_t x	= 1;
 	for (size_t i = 0; i < FF_SIZE; i++)
@@ -87,6 +88,11 @@ ff_table_s ff_table_new(short irr_p)
 	}
 
 	memcpy(table.exponents + FF_SIZE - 1, table.exponents, FF_SIZE);
+	
+	for (size_t i = 0; i < FF_SIZE * 2; i++)
+	{
+		table.power2[i]	= ff_raise_lut(table, 2, i - FF_SIZE);
+	}
 	
 	return (table);
 }
@@ -119,6 +125,11 @@ ff_t ff_raise_lut(ff_table_s table, ff_t x, short power)
 	// to compensate we will have to reduce it by one when the number is negative.
 
 	return table.exponents[log];
+}
+
+ff_t ff_raise2_lut(ff_table_s table, short power)
+{
+	return *(table.power2 + power + FF_SIZE);
 }
 
 ff_t ff_inverse_lut(ff_table_s table, ff_t x)

@@ -38,6 +38,7 @@ typedef struct ff_table
 	ff_t *logs;
 	ff_t *exponents;
 	ff_t *stdmap;
+	ff_t *power2;
 } ff_table_s;
 
 /*
@@ -58,6 +59,7 @@ typedef struct ff_table
 ff_t ff_multiply(ff_t a, ff_t b, short irr_p);
 ff_t ff_divide_lut(ff_table_s table, ff_t x, ff_t y);
 ff_t ff_raise_lut(ff_table_s table, ff_t x, short power);
+ff_t ff_raise2_lut(ff_table_s table, short power);
 ff_t ff_multiply_lut(ff_t *table, ff_t x, ff_t y);
 __m128i ff_multiply_lut_sse(ff_table_s table, __m128i x, ff_t y);
 ff_t ff_inverse_lut(ff_table_s table, ff_t x);

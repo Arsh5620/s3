@@ -75,7 +75,7 @@ poly_s rs_make_generator_polynomial(ff_table_s table, short ecc_length)
 	
 	for (size_t i = 0; i < ecc_length; i++)
 	{
-		init.memory[1]	= ff_raise_lut(table, 2, i);
+		init.memory[1]	= ff_raise2_lut(table, i);
 		poly_s temp	= poly_new(poly.size + init.size - 1);
 		poly_multiply(table, &temp, poly, init);
 		free(poly.memory);
@@ -133,13 +133,13 @@ void rs_encode(rs_encode_s *rs_info)
 inline void rs_calculate_syndromes(rs_decode_s *rs_info)
 {
 	poly_s msg_in	= rs_setup_eval_poly_sse_noinvert(rs_info->message_in_buffer);
+	
 	for (size_t i = 0; i < rs_info->field_ecc_length; i++)
 	{
 		rs_info->syndromes.memory[i + 1]	= 
 			poly_evaluate_sse
 				(&rs_info->field_table
-				, msg_in
-				, ff_raise_lut(rs_info->field_table, 2, i));
+				, msg_in, i);
 	}
 }
 
@@ -238,7 +238,7 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 		
 	for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
 	{
-		ff_t val1 =	poly_evaluate(rs_info->field_table.full_table, invert_poly, ff_raise_lut(rs_info->field_table, 2, i));
+		ff_t val1 =	poly_evaluate(rs_info->field_table.full_table, invert_poly, ff_raise2_lut(rs_info->field_table, i));
 		if (val1 == 0)
 		{
 			rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;

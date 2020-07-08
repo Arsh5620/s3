@@ -52,11 +52,11 @@ inline ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root)
 	ff_t root_powers[SIMD_VECTOR_SIZE]	= {0};
 	for (long i = 0; i < SIMD_VECTOR_SIZE; i++)
 	{
-		root_powers[i]	= ff_raise_lut(*table, root, i);
+		root_powers[i]	= ff_raise2_lut(*table, root * i);
 	}
 
 	__m128i eval_results	= _mm_load_si128((__m128i*)(poly.memory));
-	ff_t mult_x	= ff_raise_lut(*table, root, SIMD_VECTOR_SIZE);
+	ff_t mult_x	= ff_raise2_lut(*table, root * SIMD_VECTOR_SIZE);
 
 	for (size_t i = SIMD_VECTOR_SIZE; i < poly.size; i += SIMD_VECTOR_SIZE)
 	{

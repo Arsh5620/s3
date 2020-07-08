@@ -53,11 +53,11 @@ int test_fecc()
 	poly_s nsrc_poly	= {.memory = nsrc, 191, 191};
 
 	poly_s invert	= rs_invert_poly(nsrc_poly);
-	ASSERT_TEST_EQUALS(31, poly_evaluate(table.full_table, invert, 42),"evaluate polynomial a @ 42");
+	ASSERT_TEST_EQUALS(238, poly_evaluate(table.full_table, invert, 32),"evaluate polynomial a @ 32");
 
 	poly_s setup	= rs_setup_eval_poly_sse(nsrc_poly);
-	ff_t retvalue = poly_evaluate_sse(&table, setup, 42);
-	ASSERT_TEST_EQUALS(31, retvalue, "poly evaluate sse @ 42");
+	ff_t retvalue = poly_evaluate_sse(&table, setup, 5);
+	ASSERT_TEST_EQUALS(238, retvalue, "poly evaluate sse @ 32");
 
 	ff_t gen_poly_val[]	= {1, 29, 196, 111, 163, 112, 74, 10, 105, 105, 139, 132, 151, 32, 134, 26};
 	poly_s generator	= rs_make_generator_polynomial(table, 15);
