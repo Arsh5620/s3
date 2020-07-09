@@ -2,28 +2,33 @@ Flat profile:
 
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
- time   seconds   seconds    calls  ms/call  ms/call  name    
- 29.67      0.82     0.82 252997992     0.00     0.00  poly_evaluate
- 25.84      1.53     0.71                             rs_find_error_locations
- 10.01      1.80     0.28                             ff_multiply_lut
-  7.64      2.01     0.21  3000000     0.00     0.00  poly_add
-  6.19      2.18     0.17  2000000     0.00     0.00  poly_evaluate_sse
-  5.46      2.33     0.15                             ff_raise2_lut
-  3.46      2.43     0.10  1000004     0.00     0.00  poly_multiply
-  2.37      2.49     0.07                             ff_inverse_lut
-  2.18      2.55     0.06                             ff_multiply_lut_sse
-  1.46      2.59     0.04  9000018     0.00     0.00  poly_new
-  1.46      2.63     0.04                             rs_make_error_location_poly
-  1.09      2.66     0.03  4000000     0.00     0.00  poly_multiply_scalar
-  1.09      2.69     0.03                             rs_calculate_syndromes
-  0.73      2.71     0.02                             rs_correct_errors
-  0.36      2.72     0.01        1    10.01    10.01  poly_append
-  0.36      2.73     0.01                             ff_divide_lut
-  0.36      2.74     0.01                             ff_raise_lut
-  0.36      2.75     0.01                             poly_print
-  0.00      2.75     0.00  7000000     0.00     0.00  poly_copy
-  0.00      2.75     0.00  1000001     0.00     0.00  ff_polynomial_mod
-  0.00      2.75     0.00  1000001     0.00     0.00  poly_free
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 25.76      2.81     2.81 2322192024     0.00     0.00  ff_multiply_lut
+ 21.58      5.16     2.35 32000000     0.07     0.15  poly_evaluate_sse
+ 13.04      6.58     1.42 795997095     0.00     0.00  ff_raise2_lut
+ 12.21      7.91     1.33 256997570     0.01     0.01  poly_evaluate
+  6.98      8.67     0.76                             rs_find_error_locations
+  6.57      9.39     0.72 480000000     0.00     0.00  ff_multiply_lut_sse
+  3.49      9.77     0.38                             rs_make_error_location_poly
+  2.20     10.01     0.24 12000713     0.02     0.02  poly_add
+  2.20     10.25     0.24  1000064     0.24     0.48  poly_multiply
+  1.70     10.44     0.19 10000867     0.02     0.02  ff_inverse_lut
+  0.73     10.52     0.08 21001369     0.00     0.01  poly_multiply_scalar
+  0.73     10.60     0.08  5000539     0.02     0.02  ff_raise_lut
+  0.55     10.66     0.06                             rs_correct_errors
+  0.46     10.71     0.05 37002410     0.00     0.00  poly_copy
+  0.46     10.76     0.05  1000001     0.05     0.09  ff_polynomial_mod
+  0.46     10.81     0.05                             rs_calculate_syndromes
+  0.37     10.85     0.04 18000791     0.00     0.00  poly_new
+  0.28     10.88     0.03  5000539     0.01     0.01  ff_divide_lut
+  0.09     10.89     0.01                             poly_print
+  0.09     10.90     0.01                             rs_calculate_delta
+  0.09     10.91     0.01                             rs_encode
+  0.00     10.91     0.00  1000001     0.00     0.00  poly_free
+  0.00     10.91     0.00      512     0.00     0.00  ff_table_stdmap
+  0.00     10.91     0.00        2     0.00     0.00  ff_table_new
+  0.00     10.91     0.00        2     0.00    15.48  rs_make_generator_polynomial
+  0.00     10.91     0.00        1     0.00     0.00  poly_append
 
  %         the percentage of the total running time of the
 time       program used by this function.
@@ -61,115 +66,155 @@ notice and this notice are preserved.
 		     Call graph (explanation follows)
 
 
-granularity: each sample hit covers 2 byte(s) for 0.36% of 2.75 seconds
+granularity: each sample hit covers 2 byte(s) for 0.09% of 10.91 seconds
 
 index % time    self  children    called     name
                                                  <spontaneous>
-[1]     55.5    0.71    0.82                 rs_find_error_locations [1]
-                0.81    0.00 251997992/252997992     poly_evaluate [2]
-                0.00    0.00 1000000/9000018     poly_new [13]
+[1]     43.2    0.05    4.66                 rs_calculate_syndromes [1]
+                2.35    2.31 32000000/32000000     poly_evaluate_sse [2]
+                0.00    0.00 1000000/18000791     poly_new [17]
+-----------------------------------------------
+                2.35    2.31 32000000/32000000     rs_calculate_syndromes [1]
+[2]     42.7    2.35    2.31 32000000         poly_evaluate_sse [2]
+                0.97    0.00 544000000/795997095     ff_raise2_lut [6]
+                0.72    0.00 480000000/480000000     ff_multiply_lut_sse [9]
+                0.62    0.00 512000000/2322192024     ff_multiply_lut [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[3]     37.1    0.76    3.28                 rs_find_error_locations [3]
+                1.31    1.52 251997031/256997570     poly_evaluate [4]
+                0.45    0.00 251997031/795997095     ff_raise2_lut [6]
+                0.00    0.00 1000000/18000791     poly_new [17]
                 0.00    0.00 1000000/1000001     poly_free [25]
 -----------------------------------------------
-                0.00    0.00 1000000/252997992     rs_correct_errors [5]
-                0.81    0.00 251997992/252997992     rs_find_error_locations [1]
-[2]     29.6    0.82    0.00 252997992         poly_evaluate [2]
+                0.03    0.03 5000539/256997570     rs_correct_errors [8]
+                1.31    1.52 251997031/256997570     rs_find_error_locations [3]
+[4]     26.5    1.33    1.55 256997570         poly_evaluate [4]
+                1.55    0.00 1285100732/2322192024     ff_multiply_lut [5]
+-----------------------------------------------
+                0.04    0.00 30025807/2322192024     ff_polynomial_mod [14]
+                0.05    0.00 45024079/2322192024     rs_correct_errors [8]
+                0.11    0.00 90017107/2322192024     poly_multiply_scalar [12]
+                0.20    0.00 162004400/2322192024     rs_make_error_location_poly [7]
+                0.24    0.00 198019899/2322192024     poly_multiply [10]
+                0.62    0.00 512000000/2322192024     poly_evaluate_sse [2]
+                1.55    0.00 1285100732/2322192024     poly_evaluate [4]
+[5]     25.7    2.81    0.00 2322192024         ff_multiply_lut [5]
+-----------------------------------------------
+                0.00    0.00      64/795997095     rs_make_generator_polynomial [22]
+                0.45    0.00 251997031/795997095     rs_find_error_locations [3]
+                0.97    0.00 544000000/795997095     poly_evaluate_sse [2]
+[6]     13.0    1.42    0.00 795997095         ff_raise2_lut [6]
 -----------------------------------------------
                                                  <spontaneous>
-[3]     10.0    0.28    0.00                 ff_multiply_lut [3]
+[7]     10.6    0.38    0.77                 rs_make_error_location_poly [7]
+                0.22    0.00 11000713/12000713     poly_add [11]
+                0.20    0.00 162004400/2322192024     ff_multiply_lut [5]
+                0.08    0.11 21001369/21001369     poly_multiply_scalar [12]
+                0.09    0.00 5000328/10000867     ff_inverse_lut [13]
+                0.05    0.00 37002410/37002410     poly_copy [16]
+                0.02    0.00 11000713/18000791     poly_new [17]
 -----------------------------------------------
                                                  <spontaneous>
-[4]      8.0    0.04    0.18                 rs_make_error_location_poly [4]
-                0.14    0.00 2000000/3000000     poly_add [6]
-                0.03    0.00 4000000/4000000     poly_multiply_scalar [14]
-                0.01    0.00 2000000/9000018     poly_new [13]
-                0.00    0.00 7000000/7000000     poly_copy [23]
+[8]      8.9    0.06    0.91                 rs_correct_errors [8]
+                0.24    0.24 1000000/1000064     poly_multiply [10]
+                0.09    0.00 5000539/10000867     ff_inverse_lut [13]
+                0.05    0.04 1000000/1000001     ff_polynomial_mod [14]
+                0.08    0.00 5000539/5000539     ff_raise_lut [15]
+                0.03    0.03 5000539/256997570     poly_evaluate [4]
+                0.05    0.00 45024079/2322192024     ff_multiply_lut [5]
+                0.03    0.00 5000539/5000539     ff_divide_lut [18]
+                0.02    0.00 1000000/12000713     poly_add [11]
+                0.01    0.00 5000000/18000791     poly_new [17]
+-----------------------------------------------
+                0.72    0.00 480000000/480000000     poly_evaluate_sse [2]
+[9]      6.6    0.72    0.00 480000000         ff_multiply_lut_sse [9]
+-----------------------------------------------
+                0.00    0.00      64/1000064     rs_make_generator_polynomial [22]
+                0.24    0.24 1000000/1000064     rs_correct_errors [8]
+[10]     4.4    0.24    0.24 1000064         poly_multiply [10]
+                0.24    0.00 198019899/2322192024     ff_multiply_lut [5]
+-----------------------------------------------
+                0.02    0.00 1000000/12000713     rs_correct_errors [8]
+                0.22    0.00 11000713/12000713     rs_make_error_location_poly [7]
+[11]     2.2    0.24    0.00 12000713         poly_add [11]
+-----------------------------------------------
+                0.08    0.11 21001369/21001369     rs_make_error_location_poly [7]
+[12]     1.7    0.08    0.11 21001369         poly_multiply_scalar [12]
+                0.11    0.00 90017107/2322192024     ff_multiply_lut [5]
+-----------------------------------------------
+                0.09    0.00 5000328/10000867     rs_make_error_location_poly [7]
+                0.09    0.00 5000539/10000867     rs_correct_errors [8]
+[13]     1.7    0.19    0.00 10000867         ff_inverse_lut [13]
+-----------------------------------------------
+                0.00    0.00       1/1000001     rs_encode [19]
+                0.05    0.04 1000000/1000001     rs_correct_errors [8]
+[14]     0.8    0.05    0.04 1000001         ff_polynomial_mod [14]
+                0.04    0.00 30025807/2322192024     ff_multiply_lut [5]
+-----------------------------------------------
+                0.08    0.00 5000539/5000539     rs_correct_errors [8]
+[15]     0.7    0.08    0.00 5000539         ff_raise_lut [15]
+-----------------------------------------------
+                0.05    0.00 37002410/37002410     rs_make_error_location_poly [7]
+[16]     0.5    0.05    0.00 37002410         poly_copy [16]
+-----------------------------------------------
+                0.00    0.00       2/18000791     rs_init_encoder [24]
+                0.00    0.00       8/18000791     rs_init_decoder [23]
+                0.00    0.00      68/18000791     rs_make_generator_polynomial [22]
+                0.00    0.00 1000000/18000791     rs_calculate_syndromes [1]
+                0.00    0.00 1000000/18000791     rs_find_error_locations [3]
+                0.01    0.00 5000000/18000791     rs_correct_errors [8]
+                0.02    0.00 11000713/18000791     rs_make_error_location_poly [7]
+[17]     0.4    0.04    0.00 18000791         poly_new [17]
+-----------------------------------------------
+                0.03    0.00 5000539/5000539     rs_correct_errors [8]
+[18]     0.3    0.03    0.00 5000539         ff_divide_lut [18]
 -----------------------------------------------
                                                  <spontaneous>
-[5]      7.7    0.02    0.19                 rs_correct_errors [5]
-                0.10    0.00 1000000/1000004     poly_multiply [10]
-                0.07    0.00 1000000/3000000     poly_add [6]
-                0.02    0.00 5000000/9000018     poly_new [13]
-                0.00    0.00 1000000/252997992     poly_evaluate [2]
-                0.00    0.00 1000000/1000001     ff_polynomial_mod [24]
------------------------------------------------
-                0.07    0.00 1000000/3000000     rs_correct_errors [5]
-                0.14    0.00 2000000/3000000     rs_make_error_location_poly [4]
-[6]      7.6    0.21    0.00 3000000         poly_add [6]
------------------------------------------------
-                                                 <spontaneous>
-[7]      7.4    0.03    0.17                 rs_calculate_syndromes [7]
-                0.17    0.00 2000000/2000000     poly_evaluate_sse [8]
-                0.00    0.00 1000000/9000018     poly_new [13]
------------------------------------------------
-                0.17    0.00 2000000/2000000     rs_calculate_syndromes [7]
-[8]      6.2    0.17    0.00 2000000         poly_evaluate_sse [8]
------------------------------------------------
-                                                 <spontaneous>
-[9]      5.5    0.15    0.00                 ff_raise2_lut [9]
------------------------------------------------
-                0.00    0.00       4/1000004     rs_make_generator_polynomial [20]
-                0.10    0.00 1000000/1000004     rs_correct_errors [5]
-[10]     3.5    0.10    0.00 1000004         poly_multiply [10]
------------------------------------------------
-                                                 <spontaneous>
-[11]     2.4    0.07    0.00                 ff_inverse_lut [11]
------------------------------------------------
-                                                 <spontaneous>
-[12]     2.2    0.06    0.00                 ff_multiply_lut_sse [12]
------------------------------------------------
-                0.00    0.00       2/9000018     rs_init_encoder [22]
-                0.00    0.00       8/9000018     rs_make_generator_polynomial [20]
-                0.00    0.00       8/9000018     rs_init_decoder [21]
-                0.00    0.00 1000000/9000018     rs_calculate_syndromes [7]
-                0.00    0.00 1000000/9000018     rs_find_error_locations [1]
-                0.01    0.00 2000000/9000018     rs_make_error_location_poly [4]
-                0.02    0.00 5000000/9000018     rs_correct_errors [5]
-[13]     1.5    0.04    0.00 9000018         poly_new [13]
------------------------------------------------
-                0.03    0.00 4000000/4000000     rs_make_error_location_poly [4]
-[14]     1.1    0.03    0.00 4000000         poly_multiply_scalar [14]
------------------------------------------------
-                0.01    0.00       1/1           rs_encode [19]
-[15]     0.4    0.01    0.00       1         poly_append [15]
------------------------------------------------
-                                                 <spontaneous>
-[16]     0.4    0.01    0.00                 ff_divide_lut [16]
------------------------------------------------
-                                                 <spontaneous>
-[17]     0.4    0.01    0.00                 ff_raise_lut [17]
------------------------------------------------
-                                                 <spontaneous>
-[18]     0.4    0.01    0.00                 poly_print [18]
------------------------------------------------
-                                                 <spontaneous>
-[19]     0.4    0.00    0.01                 rs_encode [19]
-                0.01    0.00       1/1           poly_append [15]
-                0.00    0.00       1/1000001     ff_polynomial_mod [24]
+[19]     0.1    0.01    0.00                 rs_encode [19]
+                0.00    0.00       1/1000001     ff_polynomial_mod [14]
+                0.00    0.00       1/1           poly_append [28]
                 0.00    0.00       1/1000001     poly_free [25]
 -----------------------------------------------
                                                  <spontaneous>
-[20]     0.0    0.00    0.00                 rs_make_generator_polynomial [20]
-                0.00    0.00       4/1000004     poly_multiply [10]
-                0.00    0.00       8/9000018     poly_new [13]
+[20]     0.1    0.01    0.00                 poly_print [20]
 -----------------------------------------------
                                                  <spontaneous>
-[21]     0.0    0.00    0.00                 rs_init_decoder [21]
-                0.00    0.00       8/9000018     poly_new [13]
+[21]     0.1    0.01    0.00                 rs_calculate_delta [21]
+-----------------------------------------------
+                0.00    0.00       1/2           rs_init_encoder [24]
+                0.00    0.00       1/2           rs_init_decoder [23]
+[22]     0.0    0.00    0.00       2         rs_make_generator_polynomial [22]
+                0.00    0.00      64/1000064     poly_multiply [10]
+                0.00    0.00      68/18000791     poly_new [17]
+                0.00    0.00      64/795997095     ff_raise2_lut [6]
 -----------------------------------------------
                                                  <spontaneous>
-[22]     0.0    0.00    0.00                 rs_init_encoder [22]
-                0.00    0.00       2/9000018     poly_new [13]
+[23]     0.0    0.00    0.00                 rs_init_decoder [23]
+                0.00    0.00       1/2           rs_make_generator_polynomial [22]
+                0.00    0.00       8/18000791     poly_new [17]
+                0.00    0.00       1/2           ff_table_new [27]
 -----------------------------------------------
-                0.00    0.00 7000000/7000000     rs_make_error_location_poly [4]
-[23]     0.0    0.00    0.00 7000000         poly_copy [23]
+                                                 <spontaneous>
+[24]     0.0    0.00    0.00                 rs_init_encoder [24]
+                0.00    0.00       1/2           rs_make_generator_polynomial [22]
+                0.00    0.00       2/18000791     poly_new [17]
+                0.00    0.00       1/2           ff_table_new [27]
 -----------------------------------------------
                 0.00    0.00       1/1000001     rs_encode [19]
-                0.00    0.00 1000000/1000001     rs_correct_errors [5]
-[24]     0.0    0.00    0.00 1000001         ff_polynomial_mod [24]
------------------------------------------------
-                0.00    0.00       1/1000001     rs_encode [19]
-                0.00    0.00 1000000/1000001     rs_find_error_locations [1]
+                0.00    0.00 1000000/1000001     rs_find_error_locations [3]
 [25]     0.0    0.00    0.00 1000001         poly_free [25]
+-----------------------------------------------
+                0.00    0.00     512/512         ff_table_new [27]
+[26]     0.0    0.00    0.00     512         ff_table_stdmap [26]
+-----------------------------------------------
+                0.00    0.00       1/2           rs_init_encoder [24]
+                0.00    0.00       1/2           rs_init_decoder [23]
+[27]     0.0    0.00    0.00       2         ff_table_new [27]
+                0.00    0.00     512/512         ff_table_stdmap [26]
+-----------------------------------------------
+                0.00    0.00       1/1           rs_encode [19]
+[28]     0.0    0.00    0.00       1         poly_append [28]
 -----------------------------------------------
 
  This table describes the call tree of the program, and was sorted by
@@ -262,10 +307,12 @@ notice and this notice are preserved.
 
 Index by function name
 
-  [16] ff_divide_lut           [6] poly_add               [14] poly_multiply_scalar
-  [11] ff_inverse_lut         [15] poly_append            [13] poly_new
-   [3] ff_multiply_lut        [23] poly_copy              [18] poly_print
-  [12] ff_multiply_lut_sse     [2] poly_evaluate           [7] rs_calculate_syndromes
-  [24] ff_polynomial_mod       [8] poly_evaluate_sse       [5] rs_correct_errors
-   [9] ff_raise2_lut          [25] poly_free               [1] rs_find_error_locations
-  [17] ff_raise_lut           [10] poly_multiply           [4] rs_make_error_location_poly
+  [18] ff_divide_lut          [11] poly_add               [20] poly_print
+  [13] ff_inverse_lut         [28] poly_append            [21] rs_calculate_delta
+   [5] ff_multiply_lut        [16] poly_copy               [1] rs_calculate_syndromes
+   [9] ff_multiply_lut_sse     [4] poly_evaluate           [8] rs_correct_errors
+  [14] ff_polynomial_mod       [2] poly_evaluate_sse      [19] rs_encode
+   [6] ff_raise2_lut          [25] poly_free               [3] rs_find_error_locations
+  [15] ff_raise_lut           [10] poly_multiply           [7] rs_make_error_location_poly
+  [27] ff_table_new           [12] poly_multiply_scalar   [22] rs_make_generator_polynomial
+  [26] ff_table_stdmap        [17] poly_new

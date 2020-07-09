@@ -70,7 +70,9 @@
 		"thread": "c",
 		"data.h": "c",
 		"build": "cpp",
-		"initializer_list": "c"
+		"initializer_list": "c",
+		"ranges": "cpp",
+		"valarray": "cpp"
 	},
 	"python.pythonPath": "/sbin/python"
 }

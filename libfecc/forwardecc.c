@@ -14,12 +14,12 @@ int main()
 	rs_encode(&inf);
 	poly_print("encoded", inf.message_out_buffer);
 	inf.message_out_buffer.memory[3]=0;
-	inf.message_out_buffer.memory[110]=0;
-	inf.message_out_buffer.memory[212]=0;
+	inf.message_out_buffer.memory[4]=0;
+	inf.message_out_buffer.memory[5]=0;
 
 	rs_decode_s decode	= rs_init_decoder(n, k, 285);
 	decode.message_in_buffer	= inf.message_out_buffer;
-	for (int kl=0; kl < 100000; kl++)
+	for (int kl=0; kl < 1000000; kl++)
 	{	
 		rs_calculate_syndromes(&decode);
 		rs_make_error_location_poly(&decode);

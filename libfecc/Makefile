@@ -2,8 +2,8 @@
 
 CC=gcc # C language compiler
 # COMMONFLAGS=-Wall -std=gnu99
-CFLAGS =-pg -ggdb
-# CFLAGS = -Ofast
+# CFLAGS =-pg -O3
+CFLAGS = -Ofast
 
 HEADERFILES=$(shell find . -type f -name "*.h")
 SOURCEFILES=$(shell find . -type f -name "*.c")

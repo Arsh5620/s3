@@ -24,7 +24,7 @@ void rs_close_encoder(rs_encode_s *s)
 {
 	poly_free(s->message_in_buffer);
 	poly_free(s->message_out_buffer);
-	ff_table_close(s->field_table);
+	ff_table_free(s->field_table);
 }
 
 rs_decode_s rs_init_decoder(ff_t n, ff_t k, short irr_p)
@@ -62,7 +62,7 @@ void rs_close_decoder(rs_decode_s *decoder)
 	poly_free(decoder->message_in_buffer);
 	poly_free(decoder->message_out_buffer);
 	poly_free(decoder->generator);
-	ff_table_close(decoder->field_table);
+	ff_table_free(decoder->field_table);
 }
 
 poly_s rs_make_generator_polynomial(ff_table_s table, short ecc_length)
@@ -75,7 +75,7 @@ poly_s rs_make_generator_polynomial(ff_table_s table, short ecc_length)
 	
 	for (size_t i = 0; i < ecc_length; i++)
 	{
-		init.memory[1]	= ff_raise2_lut(table, i);
+		init.memory[1]	= ff_raise2_lut(&table, i);
 		poly_s temp	= poly_new(poly.size + init.size - 1);
 		poly_multiply(table, &temp, poly, init);
 		free(poly.memory);
@@ -89,27 +89,15 @@ poly_s rs_make_generator_polynomial(ff_table_s table, short ecc_length)
  * Basically what we are doing is copying the src to dest
  * and if dest size is bigger than source, ZERO the rest of memory
  */
-inline void rs_forward_copy(poly_s dest, poly_s src)
+FECC_INLINE
+void rs_forward_copy(poly_s dest, poly_s src)
 {
 	memcpy(dest.memory, src.memory, src.size);
 	memset(dest.memory + src.size, 0, dest.size - src.size);
 }
 
 /**
- * How does the synthetic polynomial division works?
- * We take a copy of dividend, and here the length of the dividend is
- * "Actual dividend" + "Zero bytes filled in for divisor"
- * 
- * That is why we only operate on the actual divident length. 
- * We take the value at i from message m as coff
- * Now if coff == 0, we don't do anything because log(0) is undefined
- * 
- * Otherwise we iterate through the length of the divisor
- * And we take value of divisor at j from divisor m as coff
- * 
- * We then multiply the values at i, j and we subtract it from the value of the 
- * dividend at [i + j]
- * 
+ * We are using Synthetic Division, read more at
  * https://en.wikipedia.org/wiki/Synthetic_division
  */
 
@@ -127,19 +115,17 @@ void rs_encode(rs_encode_s *rs_info)
 
 /**
  * Using Horner's Theorm, we are calculating syndromes at ecc_length locations
- * Calculating syndromes is very straight forward and more information at
+ * Calculating syndromes is very straight forward and more information is at
  * https://en.wikipedia.org/wiki/Horner%27s_method
  */
-inline void rs_calculate_syndromes(rs_decode_s *rs_info)
+FECC_INLINE
+void rs_calculate_syndromes(rs_decode_s *rs_info)
 {
 	poly_s msg_in	= rs_setup_eval_poly_sse_noinvert(rs_info->message_in_buffer);
-	
 	for (size_t i = 0; i < rs_info->field_ecc_length; i++)
 	{
 		rs_info->syndromes.memory[i + 1]	= 
-			poly_evaluate_sse
-				(&rs_info->field_table
-				, msg_in, i);
+			poly_evaluate_sse(&rs_info->field_table, msg_in, i);
 	}
 }
 
@@ -157,7 +143,7 @@ ff_t rs_calculate_delta(rs_decode_s *rs_info , short i)
 
 	for (long j = 1; j < rs_info->error_locator.size; ++j)
 	{
-		ff_t temp	= ff_multiply_lut(rs_info->field_table.full_table
+		ff_t temp	= ff_multiply_lut(rs_info->field_table.multiply_table
 			, rs_info->error_locator.memory[rs_info->error_locator.size - (j + 1)]
 			, rs_info->syndromes.memory[i - j]);
 		FF_ADDITION_INPLACE(delta, temp);
@@ -238,7 +224,7 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 		
 	for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
 	{
-		ff_t val1 =	poly_evaluate(rs_info->field_table.full_table, invert_poly, ff_raise2_lut(rs_info->field_table, i));
+		ff_t val1 =	poly_evaluate(rs_info->field_table.multiply_table, invert_poly, ff_raise2_lut(&rs_info->field_table, i));
 		if (val1 == 0)
 		{
 			rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;
@@ -279,6 +265,7 @@ poly_s rs_setup_eval_poly_sse(poly_s poly)
 	return (poly2);
 }
 
+FECC_INLINE
 poly_s rs_setup_eval_poly_sse_noinvert(poly_s poly)
 {
 	short alignment	= ALLOCATE_ALIGNMENT(poly.size);
@@ -322,13 +309,13 @@ void rs_correct_errors(rs_decode_s *rs_info)
 			{
 				// in case of i = j then the inverse will cancel out the X and the final 
 				// result will be 1. 
-				err_loc_prime = ff_multiply_lut(rs_info->field_table.full_table, err_loc_prime, 
-					FF_SUBSTRACTION(1, ff_multiply_lut(rs_info->field_table.full_table, X_inv, X_poly.memory[j])));
+				err_loc_prime = ff_multiply_lut(rs_info->field_table.multiply_table, err_loc_prime, 
+					FF_SUBSTRACTION(1, ff_multiply_lut(rs_info->field_table.multiply_table, X_inv, X_poly.memory[j])));
 			}
 		}
 
-		ff_t polynomial_eval	= poly_evaluate(rs_info->field_table.full_table, (error_evaluator), X_inv);
-		polynomial_eval	= ff_multiply_lut(rs_info->field_table.full_table, X_poly.memory[i], polynomial_eval);
+		ff_t polynomial_eval	= poly_evaluate(rs_info->field_table.multiply_table, (error_evaluator), X_inv);
+		polynomial_eval	= ff_multiply_lut(rs_info->field_table.multiply_table, X_poly.memory[i], polynomial_eval);
 
 		ff_t magnitude	= ff_divide_lut(rs_info->field_table, polynomial_eval, err_loc_prime);
 

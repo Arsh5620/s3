@@ -11,7 +11,7 @@ int test_fecc()
 
 	BEGIN_TEST;
 	ASSERT_TEST_EQUALS(ff_multiply(129, 129, prime_poly), 18, "ff multiply 129 * 129");
-	ASSERT_TEST_EQUALS(ff_multiply_lut(table.full_table, 129, 129), 18, "ff multiply lut assist 129 * 129");
+	ASSERT_TEST_EQUALS(ff_multiply_lut(table.multiply_table, 129, 129), 18, "ff multiply lut assist 129 * 129");
 	ASSERT_TEST_EQUALS(ff_divide_lut(table, 129, 127), 3, "ff divide lut assist 129 / 127");
 	ASSERT_TEST_EQUALS(ff_divide_lut(table, 12, 115), 197, "ff divide lut assist 12 / 115");
 	ASSERT_TEST_EQUALS(ff_raise_lut(table, 2, 8), 29, "ff raise lut assist 2 ^ 8");
@@ -53,7 +53,7 @@ int test_fecc()
 	poly_s nsrc_poly	= {.memory = nsrc, 191, 191};
 
 	poly_s invert	= rs_invert_poly(nsrc_poly);
-	ASSERT_TEST_EQUALS(238, poly_evaluate(table.full_table, invert, 32),"evaluate polynomial a @ 32");
+	ASSERT_TEST_EQUALS(238, poly_evaluate(table.multiply_table, invert, 32),"evaluate polynomial a @ 32");
 
 	poly_s setup	= rs_setup_eval_poly_sse(nsrc_poly);
 	ff_t retvalue = poly_evaluate_sse(&table, setup, 5);
@@ -111,7 +111,7 @@ int test_fecc()
 	clock_t time1 = clock();
 	for (size_t i = 0; i < COUNT_ITERATE; i++)
 	{
-			volatile ff_t in1 = poly_evaluate(table.full_table, nsrc_poly, 42);
+			volatile ff_t in1 = poly_evaluate(table.multiply_table, nsrc_poly, 42);
 	}
 
 	clock_t time2	= clock();
