@@ -121,12 +121,13 @@ void rs_encode(rs_encode_s *rs_info)
 FECC_INLINE
 void rs_calculate_syndromes(rs_decode_s *rs_info)
 {
-	poly_s msg_in	= rs_setup_eval_poly_sse_noinvert(rs_info->message_in_buffer);
+	poly_s msg_in	= rs_setup_poly_sse(rs_info->message_in_buffer);
 	for (size_t i = 0; i < rs_info->field_ecc_length; i++)
 	{
 		rs_info->syndromes.memory[i + 1]	= 
 			poly_evaluate_sse(&rs_info->field_table, msg_in, i);
 	}
+	poly_free(msg_in);
 }
 
 /*
@@ -137,6 +138,7 @@ void rs_calculate_syndromes(rs_decode_s *rs_info)
  * for j in range(1, len(err_loc)):
  * delta ^= galios.gf_mul_lut(err_loc[-(j + 1)], synd[i - j])
  */
+FECC_INLINE
 ff_t rs_calculate_delta(rs_decode_s *rs_info , short i)
 {
 	ff_t delta	= rs_info->syndromes.memory[i];
@@ -161,7 +163,7 @@ void rs_make_error_location_poly(rs_decode_s *rs_info)
 	POLY_RESET(err_poly);
 	poly_s *old_err_poly	=  &rs_info->error_locator_old;
 	POLY_RESET(old_err_poly);
-
+ 
 	poly_s *temp_poly	= &rs_info->error_locator_temp;
 	for (long i=0; i < rs_info->syndromes.size; ++i)
 	{
@@ -187,7 +189,7 @@ void rs_make_error_location_poly(rs_decode_s *rs_info)
 			poly_add(rs_info->field_table, &t1, *err_poly, *temp_poly);
 						
 			poly_copy(err_poly, &t1);
-			free(t1.memory);
+			poly_free(t1);
 		}
 	}
 }
@@ -224,7 +226,10 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 		
 	for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
 	{
-		ff_t val1 =	poly_evaluate(rs_info->field_table.multiply_table, invert_poly, ff_raise2_lut(&rs_info->field_table, i));
+		ff_t val1 =	poly_evaluate(rs_info->field_table.multiply_table
+			, invert_poly
+			, ff_raise2_lut(&rs_info->field_table, i));
+			
 		if (val1 == 0)
 		{
 			rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;
@@ -241,6 +246,7 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 	}
 }
 
+FECC_INLINE
 poly_s rs_invert_poly(poly_s poly)
 {
 	poly_s poly2 = poly_new(poly.size);
@@ -252,21 +258,8 @@ poly_s rs_invert_poly(poly_s poly)
 	return(poly2);
 }
 
-poly_s rs_setup_eval_poly_sse(poly_s poly)
-{
-	short alignment	= ALLOCATE_ALIGNMENT(poly.size);
-	short diff	= alignment - poly.size;
-	poly_s poly2	= poly_new(alignment);
-
-	for (size_t i = 1; i <= poly.size; i++)
-	{
-		poly2.memory[diff + poly.size - i]	= poly.memory[i - 1];
-	}
-	return (poly2);
-}
-
 FECC_INLINE
-poly_s rs_setup_eval_poly_sse_noinvert(poly_s poly)
+poly_s rs_setup_poly_sse(poly_s poly)
 {
 	short alignment	= ALLOCATE_ALIGNMENT(poly.size);
 	short diff	= alignment - poly.size;

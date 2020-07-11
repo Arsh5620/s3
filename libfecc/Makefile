@@ -1,9 +1,10 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
-# COMMONFLAGS=-Wall -std=gnu99
-# CFLAGS =-pg -O3
-CFLAGS = -Ofast
+# profile or debugging flags no longer required
+# will be using vtune for profiling on Intel
+# CFLAGS = -O0 -ggdb
+CFLAGS = -Ofast -flto -ggdb
 
 HEADERFILES=$(shell find . -type f -name "*.h")
 SOURCEFILES=$(shell find . -type f -name "*.c")

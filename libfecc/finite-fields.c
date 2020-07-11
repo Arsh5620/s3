@@ -180,6 +180,32 @@ ff_t ff_multiply_lut(ff_t *full_table, ff_t x, ff_t y)
 }
 
 /**
+ * Before using partial modified lut, full lut segmentation should be done.
+ * Basically make sure that you have the full FF_SIZE lut table already 
+ * setup using FF_TABLE_MULT_MODIFIED for the appropriate value of x
+ */
+FECC_INLINE
+ff_t ff_multiply_modified_lut(ff_t *partial_table, ff_t y)
+{
+	return partial_table[y];
+}
+
+FECC_INLINE
+ff_t ff_multiply2(ff_t *full_table, unsigned short x, ff_t irr_p)
+{
+	/*
+	 * https://en.wikipedia.org/wiki/Finite_field_arithmetic#Implementation_tricks
+	 */
+	x <<=1;
+
+	if (x & 0x100)
+	{
+		FF_SUBSTRACTION_INPLACE(x, irr_p);
+	}
+	return x;
+}
+
+/**
  * Please refer to the article 
  * http://web.eecs.utk.edu/~jplank/plank/papers/FAST-2013-GF.pdf
  * for more information on how this works

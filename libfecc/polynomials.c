@@ -45,11 +45,12 @@ FECC_INLINE
 ff_t poly_evaluate(ff_t *multiply_table, poly_s poly, short evaluate_at)
 {
 	ff_t eval	= poly.memory[0];
+	ff_t *modified_lut	= (multiply_table + FF_TABLE_MULT_MODIFIED(evaluate_at));
 
 	for (size_t i = 1; i < poly.size; i++)
 	{
-		ff_t lookup	= ff_multiply_lut(multiply_table, eval, evaluate_at);
-		eval	= FF_ADDITION(lookup, *(poly.memory + i));
+		eval	= FF_ADDITION
+			(ff_multiply_modified_lut(modified_lut, eval), poly.memory[i]);
 	}
 
 	return (eval);
@@ -75,12 +76,7 @@ ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root_log)
 	 * We will do regular multiplication and save ourselves some 
 	 * memory accesses.
 	 */
-	ff_t root_powers[SIMD_VECTOR_SIZE]	= {0};
-	for (char i = 0; i < SIMD_VECTOR_SIZE; i++)
-	{
-		root_powers[i]	= ff_raise2_lut(table, root_log * i);
-	}
-
+	
 	ff_t scalar_x	= ff_raise2_lut(table, root_log * SIMD_VECTOR_SIZE);
 	__m128i evaluation	= _mm_load_si128((__m128i*)(poly.memory));
 
@@ -95,35 +91,13 @@ ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root_log)
 			_mm_xor_si128(evaluation , *((__m128i*)(poly.memory + i)));
 	}
 
+	ff_t eval_value	= 0;
 	ff_t *evaluation_p	= (ff_t*) &evaluation;
 	for (size_t i = 0, j = SIMD_VECTOR_SIZE - 1; i < SIMD_VECTOR_SIZE; i++, j--)
 	{
-		root_powers[i]	= ff_multiply_lut(table->multiply_table
+		FF_ADDITION_INPLACE(eval_value, ff_multiply_lut(table->multiply_table
 			, evaluation_p[j]
-			, root_powers[i]);
-	}
-
-	/**
-	 * Code below is just an optimization of adding sizeof(__m128i)
-	 * in finite fields. Since addition in finite fields is simple XOR
-	 * we can do horizontal addition, which is we can add high part of
-	 * the vector to the lower part.
-	 * And with each XOR the size of the vector is halved and we continue
-	 * doing this until we have reached a byte(sizeof(ff_t)).
-	 * But that will take too much setup for more than what its worth, 
-	 * so we instead use long to do the XORs. 
-	 */
-	ff_t eval_value	= 0;
-	size_t v1	= 0, *v2	= (size_t*) root_powers;
-
-	for (size_t i = 0; i < (SIMD_VECTOR_SIZE / sizeof(v1)); i++)
-	{
-		FF_ADDITION_INPLACE(v1, v2[i]);
-	}
-	
-	for (size_t i = 0; i < sizeof(v1); i++)
-	{
-		FF_ADDITION_INPLACE(eval_value, ((ff_t*)(&v1))[i]);
+			, ff_raise2_lut(table, root_log * i)));
 	}
 
 	return (eval_value);

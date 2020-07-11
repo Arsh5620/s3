@@ -26,6 +26,6 @@ void poly_copy(poly_s *dest, poly_s *source);
 poly_s poly_make_copy(poly_s poly);
 poly_s ff_polynomial_mod(ff_table_s table, poly_s dividend, poly_s divisor);
 
-ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t evaluate_at);
+ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root_log);
 void poly_multiply_scalar_sse(ff_table_s table, poly_s *poly, ff_t scalar);
 #endif // _POLYNOMIALS_INCLUDE_GAURD_
