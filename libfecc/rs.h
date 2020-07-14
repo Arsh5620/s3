@@ -32,6 +32,7 @@ typedef struct rs_decode
 	poly_s error_locator_old;
 	poly_s error_locator_temp;
 	poly_s error_locations;
+	poly_s working_set;
 } rs_decode_s;
 
 rs_encode_s rs_init_encoder(ff_t n, ff_t k, short irr_p);
@@ -45,10 +46,15 @@ poly_s ff_polynomial_copy(poly_s poly);
 void rs_calculate_syndromes(rs_decode_s *rs_info);
 void rs_polynomial_append(poly_s *polynomial, ff_t monomial);
 void rs_make_error_location_poly(rs_decode_s *rs_info);
-void rs_correct_errors(rs_decode_s *rs_info);
+	void rs_correct_errors(rs_decode_s *rs_info);
 void rs_find_error_locations(rs_decode_s *rs_info);
-poly_s rs_invert_poly(poly_s poly);
-poly_s rs_setup_poly_sse(poly_s poly);
+void rs_invert_poly(poly_s *dest, poly_s poly);
+// poly_s rs_invert_poly(poly_s poly);
+void rs_drop_leading_zero(poly_s *poly);
+void rs_setup_poly_sse(poly_s *dest, poly_s src);
+// poly_s rs_setup_poly_sse(poly_s poly);
+// poly_s rs_setup_poly_sse(poly_s poly);
+
 poly_s ff_polynomial_mod(ff_table_s table
 	, poly_s dividend, poly_s divisor);
 ff_t rs_calculate_delta(rs_decode_s *rs_info , short syndrome_i);
