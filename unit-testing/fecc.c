@@ -24,12 +24,11 @@ int test_fecc()
 	poly_s b	= {.memory = b_src, 6, 6};
 
 	poly_s c	= poly_new(MAX(a.size, b.size));
-	poly_add(table, &c, a, b);
+	poly_add(&c, a, b);
 	ASSERT_MEMTEST_EQUALS(ab_src, c.memory, sizeof(ab_src), c.size, "polynomial addition test");
 
 	ff_t ac_src[]	= {0, 7, 6, 16, 28, 63, 8, 0, 26, 23, 60};
-	c	= poly_new(a.size + b.size - 1);
-	poly_multiply(table, &c, a, b);
+	c	= poly_multiply(table, a, b);
 	ASSERT_MEMTEST_EQUALS(ac_src, c.memory, sizeof(ac_src), c.size, "polynomial multiplication test");
 
 	ff_t *acopy_src	= aligned_alloc(16, 16);
@@ -52,12 +51,18 @@ int test_fecc()
 	  11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9};
 	poly_s nsrc_poly	= {.memory = nsrc, 191, 191};
 
-	ASSERT_TEST_EQUALS(90, poly_evaluate(table.multiply_table, nsrc_poly, 32),"evaluate polynomial a @ 32");
-
-	poly_s setup	= rs_setup_poly_sse(nsrc_poly);
+	ff_t *modified_lut	= table.multiply_table + FF_TABLE_MULT_MODIFIED(32);
+	ASSERT_TEST_EQUALS(90, poly_evaluate_modified(modified_lut, nsrc_poly),"evaluate polynomial a @ 32");
+	poly_s poly_new1	= poly_new(257);
+	rs_setup_poly_sse(&poly_new1, nsrc_poly);
 	// poly_print("setup", setup);
-	ff_t retvalue = poly_evaluate_sse(&table, setup, 5);
+	ff_t retvalue = poly_evaluate_sse(&table, poly_new1, 5);
 	ASSERT_TEST_EQUALS(90, retvalue, "poly evaluate sse @ 32");
+
+	// poly_s setup	= rs_setup_poly_sse(nsrc_poly);
+	// // poly_print("setup", setup);
+	// ff_t retvalue = poly_evaluate_sse(&table, setup, 5);
+	// ASSERT_TEST_EQUALS(90, retvalue, "poly evaluate sse @ 32");
 
 	ff_t gen_poly_val[]	= {1, 29, 196, 111, 163, 112, 74, 10, 105, 105, 139, 132, 151, 32, 134, 26};
 	poly_s generator	= rs_make_generator_polynomial(table, 15);
@@ -109,9 +114,10 @@ int test_fecc()
 	#include <time.h>
 	#define COUNT_ITERATE 10000
 	clock_t time1 = clock();
+	modified_lut	= (table.multiply_table + FF_TABLE_MULT_MODIFIED(42));
 	for (size_t i = 0; i < COUNT_ITERATE; i++)
 	{
-			volatile ff_t in1 = poly_evaluate(table.multiply_table, nsrc_poly, 42);
+			volatile ff_t in1 = poly_evaluate_modified(modified_lut, nsrc_poly);
 	}
 
 	clock_t time2	= clock();
