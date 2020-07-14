@@ -7,50 +7,109 @@ galios.init_tables(prime)
 def rs_print_poly(string, poly):
 	print("poly: " + string)
 	for ii in range(0, len(poly)):
-		print(str(poly[ii]))
+		print("poly_val: " + str(poly[ii]))
 	print("")
 
+#
+# def rs_find_error_locator(synd, nsym):
+# 	err_loc = [1]
+# 	old_loc = [1]
+#
+# 	for i in range(0, nsym):
+# 		delta = synd[i]
+# 		for j in range(1, len(err_loc)):
+# 			delta ^= galios.gf_mul_lut(err_loc[-(j + 1)], synd[i - j])
+# 		# delta = S_{i + v} + Λ1 S_{i + v − 1} + .... + Λ v S_{i} = 0 for i = 0, .... , 2t-v-1
+# 		# d\gets S_{k}+C_{1}S_{k-1}+\cdots +C_{L}S_{k-L}.
+# 		old_loc = old_loc + [0]
+#
+# 		if delta != 0:
+# 			if len(old_loc) > len(err_loc):
+# 				new_loc = galios.gf_poly_multiply_scalar(old_loc, delta)
+# 				old_loc = galios.gf_poly_multiply_scalar(err_loc, galios.gf_inverse_lut(delta))
+# 				err_loc = new_loc
+# 			scalar = galios.gf_poly_multiply_scalar(old_loc, delta)
+# 			err_loc = galios.gf_poly_add(err_loc, scalar)
+# 	# Let C(x) be an instance of Λ(x), B(x) is C(x) for last iteration.
+# 	# C(x) is defined as C(x) = (1 + C1x)(1 + C2x) ... (1 + Cvx)
+# 	# C(x)=C_{L}x^{L}+C_{L-1}x^{L-1}+\cdots +C_{2}x^{2}+C_{1}x+1
+# 	# then after we have calculated delta,
+# 	# C(x) is initialized to 1x^0
+# 	# L is the current number of assumed errors, and initialized to zero.
+# 	# N is the total number of syndromes.
+# 	# n is used as the main iterator and to index the syndromes from 0 to N−1.
+# 	# B(x) is a copy of the last C(x) since L was updated and initialized to 1.
+# 	# b is a copy of the last discrepancy d since L was updated and initialized to 1.
+# 	# m is the number of iterations since L, B(x), and b were updated and initialized to 1.
+# 	# **
+# 	# C(x)\gets C(x)-(d/b)x^{m}B(x).
+# 	# Here if we were to calculate C(x) after it is adjusted the delta should be zero.
+#
+# 	while len(err_loc) and err_loc[0] == 0:
+# 		del err_loc[0]
+# 	rs_print_poly("error loc" , err_loc)
+# 	errs = len(err_loc) - 1
+# 	print(str(errs) + "is the number of errors")
+# 	print(str(len(err_loc)) + "is the number of nsym")
+# 	if errs * 2 > nsym:
+# 		raise Exception("Too many errors to correct")
+# 	return err_loc
 
-def rs_find_error_locator(synd, nsym):
-	err_loc = [1]
-	old_loc = [1]
+def rs_find_error_locator(synd, nsym, erase_loc=None, erase_count=0):
+    '''Find error/errata locator and evaluator polynomials with Berlekamp-Massey algorithm'''
+    if erase_loc: # if the erasure locator polynomial is supplied, we init with its value, so that we include erasures in the final locator polynomial
+        err_loc = list(erase_loc)
+        old_loc = list(erase_loc)
+    else:
+        err_loc = [1] # This is the main variable we want to fill, also called Sigma in other notations or more formally the errors/errata locator polynomial.
+        old_loc = [1] # BM is an iterative algorithm, and we need the errata locator polynomial of the previous iteration in order to update other necessary variables.
+    #L = 0 # update flag variable, not needed here because we use an alternative equivalent way of checking if update is needed (but using the flag could potentially be faster depending on if using length(list) is taking linear time in your language, here in Python it's constant so it's as fast.
 
-	for i in range(0, nsym):
-		delta = synd[i]
-		for j in range(1, len(err_loc)):
-			delta ^= galios.gf_mul_lut(err_loc[-(j + 1)], synd[i - j])
-		# delta = S_{i + v} + Λ1 S_{i + v − 1} + .... + Λ v S_{i} = 0 for i = 0, .... , 2t-v-1
-		# d\gets S_{k}+C_{1}S_{k-1}+\cdots +C_{L}S_{k-L}.
-		old_loc = old_loc + [0]
+    # Fix the syndrome shifting: when computing the syndrome, some implementations may prepend a 0 coefficient for the lowest degree term (the constant). This is a case of syndrome shifting, thus the syndrome will be bigger than the number of ecc symbols (I don't know what purpose serves this shifting). If that's the case, then we need to account for the syndrome shifting when we use the syndrome such as inside BM, by skipping those prepended coefficients.
+    # Another way to detect the shifting is to detect the 0 coefficients: by definition, a syndrome does not contain any 0 coefficient (except if there are no errors/erasures, in this case they are all 0). This however doesn't work with the modified Forney syndrome, which set to 0 the coefficients corresponding to erasures, leaving only the coefficients corresponding to errors.
+    synd_shift = 0
+    if len(synd) > nsym: synd_shift = len(synd) - nsym
 
-		if delta != 0:
-			if len(old_loc) > len(err_loc):
-				new_loc = galios.gf_poly_multiply_scalar(old_loc, delta)
-				old_loc = galios.gf_poly_multiply_scalar(err_loc, galios.gf_inverse_lut(delta))
-				err_loc = new_loc
-			scalar = galios.gf_poly_multiply_scalar(old_loc, delta)
-			err_loc = galios.gf_poly_add(err_loc, scalar)
-	# Let C(x) be an instance of Λ(x), B(x) is C(x) for last iteration.
-	# C(x) is defined as C(x) = (1 + C1x)(1 + C2x) ... (1 + Cvx)
-	# C(x)=C_{L}x^{L}+C_{L-1}x^{L-1}+\cdots +C_{2}x^{2}+C_{1}x+1
-	# then after we have calculated delta,
-	# C(x) is initialized to 1x^0
-	# L is the current number of assumed errors, and initialized to zero.
-	# N is the total number of syndromes.
-	# n is used as the main iterator and to index the syndromes from 0 to N−1.
-	# B(x) is a copy of the last C(x) since L was updated and initialized to 1.
-	# b is a copy of the last discrepancy d since L was updated and initialized to 1.
-	# m is the number of iterations since L, B(x), and b were updated and initialized to 1.
-	# **
-	# C(x)\gets C(x)-(d/b)x^{m}B(x).
-	# Here if we were to calculate C(x) after it is adjusted the delta should be zero.
+    for i in range(0, nsym-erase_count): # generally: nsym-erase_count == len(synd), except when you input a partial erase_loc and using the full syndrome instead of the Forney syndrome, in which case nsym-erase_count is more correct (len(synd) will fail badly with IndexError).
+        if erase_loc: # if an erasures locator polynomial was provided to init the errors locator polynomial, then we must skip the FIRST erase_count iterations (not the last iterations, this is very important!)
+            K = erase_count+i+synd_shift
+        else: # if erasures locator is not provided, then either there's no erasures to account or we use the Forney syndromes, so we don't need to use erase_count nor erase_loc (the erasures have been trimmed out of the Forney syndromes).
+            K = i+synd_shift
 
-	while len(err_loc) and err_loc[0] == 0:
-		del err_loc[0]
-	errs = len(err_loc) - 1
-	if errs * 2 > nsym:
-		raise Exception("Too many errors to correct")
-	return err_loc
+        # Compute the discrepancy Delta
+        # Here is the close-to-the-books operation to compute the discrepancy Delta: it's a simple polynomial multiplication of error locator with the syndromes, and then we get the Kth element.
+        #delta = gf_poly_mul(err_loc[::-1], synd)[K] # theoretically it should be gf_poly_add(synd[::-1], [1])[::-1] instead of just synd, but it seems it's not absolutely necessary to correctly decode.
+        # But this can be optimized: since we only need the Kth element, we don't need to compute the polynomial multiplication for any other element but the Kth. Thus to optimize, we compute the polymul only at the item we need, skipping the rest (avoiding a nested loop, thus we are linear time instead of quadratic).
+        # This optimization is actually described in several figures of the book "Algebraic codes for data transmission", Blahut, Richard E., 2003, Cambridge university press.
+        delta = synd[K]
+        for j in range(1, len(err_loc)):
+            delta ^= galios.gf_mul_lut(err_loc[-(j+1)], synd[K - j]) # delta is also called discrepancy. Here we do a partial polynomial multiplication (ie, we compute the polynomial multiplication only for the term of degree K). Should be equivalent to brownanrs.polynomial.mul_at().
+        print( "delta" + str(delta))#, K, delta, list(gf_poly_mul(err_loc[::-1], synd)) # debugline
+
+        # Shift polynomials to compute the next degree
+        old_loc = old_loc + [0]
+
+        # Iteratively estimate the errata locator and evaluator polynomials
+        if delta != 0: # Update only if there's a discrepancy
+            if len(old_loc) > len(err_loc): # Rule B (rule A is implicitly defined because rule A just says that we skip any modification for this iteration)
+            #if 2*L <= K+erase_count: # equivalent to len(old_loc) > len(err_loc), as long as L is correctly computed
+                # Computing errata locator polynomial Sigma
+                new_loc = galios.gf_poly_multiply_scalar(old_loc, delta)
+                old_loc = galios.gf_poly_multiply_scalar(err_loc, galios.gf_inverse_lut(delta)) # effectively we are doing err_loc * 1/delta = err_loc // delta
+                err_loc = new_loc
+                # Update the update flag
+                #L = K - L # the update flag L is tricky: in Blahut's schema, it's mandatory to use `L = K - L - erase_count` (and indeed in a previous draft of this function, if you forgot to do `- erase_count` it would lead to correcting only 2*(errors+erasures) <= (n-k) instead of 2*errors+erasures <= (n-k)), but in this latest draft, this will lead to a wrong decoding in some cases where it should correctly decode! Thus you should try with and without `- erase_count` to update L on your own implementation and see which one works OK without producing wrong decoding failures.
+
+            # Update with the discrepancy
+            err_loc = galios.gf_poly_add(err_loc, galios.gf_poly_multiply_scalar(old_loc, delta))
+
+    # Check if the result is correct, that there's not too many errors to correct
+    while len(err_loc) and err_loc[0] == 0: del err_loc[0] # drop leading 0s, else errs will not be of the correct size
+    errs = len(err_loc) - 1
+    if (errs-erase_count) * 2 + erase_count > nsym:
+        raise Exception("Too many errors to correct")    # too many errors to correct
+
+    return err_loc
 
 def rs_find_errors(err_loc, nmess):  # nmess is len(msg_in)
 	'''Find the roots (ie, where evaluation = zero) of error polynomial by brute-force trial, this is a sort of Chien's search
@@ -173,28 +232,12 @@ fecc = 8
 
 message = galios.rs_encode_msg(msg_in, fecc)
 
-print(str(message))
 message[3] = 0
 message[7] = 0
 message[8] = 0
 
 syndrome = galios.rs_calc_syndromes(message, fecc)
-print(str(syndrome))
 error_locator_poly = rs_find_error_locator(syndrome, fecc)
 rs_print_poly("error locator", error_locator_poly)
 error_poly = rs_find_errors(error_locator_poly[::-1], len(message))
-poly = [7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7,
-9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7,
-9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7
-, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9,
-7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9,
- 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7,
- 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9,
- 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 11, 11, 11, 11, 11, 0];
-print("poly evaluate is " + str(galios.gf_poly_eval(poly, 42)))
 actual = rs_correct_errata(message, syndrome, error_poly)
-
-a=[0, 1, 2, 3, 4, 5]
-b=[7, 8, 9, 10, 11, 12]
-
-rs_print_poly("remainder", galios.gf_poly_div(b, a))

@@ -93,13 +93,10 @@ int test_fecc()
 	ASSERT_MEMTEST_EQUALS(syndromes, decode.syndromes.memory
 		, sizeof(syndromes), decode.syndromes.size, "rs syndromes test");
 
-	rs_make_error_location_poly(&decode);
-	ff_t rs_err_locator_poly[]	= {0, 70, 89, 111, 1};
+	rs_make_error_locator_poly(&decode);
+	ff_t rs_err_locator_poly[]	= {70, 89, 111, 1};
 	ASSERT_MEMTEST_EQUALS(rs_err_locator_poly, decode.error_locator.memory
 		, sizeof(rs_err_locator_poly), decode.error_locator.size, "rs error locator test");
-	
-	decode.error_locator.memory ++;
-	decode.error_locator.size --;
 
 	rs_find_error_locations(&decode);
 	ff_t rs_err_locations[]	= {8, 7, 3};

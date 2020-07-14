@@ -74,5 +74,5 @@
 		"ranges": "cpp",
 		"valarray": "cpp"
 	},
-	"python.pythonPath": "/sbin/python"
+	"python.pythonPath": "/usr/bin/python2"
 }

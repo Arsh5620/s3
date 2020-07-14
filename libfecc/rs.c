@@ -63,6 +63,7 @@ void rs_close_decoder(rs_decode_s *decoder)
 	poly_free(decoder->message_in_buffer);
 	poly_free(decoder->message_out_buffer);
 	poly_free(decoder->generator);
+	poly_free(decoder->working_set);
 	ff_table_free(decoder->field_table);
 }
 
@@ -160,11 +161,10 @@ void rs_drop_leading_zero(poly_s *poly)
 	poly->size	-= index;
 }
 
-
 /**
  * Berlekamp-Massey Algorithm
  */
-void rs_make_error_location_poly(rs_decode_s *rs_info)
+void rs_make_error_locator_poly(rs_decode_s *rs_info)
 {
 	poly_s *err_poly	= &rs_info->error_locator;
 	POLY_RESET(err_poly);
@@ -172,9 +172,14 @@ void rs_make_error_location_poly(rs_decode_s *rs_info)
 	POLY_RESET(old_err_poly);
  
 	poly_s *temp_poly	= &rs_info->error_locator_temp;
-	for (long i=0; i < rs_info->syndromes.size; ++i)
+	for (long i=0; i < rs_info->field_ecc_length; ++i)
 	{
-		ff_t delta	= rs_calculate_delta(rs_info, i);
+		ff_t syndrome_shift	= 
+			rs_info->syndromes.size > rs_info->field_ecc_length 
+			? rs_info->syndromes.size - rs_info->field_ecc_length 
+			: 0;
+
+		ff_t delta	= rs_calculate_delta(rs_info, i + syndrome_shift);
 		rs_polynomial_append(old_err_poly, 0);
 
 		if (delta != 0)
@@ -218,28 +223,27 @@ poly_s rs_make_error_evaluator_poly(rs_decode_s *decode)
 void rs_find_error_locations(rs_decode_s *rs_info)
 {
 	rs_invert_poly(&rs_info->working_set, rs_info->error_locator);
-	// poly_s invert	= rs_invert_poly(rs_info->error_locator);
 	rs_info->error_locations.size	= rs_info->error_locator.size - 1;
 	
 	if (rs_info->error_locations.size > 0)
 	{
-	for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
-	{
-		ff_t *multiply_table	= (rs_info->field_table.multiply_table 
-			+ FF_TABLE_MULT_MODIFIED(ff_raise2_lut(&rs_info->field_table, i)));
-
-		ff_t val1 =	poly_evaluate_modified(multiply_table, rs_info->working_set);
-			
-		if (val1 == 0)
+		for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
 		{
-			rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;
-			
-			if(j == rs_info->error_locations.size)
+			ff_t *multiply_table	= (rs_info->field_table.multiply_table 
+				+ FF_TABLE_MULT_MODIFIED(ff_raise2_lut(&rs_info->field_table, i)));
+	
+			ff_t val1 =	poly_evaluate_modified(multiply_table, rs_info->working_set);
+				
+			if (val1 == 0)
 			{
-				break;
+				rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;
+
+				if(j == rs_info->error_locations.size)
+				{
+					break;
+				}
 			}
 		}
-	}
 	}
 }
 

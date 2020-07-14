@@ -127,11 +127,11 @@ void poly_add(poly_s *result, poly_s poly_a, poly_s poly_b)
 FECC_INLINE
 void poly_add_inplace(poly_s *dest, poly_s *src)
 {
-	size_t diff	= dest->size - src->size;
+	ff_t *memory_dest	= dest-> memory + (dest->size - src->size);
 	// Do an inplace addition in finite field. 
 	for (size_t i = 0; i < src->size; i++)
 	{
-		FF_ADDITION_INPLACE(dest->memory[i + diff], src->memory[i]);
+		FF_ADDITION_INPLACE(memory_dest[i], src->memory[i]);
 	}
 }
 
