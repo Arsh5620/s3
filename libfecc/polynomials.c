@@ -144,20 +144,6 @@ void poly_append(poly_s poly_a, poly_s poly_b)
 	memcpy(poly_a.memory + poly_a.size - memcpy_size, poly_b.memory, memcpy_size);
 }
 
-/**
- * Regular poly scalar multiplication, multiplies entire polynomial by
- * given scalar value in place. 
- */
-FECC_INLINE
-void poly_multiply_scalar(ff_table_s table, poly_s *poly, ff_t scalar)
-{
-	for (size_t i = 0; i < poly->size; i++)
-	{
-		poly->memory[i]	= 
-			ff_multiply_lut(table.multiply_table, poly->memory[i], scalar);
-	}
-}
-
 FECC_INLINE
 poly_s poly_free(poly_s poly)
 {
@@ -181,14 +167,6 @@ void poly_copy(poly_s *dest, poly_s *source)
 	dest->size	= source->size;
 }
 
-FECC_INLINE
-poly_s poly_make_copy(poly_s poly)
-{
-	poly_s copy	= poly_new(poly.size);
-	memcpy(copy.memory, poly.memory, sizeof(ff_t) * poly.size);
-	return (copy);
-}
-
 /**
  * TODO
  */
@@ -196,7 +174,9 @@ FECC_UNROLL_LOOPS FECC_INLINE
 poly_s ff_polynomial_mod(ff_table_s table, poly_s dividend, poly_s divisor)
 {
 	long diff	= dividend.size - (divisor.size - 1);
-	poly_s dividend_copy	= poly_make_copy(dividend);
+	poly_s dividend_copy	= poly_new(dividend.size);
+	poly_copy(&dividend_copy, &dividend);
+
 	poly_s remainder	= poly_new(divisor.size - 1);
 
 	for (size_t i = 0; i < diff; i++)
@@ -220,7 +200,7 @@ poly_s ff_polynomial_mod(ff_table_s table, poly_s dividend, poly_s divisor)
 }
 
 FECC_INLINE
-void ff_polynomial_mod_x(ff_table_s table, poly_s *poly, short x_degree)
+void ff_polynomial_trim_x(ff_table_s table, poly_s *poly, short x_degree)
 {
 	memmove(poly->memory, poly->memory + (poly->size - x_degree), x_degree);
 	poly->size	= x_degree;

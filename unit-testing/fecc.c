@@ -37,11 +37,6 @@ int test_fecc()
 		*(acopy_src + i)	= i;
 	}
 
-	poly_s a_cpy	= {.memory = acopy_src, 16, 16};
-	ff_t ad_src[]	= {0, 12, 24, 20, 48, 60, 40, 36, 96, 108, 120, 116, 80, 92, 72, 68};
-	poly_multiply_scalar(table, &a_cpy, 12);
-	ASSERT_MEMTEST_EQUALS(ad_src, a_cpy.memory, sizeof(ad_src), a_cpy.size, "polynomial scalar mult test");
-
 	ff_t nsrc[]	= {7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9
 	, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 
 	9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7, 9, 11, 9, 15, 9, 7,

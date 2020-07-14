@@ -101,7 +101,6 @@ void rs_forward_copy(poly_s dest, poly_s src)
  * We are using Synthetic Division, read more at
  * https://en.wikipedia.org/wiki/Synthetic_division
  */
-
 void rs_encode(rs_encode_s *rs_info)
 {
 	rs_forward_copy(rs_info->message_out_buffer, rs_info->message_in_buffer);
@@ -114,6 +113,35 @@ void rs_encode(rs_encode_s *rs_info)
 	poly_free(remainder);
 }
 
+FECC_INLINE
+void rs_decode(rs_decode_s *decode)
+{
+	rs_calculate_syndromes(decode);
+	
+	if (decode->result != DECODE_STATUS_NONE)
+	{
+		return;
+	}
+
+	rs_make_error_locator_poly(decode);
+	rs_drop_leading_zeroes(&decode->error_locator);
+
+	if ((decode->error_locator.size - 1) * 2 > decode->field_ecc_length)
+	{
+		decode->result	= DECODE_STATUS_BERLEKAMP_MASSEY_FAILED;
+		return;
+	}
+
+	rs_find_error_locations(decode);
+
+	if (decode->result != DECODE_STATUS_NONE)
+	{
+		return;
+	}
+
+	rs_correct_errors(decode);
+}
+
 /**
  * Using Horner's Theorm, we are calculating syndromes at ecc_length locations
  * Calculating syndromes is very straight forward and more information is at
@@ -123,20 +151,32 @@ FECC_INLINE
 void rs_calculate_syndromes(rs_decode_s *rs_info)
 {
 	rs_setup_poly_sse(&rs_info->working_set, rs_info->message_in_buffer);
+	char no_error	= 1;
 	for (size_t i = 0; i < rs_info->field_ecc_length; i++)
 	{
-		rs_info->syndromes.memory[i + 1]	= 
+		ff_t syndrome	= 
 			poly_evaluate_sse(&rs_info->field_table, rs_info->working_set, i);
+		rs_info->syndromes.memory[i + 1]	= syndrome;
+		
+		if (syndrome != 0)
+		{
+			 no_error	= 0;
+		}
+	}
+
+	if (no_error == 1)
+	{
+		rs_info->result	= DECODE_STATUS_NO_ERRORS_FOUND;
 	}
 }
 
 /*
  * In rs_calculate_delta what we are doing here is 
- * we are calculate the value of delta for berlekamp-massey algorithm
+ * we are calculating the value of delta for berlekamp-massey algorithm
  * and we do that by multiplying the error locator by syndromes and 
- * calculating the addition value into delta
+ * calculating the horizontal sum into delta
  * for j in range(1, len(err_loc)):
- * delta ^= galios.gf_mul_lut(err_loc[-(j + 1)], synd[i - j])
+ * 		delta ^= galios.gf_mul_lut(err_loc[-(j + 1)], synd[i - j])
  */
 FECC_INLINE
 ff_t rs_calculate_delta(rs_decode_s *rs_info , short i)
@@ -154,11 +194,15 @@ ff_t rs_calculate_delta(rs_decode_s *rs_info , short i)
 }
 
 FECC_INLINE
-void rs_drop_leading_zero(poly_s *poly)
+void rs_drop_leading_zeroes(poly_s *poly)
 {
-	int index	= 1;
-	memmove(poly->memory, poly->memory + index, poly->size - index);
-	poly->size	-= index;
+	int index	= 0;
+	for (; index < poly->size && poly->memory[index] == 0; index++);
+	if (index)
+	{
+		memmove(poly->memory, poly->memory + index, poly->size - index);
+		poly->size	-= index;
+	}
 }
 
 /**
@@ -167,34 +211,33 @@ void rs_drop_leading_zero(poly_s *poly)
 void rs_make_error_locator_poly(rs_decode_s *rs_info)
 {
 	poly_s *err_poly	= &rs_info->error_locator;
+	poly_s *old_poly	= &rs_info->error_locator_old;
 	POLY_RESET(err_poly);
-	poly_s *old_err_poly	=  &rs_info->error_locator_old;
-	POLY_RESET(old_err_poly);
+	POLY_RESET(old_poly);
  
 	poly_s *temp_poly	= &rs_info->error_locator_temp;
 	for (long i=0; i < rs_info->field_ecc_length; ++i)
 	{
-		ff_t syndrome_shift	= 
-			rs_info->syndromes.size > rs_info->field_ecc_length 
-			? rs_info->syndromes.size - rs_info->field_ecc_length 
-			: 0;
+		ff_t syndrome_shift	= (rs_info->syndromes.size > rs_info->field_ecc_length 
+			? rs_info->syndromes.size - rs_info->field_ecc_length : 0 );
 
 		ff_t delta	= rs_calculate_delta(rs_info, i + syndrome_shift);
-		rs_polynomial_append(old_err_poly, 0);
+		rs_polynomial_append(old_poly, 0);
 
 		if (delta != 0)
 		{
-			if (old_err_poly->size > err_poly->size)
+			if (old_poly->size > err_poly->size)
 			{
-				poly_copy(temp_poly, old_err_poly);
+				poly_copy(temp_poly, old_poly);
 				poly_multiply_scalar_sse(rs_info->field_table, temp_poly, delta);
 				ff_t poly_inverse	= ff_inverse_lut(rs_info->field_table, delta);
-				poly_copy(old_err_poly, err_poly);
-				poly_multiply_scalar_sse(rs_info->field_table, old_err_poly
+				poly_copy(old_poly, err_poly);
+				poly_multiply_scalar_sse(rs_info->field_table, old_poly
 					, poly_inverse);
 				poly_copy(err_poly, temp_poly);
 			}
-			poly_copy(temp_poly, old_err_poly);
+
+			poly_copy(temp_poly, old_poly);
 			poly_multiply_scalar_sse(rs_info->field_table, temp_poly, delta);
 			poly_add_inplace(err_poly, temp_poly);
 		}
@@ -214,7 +257,7 @@ poly_s rs_make_error_evaluator_poly(rs_decode_s *decode)
 	rs_invert_poly(&decode->working_set, decode->syndromes);
 	poly_s temp_poly	=
 		poly_multiply(decode->field_table, decode->working_set, decode->error_locator);
-	ff_polynomial_mod_x(decode->field_table, &temp_poly, decode->error_locator.size + 2);
+	ff_polynomial_trim_x(decode->field_table, &temp_poly, decode->error_locator.size + 1);
 	poly_copy(&decode->error_evaluator, &temp_poly);
 	poly_free(temp_poly);
 	return (decode->error_evaluator);
@@ -227,16 +270,16 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 	
 	if (rs_info->error_locations.size > 0)
 	{
-		for (size_t i = 0, j = 0; i < rs_info->message_in_buffer.size; i++)
+		long i = 0, j = 0;
+		for (; i < rs_info->message_in_buffer.size; i++)
 		{
 			ff_t *multiply_table	= (rs_info->field_table.multiply_table 
 				+ FF_TABLE_MULT_MODIFIED(ff_raise2_lut(&rs_info->field_table, i)));
-	
-			ff_t val1 =	poly_evaluate_modified(multiply_table, rs_info->working_set);
-				
-			if (val1 == 0)
+		
+			if (poly_evaluate_modified(multiply_table, rs_info->working_set) == 0)
 			{
-				rs_info->error_locations.memory[j++]	= rs_info->message_in_buffer.size - 1 - i;
+				rs_info->error_locations.memory[j++]	= 
+					rs_info->message_in_buffer.size - 1 - i;
 
 				if(j == rs_info->error_locations.size)
 				{
@@ -244,6 +287,15 @@ void rs_find_error_locations(rs_decode_s *rs_info)
 				}
 			}
 		}
+
+		if (j != rs_info->error_locations.size)
+		{
+			rs_info->result	= DECODE_STATUS_CHIEN_SEARCH_FAILED;
+		}
+	}
+	else
+	{
+		rs_info->result	= DECODE_STATUS_NO_ERRORS_FOUND;
 	}
 }
 
@@ -264,23 +316,29 @@ void rs_setup_poly_sse(poly_s *dest, poly_s src)
 	short diff	= alignment - src.size;
 	dest->size	= alignment;
 
-	memset(dest->memory, 0, diff);
-	memcpy(dest->memory + diff, src.memory, src.size);
+	if (diff)
+	{
+		memset(dest->memory, 0, diff);
+		memcpy(dest->memory + diff, src.memory, src.size);
+	}
 }
 
 void rs_correct_errors(rs_decode_s *rs_info)
 {
-	rs_invert_poly(&rs_info->working_set, rs_info->syndromes);
 	poly_s error_evaluator	= rs_make_error_evaluator_poly(rs_info);
 	if (error_evaluator.size <=0 )
 	{
-		return ;
+		rs_info->result	= DECODE_STATUS_ERROR_EVAL_FAILED;
+		return;
 	}
-	poly_s X_poly	= poly_new(rs_info->error_locations.size);
+
+	poly_s X_poly	= rs_info->working_set;
+	X_poly.size	= rs_info->error_locations.size;
 
 	for (long i = 0; i < rs_info->error_locations.size; i++)
 	{
-		ff_t coff	= (rs_info->message_in_buffer.size - 1 - rs_info->error_locations.memory[i]);
+		ff_t coff	= (rs_info->message_in_buffer.size -
+			 rs_info->error_locations.memory[i] - 1);
 		short l = 255 - coff;
 		X_poly.memory[i]	= ff_raise_lut(rs_info->field_table, 2, -l);
 	}
@@ -290,27 +348,32 @@ void rs_correct_errors(rs_decode_s *rs_info)
 
 	for (long i = 0; i < X_poly.size; i++)
 	{
-		ff_t X_inv	= ff_inverse_lut(rs_info->field_table, X_poly.memory[i]);
+		ff_t *multiply_table	= rs_info->field_table.multiply_table;
+		ff_t X_inverse	= ff_inverse_lut(rs_info->field_table, X_poly.memory[i]);
 		ff_t err_loc_prime = 1;
 
 		for (size_t j = 0; j < X_poly.size; j++)
 		{
 			if (i != j)
 			{
-				// in case of i = j then the inverse will cancel out the X and the final 
-				// result will be 1. 
-				err_loc_prime = ff_multiply_lut(rs_info->field_table.multiply_table, err_loc_prime, 
-					FF_SUBSTRACTION(1, ff_multiply_lut(rs_info->field_table.multiply_table, X_inv, X_poly.memory[j])));
+				ff_t temp1	= FF_SUBSTRACTION(1, ff_multiply_lut
+					(multiply_table, X_inverse, X_poly.memory[j]));
+
+				err_loc_prime = ff_multiply_lut(multiply_table
+					, err_loc_prime, temp1);					
 			}
 		}
-		ff_t *modified_lut	= (rs_info->field_table.multiply_table + FF_TABLE_MULT_MODIFIED(X_inv));
-		ff_t polynomial_eval	= poly_evaluate_modified(modified_lut, error_evaluator);
-		polynomial_eval	= ff_multiply_lut(rs_info->field_table.multiply_table, X_poly.memory[i], polynomial_eval);
-		ff_t magnitude	= ff_divide_lut(rs_info->field_table, polynomial_eval, err_loc_prime);
+		ff_t *modified_lut		= 
+			multiply_table + FF_TABLE_MULT_MODIFIED(X_inverse);
+			
+		ff_t eval	= poly_evaluate_modified(modified_lut, error_evaluator);
+		eval	= ff_multiply_lut(multiply_table, eval, X_poly.memory[i]);
+		
+		ff_t magnitude	= 
+			ff_divide_lut(rs_info->field_table, eval, err_loc_prime);
 
 		ff_t err_location	= rs_info->error_locations.memory[i];
-		FF_ADDITION_INPLACE(rs_info->message_out_buffer.memory[err_location], magnitude);
+		FF_ADDITION_INPLACE(rs_info->message_out_buffer.memory[err_location]
+			, magnitude);
 	}
-
-	poly_free(X_poly);
 }

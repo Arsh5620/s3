@@ -14,19 +14,14 @@ typedef struct poly
  
 poly_s poly_new(short size);
 poly_s poly_free(poly_s poly);
-poly_s poly_multiply(ff_table_s table, poly_s poly_a, poly_s poly_b);
-ff_t poly_evaluate(ff_t *full_table, poly_s poly, short evaluate_at);
-void poly_add(poly_s *result, poly_s poly_a, poly_s poly_b);
-void poly_add_inplace(poly_s *dest, poly_s *src);
-// size_t poly_add_sse(ff_table_s table, poly_s *result, poly_s poly_a, poly_s poly_b);
 void poly_append(poly_s poly_a, poly_s poly_b);
-void poly_multiply_scalar(ff_table_s table, poly_s *poly, ff_t scalar);
 void poly_print(char *string, poly_s poly);
 void poly_copy(poly_s *dest, poly_s *source);
-poly_s poly_make_copy(poly_s poly);
+void poly_add(poly_s *result, poly_s poly_a, poly_s poly_b);
+void poly_add_inplace(poly_s *dest, poly_s *src);
 poly_s ff_polynomial_mod(ff_table_s table, poly_s dividend, poly_s divisor);
-void ff_polynomial_mod_x(ff_table_s table, poly_s *poly, short x_degree);
-
+void ff_polynomial_trim_x(ff_table_s table, poly_s *poly, short x_degree);
+poly_s poly_multiply(ff_table_s table, poly_s poly_a, poly_s poly_b);
 ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root_log);
 ff_t poly_evaluate_modified(ff_t *modified_multiply_table, poly_s poly);
 void poly_multiply_scalar_sse(ff_table_s table, poly_s *poly, ff_t scalar);
