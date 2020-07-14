@@ -19,18 +19,19 @@ poly_s poly_new(short size)
  * algorithms such as Karatsuba. 
  */
 FECC_INLINE
-void poly_multiply(ff_table_s table, poly_s *result
-	, poly_s poly_a, poly_s poly_b)
+poly_s poly_multiply(ff_table_s table, poly_s poly_a, poly_s poly_b)
 {
+	poly_s result	= poly_new(poly_a.size + poly_b.size - 1);
 	for (size_t i = 0; i < poly_a.size; i++)
 	{
+		ff_t *mod_table	= table.multiply_table + FF_TABLE_MULT_MODIFIED(poly_a.memory[i]);
 		for (size_t j = 0; j < poly_b.size; j++)
 		{
-			FF_ADDITION_INPLACE
-			(result->memory[i + j], ff_multiply_lut
-				(table.multiply_table, poly_a.memory[i], poly_b.memory[j]));
-		}	
+			FF_ADDITION_INPLACE(result.memory[i + j], ff_multiply_modified_lut
+				(mod_table, poly_b.memory[j]));
+		}
 	}
+	return (result);
 }
 
 /**
@@ -42,15 +43,14 @@ void poly_multiply(ff_table_s table, poly_s *result
  * See Estrin's Method at https://en.wikipedia.org/wiki/Estrin%27s_scheme
  */
 FECC_INLINE
-ff_t poly_evaluate(ff_t *multiply_table, poly_s poly, short evaluate_at)
+ff_t poly_evaluate_modified(ff_t *modified_multiply_table, poly_s poly)
 {
 	ff_t eval	= poly.memory[0];
-	ff_t *modified_lut	= (multiply_table + FF_TABLE_MULT_MODIFIED(evaluate_at));
 
 	for (size_t i = 1; i < poly.size; i++)
 	{
 		eval	= FF_ADDITION
-			(ff_multiply_modified_lut(modified_lut, eval), poly.memory[i]);
+			(ff_multiply_modified_lut(modified_multiply_table, eval), poly.memory[i]);
 	}
 
 	return (eval);
@@ -108,7 +108,7 @@ ff_t poly_evaluate_sse(ff_table_s *table, poly_s poly, ff_t root_log)
  * When optimizing GCC can automatically vectorize the code.
  */
 FECC_INLINE
-void poly_add(ff_table_s table, poly_s *result, poly_s poly_a, poly_s poly_b)
+void poly_add(poly_s *result, poly_s poly_a, poly_s poly_b)
 {
 	size_t result_length =  MAX(poly_a.size, poly_b.size);
 
@@ -121,6 +121,17 @@ void poly_add(ff_table_s table, poly_s *result, poly_s poly_a, poly_s poly_b)
 	{
 		FF_ADDITION_INPLACE(result->memory[i + result_length - poly_b.size]
 			, poly_b.memory[i]);
+	}
+}
+
+FECC_INLINE
+void poly_add_inplace(poly_s *dest, poly_s *src)
+{
+	size_t diff	= dest->size - src->size;
+	// Do an inplace addition in finite field. 
+	for (size_t i = 0; i < src->size; i++)
+	{
+		FF_ADDITION_INPLACE(dest->memory[i + diff], src->memory[i]);
 	}
 }
 
@@ -208,6 +219,13 @@ poly_s ff_polynomial_mod(ff_table_s table, poly_s dividend, poly_s divisor)
 	return (remainder);
 }
 
+FECC_INLINE
+void ff_polynomial_mod_x(ff_table_s table, poly_s *poly, short x_degree)
+{
+	memmove(poly->memory, poly->memory + (poly->size - x_degree), x_degree);
+	poly->size	= x_degree;
+}
+
 /**
  * Load Multiply Store using SSE shuffle multiply. 
  */
@@ -215,8 +233,7 @@ void poly_multiply_scalar_sse(ff_table_s table, poly_s *poly, ff_t scalar)
 {
 	for (size_t i = 0; i < poly->size; i += SIMD_VECTOR_SIZE)
 	{
-		__m128i filter = _mm_load_si128((__m128i*)(poly->memory + i));
-		__m128i temp = ff_multiply_lut_sse(table.ssemap, filter, scalar);
-		*(__m128i*)(poly->memory + i) = temp;
+		*(__m128i*)(poly->memory + i) 
+			= ff_multiply_lut_sse(table.ssemap, *(__m128i*)(poly->memory + i), scalar);
 	}
 }
