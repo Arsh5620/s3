@@ -40,7 +40,7 @@ rs_decode_s rs_init_decoder(ff_t n, ff_t k, short irr_p)
 	decoder.field_table	=	ff_table_new(irr_p);
 	decoder.generator	= 
 		rs_make_generator_polynomial(decoder.field_table, ecc_length);
-	short allocation_length	= ecc_length + 1;
+	short allocation_length	= ecc_length;
 	decoder.syndromes	= poly_new(allocation_length);
 	decoder.error_evaluator	= poly_new(allocation_length);
 	decoder.error_locator	= poly_new(allocation_length);
@@ -156,7 +156,7 @@ void rs_calculate_syndromes(rs_decode_s *rs_info)
 	{
 		ff_t syndrome	= 
 			poly_evaluate_sse(&rs_info->field_table, rs_info->working_set, i);
-		rs_info->syndromes.memory[i + 1]	= syndrome;
+		rs_info->syndromes.memory[i]	= syndrome;
 		
 		if (syndrome != 0)
 		{
@@ -212,16 +212,17 @@ void rs_make_error_locator_poly(rs_decode_s *rs_info)
 {
 	poly_s *err_poly	= &rs_info->error_locator;
 	poly_s *old_poly	= &rs_info->error_locator_old;
+	poly_s *temp_poly	= &rs_info->error_locator_temp;
 	POLY_RESET(err_poly);
 	POLY_RESET(old_poly);
  
-	poly_s *temp_poly	= &rs_info->error_locator_temp;
 	for (long i=0; i < rs_info->field_ecc_length; ++i)
 	{
-		ff_t syndrome_shift	= (rs_info->syndromes.size > rs_info->field_ecc_length 
-			? rs_info->syndromes.size - rs_info->field_ecc_length : 0 );
+		// ff_t syndrome_shift	= (rs_info->syndromes.size > rs_info->field_ecc_length 
+		// 	? rs_info->syndromes.size - rs_info->field_ecc_length : 0 );
 
-		ff_t delta	= rs_calculate_delta(rs_info, i + syndrome_shift);
+		// ff_t delta	= rs_calculate_delta(rs_info, i + syndrome_shift);
+		ff_t delta	= rs_calculate_delta(rs_info, i);
 		rs_polynomial_append(old_poly, 0);
 
 		if (delta != 0)
@@ -255,6 +256,9 @@ poly_s rs_make_error_evaluator_poly(rs_decode_s *decode)
 {
 	// Omega(x) = Synd(x) * Error_loc(x) mod x ^ (n-k+1)
 	rs_invert_poly(&decode->working_set, decode->syndromes);
+	decode->working_set.memory[decode->working_set.size] = 0;
+	decode->working_set.size ++;
+
 	poly_s temp_poly	=
 		poly_multiply(decode->field_table, decode->working_set, decode->error_locator);
 	ff_polynomial_trim_x(decode->field_table, &temp_poly, decode->error_locator.size + 1);
@@ -319,8 +323,8 @@ void rs_setup_poly_sse(poly_s *dest, poly_s src)
 	if (diff)
 	{
 		memset(dest->memory, 0, diff);
-		memcpy(dest->memory + diff, src.memory, src.size);
 	}
+	memcpy(dest->memory + diff, src.memory, src.size);
 }
 
 void rs_correct_errors(rs_decode_s *rs_info)
