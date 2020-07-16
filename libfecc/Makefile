@@ -4,7 +4,7 @@ CC=gcc # C language compiler
 # profile or debugging flags no longer required
 # will be using vtune for profiling on Intel
 # CFLAGS = -O0 -ggdb
-CFLAGS = -Ofast -flto -ggdb
+CFLAGS = -Ofast -flto
 
 HEADERFILES=$(shell find . -type f -name "*.h")
 SOURCEFILES=$(shell find . -type f -name "*.c")

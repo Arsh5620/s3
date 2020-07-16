@@ -84,7 +84,7 @@ int test_fecc()
 	decode.message_in_buffer	= encode.message_out_buffer;
 
 	rs_calculate_syndromes(&decode);	
-	ff_t syndromes[] = {0, 12, 132, 92, 111, 248, 220, 26, 211};
+	ff_t syndromes[] = {12, 132, 92, 111, 248, 220, 26, 211};
 	ASSERT_MEMTEST_EQUALS(syndromes, decode.syndromes.memory
 		, sizeof(syndromes), decode.syndromes.size, "rs syndromes test");
 
