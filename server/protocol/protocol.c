@@ -20,9 +20,9 @@ dbp_protocol_s dbp_connection_initialize_sync(unsigned short port)
 		
 	if (database_init(DBP_CONFIG_FILENAME) == MYSQL_SUCCESS
 		&& database_table_verify(AUTH_TABLE_CHECK
-			, AUTH_TABLE_CHECK, AUTH_TABLE_NAME, auth_binds_setup)	== SUCCESS
+			, AUTH_TABLE_CREATE, AUTH_TABLE_NAME, auth_binds_setup)	== SUCCESS
 		&&  database_table_verify(FILEMGMT_TABLE_CHECK
-			, FILEMGMT_TABLE_CHECK, FILEMGMT_TABLE_NAME
+			, FILEMGMT_TABLE_CREATE, FILEMGMT_TABLE_NAME
 			, filemgmt_binds_setup)	== SUCCESS)
 	{
 		protocol.init_complete = TRUE;

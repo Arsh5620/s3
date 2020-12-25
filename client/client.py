@@ -159,7 +159,7 @@ while(1):
 		ssock.recv(1) # just to check if the sock is open
 		exit()
 
-	filename = '/home/arshdeep/chat/client/Arshdeep.Jpeg'
+	filename = './file'
 	fin = open(filename, 'rb') # open file one.pdf to send 
 
 	file_len = os.stat(filename).st_size
