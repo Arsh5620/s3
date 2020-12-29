@@ -2,7 +2,7 @@
 #include "../build.h"
 
 #define SERVER_INFO_CONST_RESPONSE STRING	\
-	("dbp server version " __DBP_VERSION__ ", " __DBP_INFO__)
+	("DBP server version " __SERVER_VERSION__ ", " __SERVER_INFO__)
 
 long dbp_server_request_writer(dbp_response_s *response)
 {

@@ -19,3 +19,4 @@ __pycache__
 .idea
 libfecc/main
 unit-testing/main
+backup-sha/

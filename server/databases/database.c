@@ -218,6 +218,7 @@ int database_table_call1(MYSQL_STMT *stmt, string_s query
 	, MYSQL_BIND *bind, int bind_count)
 {
 	int result	= mysql_stmt_prepare(stmt, query.address, query.length);
+
 	if (result > 0)
 	{
 		mysql_stmt_close(stmt);
