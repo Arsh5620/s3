@@ -6,7 +6,7 @@
 
 #include "../general/string.h"
 #include "../networking/network.h"
-#include "../data-structures/list.h"
+#include "../ssbs/list.h"
 
 enum file_errors_enum {
 	FILE_SUCCESS

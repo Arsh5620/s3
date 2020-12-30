@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "lexer.h"
-#include "../data-structures/list.h"
+#include "../ssbs/list.h"
 
 enum parser_wait_enum {
 	PARSER_WAIT_KEY

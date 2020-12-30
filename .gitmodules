@@ -1,3 +1,6 @@
 [submodule "ssbs"]
 	path = ssbs
 	url = https://github.com/Arsh5620/ssbs
+[submodule "server/ssbs"]
+	path = server/ssbs
+	url = git@github.com:Arsh5620/ssbs.git

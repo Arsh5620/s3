@@ -15,7 +15,7 @@
 #include "../data-structures/hash_table.h"
 #include "../memdbg/memory.h"
 #include "../general/string.h"
-#include "../data-structures/list.h"
+#include "../ssbs/list.h"
 #include "../parser/parser.h"
 #include "../databases/database.h"
 #include "../dataparser/data.h"
