@@ -266,4 +266,6 @@ int dbp_request_data_headers(dbp_protocol_s *protocol, dbp_request_s *request);
 int auth_binds_setup(MYSQL *mysql);
 int dbp_auth_query(dbp_request_s *request);
 int dbp_auth_transaction(dbp_request_s *request);
+
+int dbp_copy_keyvaluepairs(my_list_s source_list, my_list_s *dest_list);
 #endif //PROTOCOL_INCLUDE_GAURD

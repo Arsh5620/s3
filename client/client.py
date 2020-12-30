@@ -4,6 +4,14 @@ import socket
 import time
 import ssl
 import os
+import sys
+parentdir = os.path.abspath("../server/ssbs/")  # noqa
+sys.path.insert(0, parentdir)  # noqa
+# pylint: disable=import-error
+from python import serializetypes  # noqa
+# pylint: disable=import-error
+from python import serialize  # noqa
+import inspect
 
 sock = socket.socket()
 
@@ -11,7 +19,8 @@ hostname = "127.0.0.1"
 
 print("Do you want to enable ssl?")
 
-want_ssl = input()
+# want_ssl = input()
+want_ssl = False
 
 ssock = 0
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
@@ -76,6 +85,19 @@ class PacketResponseReader:
         return(self.data_length)
 
 
+def binary_serialize(pair_string):
+    pairs = pair_string.split("\n")
+    serialize_memory = bytearray()
+    for pair in pairs:
+        key_value = pair.split("=")
+        print(key_value)
+        if (len(key_value) >= 2):
+            serialize.serializer_add(
+                serialize_memory, key_value[0], key_value[1])
+    serialize.serializer_add_eof(serialize_memory)
+    return serialize_memory
+
+
 while(1):
     magic0 = 0xD010000000000000
     magic1 = 0xD0D1000000000000
@@ -83,27 +105,27 @@ while(1):
     magic_invalid1 = 0x00D1000000000000
 
     file_name_1 = "root/sdcard/storage/DCIM/Arshdeep.Jpeg"
-    auth = "username=arshdeep\nsecret=\"SomeSecretKeyWhichIsReallyLong\"\n"
+    auth = "username=arshdeep\nsecret=SomeSecretKeyWhichIsReallyLong\n"
 
     key_value_pairs = ("action=create\n"
-                       "filename=\"" + file_name_1 + "\"\n"
+                       "filename=" + file_name_1 + "\n"
                        "crc=00565423\n" + auth)
     key_value_pair_nonparseable = ("action.==create\n"
-                                   "filename~\"" + file_name_1 + "\"\n"
+                                   "filename~ " + file_name_1 + "\n"
                                    "folder\n"
                                    "crc=jkhkjhkk\n")
     key_value_pair_onlykeys = ("action=create\n"
-                               "filename=\"\"\n"
-                               "folder=\"\"\n"
+                               "filename=\n"
+                               "folder=\n"
                                "crc=1234\n")
     key_value_pair_update = ("action=update\n"
-                             "filename=\"" + file_name_1 + "\"\n"
+                             "filename=" + file_name_1 + "\n"
                              "updateat=20000\n"
-                             "trim=\"0\"\n" + auth)
+                             "trim=0\n" + auth)
     key_value_pair_delete = ("action=delete\n"
-                             "filename=\"" + file_name_1 + "\"\n" + auth)
+                             "filename=" + file_name_1 + "\n" + auth)
     key_value_pair_request = ("action=request\n"
-                              "filename=\"" + file_name_1 + "\"\n" + auth)
+                              "filename=" + file_name_1 + "\n" + auth)
 
     key_value_pair_thin = ("action=create\n")
     key_value_pair_invalidaction = ("action=whatever\n")
@@ -168,11 +190,11 @@ while(1):
     if (data_entered != "A" and data_entered != "B" and data_entered != "C"):
         magic_packet += file_len
 
-    header_keys = header_pairs
-    header_keys += ' ' * (256 - len(header_keys))
+    header_keys = binary_serialize(header_pairs)
+    header_keys += (' ' * (256 - len(header_keys))).encode()
 
     ssock.send(magic_packet.to_bytes(8, byteorder="little"))
-    ssock.send(header_keys.encode())
+    ssock.send(header_keys)
 
     # now we have send the request to the server, and must wait for the server response
 
