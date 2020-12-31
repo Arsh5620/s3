@@ -1,63 +1,60 @@
-// the purpose of this file is to handle the management of
-// checking, placing and retrieving the files given provided
-// the relocation data.
 #include <string.h>
 #include "./filemgmt.h"
 #include "../logger/messages.h"
 #include "../files/path.h"
 
-database_table_bind_s filemgmt_binds = {0};
-
 int
-filemgmt_binds_setup (MYSQL *mysql)
+filemgmt_file_query_sqlite3 (
+  const char *query,
+  int query_length,
+  char *file_name,
+  int file_name_length,
+  char *error_message)
 {
-    filemgmt_binds = database_bind_setup (mysql, FILEMGMT_BIND);
-    if (filemgmt_binds.error)
+    int error;
+    sqlite3_stmt *stmt = database_get_stmt (query, query_length, &error);
+
+    if (error != SUCCESS)
     {
-        return (FAILED);
+        return error;
     }
-    return (SUCCESS);
+
+    sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
+
+    return database_finish_stmt (stmt, SQLITE_ROW, error_message);
 }
 
 int
-filemgmt_bind_fileinfo (database_table_bind_s *bind, string_s file_name, boolean new_bind)
+filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_length)
 {
-    string_s strings[] = {FILEMGMT_COLUMN_FILE_NAME};
+    int error;
+    sqlite3_stmt *stmt
+      = database_get_stmt (FILEMGMT_QUERY_INSERT, sizeof (FILEMGMT_QUERY_INSERT), &error);
 
-    database_table_bind_s bind_in
-      = new_bind ? database_bind_select_copy (filemgmt_binds, strings, 1) : *bind;
-
-    database_bind_clean (bind_in);
-
-    if (database_bind_add_data (bind_in, FILEMGMT_COLUMN_FILE_NAME, file_name) == MYSQL_ERROR)
+    if (error != SUCCESS)
     {
-        return (FILEMGMT_SQL_COULD_NOT_BIND);
+        return error;
     }
 
-    *bind = bind_in;
-    return (MYSQL_SUCCESS);
+    sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
+    sqlite3_bind_int64 (stmt, 2, time (NULL));
+    sqlite3_bind_int64 (stmt, 3, file_length);
+    sqlite3_bind_null (stmt, 4);
+
+    return database_finish_stmt (stmt, SQLITE_DONE, "Could not add file");
 }
 
 int
 filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_stats)
 {
-    database_table_bind_s bind_out = filemgmt_binds;
-    database_table_bind_s bind_in = {0};
+    int result = filemgmt_file_query_sqlite3 (
+      FILEMGMT_QUERY_EXISTS,
+      sizeof (FILEMGMT_QUERY_EXISTS),
+      file_name.address,
+      file_name.length,
+      "File not found");
 
-    int result = filemgmt_bind_fileinfo (&bind_in, file_name, TRUE);
-    if (result != SUCCESS)
-    {
-        return (result);
-    }
-
-    result = database_table_query (
-      database_table_row_exists,
-      STRING (FILEMGMT_QUERY_EXISTS),
-      bind_in.bind_params,
-      1,
-      bind_out.bind_params);
-
-    if (result != FALSE)
+    if (result == SUCCESS)
     {
         my_print (
           MESSAGE_OUT_LOGS,
@@ -66,10 +63,7 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
           file_name.length,
           file_name.address);
     }
-
-    database_bind_free (bind_in);
-
-    if (result == FALSE)
+    else
     {
         return (FALSE);
     }
@@ -94,22 +88,8 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
 int
 filemgmt_file_add (string_s file_name)
 {
-    database_table_bind_s bind_in = filemgmt_binds;
-
-    int result = filemgmt_bind_fileinfo (&bind_in, file_name, FALSE);
-    if (result != SUCCESS)
-    {
-        return (result);
-    }
-
-    if (
-      database_table_insert (
-        NULL, STRING (FILEMGMT_QUERY_INSERT), bind_in.bind_params, bind_in.count)
-      == -1)
-    {
-        return (FAILED);
-    }
-    return (SUCCESS);
+    // TODO: instead of 0x8100 add the actual file size
+    return filemgmt_file_add_sqlite3 (file_name.address, file_name.length, 0x8100);
 }
 
 int
@@ -126,26 +106,12 @@ filemgmt_rename_file (string_s dest, string_s src)
 int
 filemgmt_remove_meta (string_s file_name)
 {
-    database_table_bind_s bind_in = {0};
-
-    int result = filemgmt_bind_fileinfo (&bind_in, file_name, TRUE);
-    if (result != SUCCESS)
-    {
-        return (result);
-    }
-
-    int deleted = database_table_stmt (STRING (FILEMGMT_QUERY_DELETE), bind_in.bind_params, 1);
-
-    database_bind_free (bind_in);
-
-    if (deleted != -1)
-    {
-        return (SUCCESS);
-    }
-    else
-    {
-        return (FAILED);
-    }
+    return filemgmt_file_query_sqlite3 (
+      FILEMGMT_QUERY_DELETE,
+      sizeof (FILEMGMT_QUERY_DELETE),
+      file_name.address,
+      file_name.length,
+      "File could not be deleted");
 }
 
 int
@@ -170,7 +136,7 @@ filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file
         return (FAILED);
     }
 
-    if (file_dir_mkine (FILEMGMT_HASH_FOLDER) != FILE_DIR_EXISTS)
+    if (file_dir_mkine (FILEMGMT_FOLDER_META_NAME) != FILE_DIR_EXISTS)
     {
         return (FAILED);
     }
@@ -185,7 +151,7 @@ filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file
     }
 
     string_s real_file_name = file_path_concat (STRING (FILEMGMT_FOLDER_NAME), file_name);
-    string_s real_hash_file_name = file_path_concat (STRING (FILEMGMT_HASH_FOLDER), file_name);
+    string_s real_hash_file_name = file_path_concat (STRING (FILEMGMT_FOLDER_META_NAME), file_name);
 
     file_info->file_name = file_name;
     file_info->real_file_name = real_file_name;

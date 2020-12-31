@@ -11,7 +11,7 @@ else ifeq ($(PROFILE), 1)
 else
 	CFLAGS =-ggdb3 $(DEBUGFLAG)
 endif
-LINKFLAGS=-lmysqlclient -lssl -lcrypto
+LINKFLAGS=-lmysqlclient -lssl -lcrypto -lsqlite3
 
 HEADERFILES=$(shell find . -type f -name "*.h")
 SOURCEFILES=$(shell find . -type f -name "*.c")

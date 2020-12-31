@@ -1,5 +1,6 @@
 *.o
 *.gch
+schema.db
 server/main
 server/logs/*
 server/temp/*
@@ -19,4 +20,4 @@ __pycache__
 .idea
 libfecc/main
 unit-testing/main
-backup-sha/
+meta/

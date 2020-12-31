@@ -2,6 +2,7 @@
 #define LOGS_INCLUDE_GAURD
 
 #include <stdarg.h>
+#include <stdio.h>
 #include "../general/define.h"
 
 #define LOG_DIR_NAME "logs"
@@ -30,10 +31,6 @@ enum logger_level
     LOGGER_LEVEL_ERROR,
     LOGGER_LEVEL_CATASTROPHIC // any error where program WILL exit.
 };
-
-#define LOG_LEVEL(x) (x & 0xFF)
-#define LOG_EXIT_GET(x) (x >> 8)
-#define LOG_EXIT_SET(x, y) (LOG_LEVEL (x) | (y << 8))
 
 logger_s
 logs_open ();

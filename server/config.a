@@ -1,9 +1,0 @@
-username = "arsh"
-password = "p@ssw0rd"
-database = ""
-machine  = "localhost"
-port     = 3306
-
-# This is a configuration file that contains the default 
-# username password configuration for connection to the mariadb
-# sql server, please edit it as required.

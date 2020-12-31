@@ -21,52 +21,40 @@ typedef struct filemgmt_file_name
     string_s temp_hash_file_name;
 } filemgmt_file_name_s;
 
-#define FILEMGMT_TABLE_NAME "file_information"
+#define FILEMGMT_TABLE_NAME "metadata"
 
-#define FILEMGMT_QUERY_EXISTS "SELECT * FROM " FILEMGMT_TABLE_NAME " WHERE file_name = ?"
+#define FILEMGMT_COLUMN_FILENAME "filename"
+#define FILEMGMT_COLUMN_DATE "date"
+#define FILEMGMT_COLUMN_SIZE "size"
+#define FILEMGMT_COLUMN_HASH "md5"
 
-#define FILEMGMT_QUERY_DELETE "DELETE FROM " FILEMGMT_TABLE_NAME " WHERE file_name = ? LIMIT 1;"
+#define FILEMGMT_QUERY_EXISTS                                                                      \
+    "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ? LIMIT 1;"
 
-#define FILEMGMT_QUERY_INSERT                                                                      \
-    "INSERT INTO " FILEMGMT_TABLE_NAME " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+#define FILEMGMT_QUERY_DELETE                                                                      \
+    "DELETE FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ?;"
 
-#define FILEMGMT_COLUMN_FILE_NAME STRING ("file_name")
-#define FILEMGMT_COLUMN_FILE_CD STRING ("file_cd")
-#define FILEMGMT_COLUMN_FILE_UD STRING ("file_ud")
-#define FILEMGMT_COLUMN_FILE_LA STRING ("file_la")
-#define FILEMGMT_COLUMN_FILE_LM STRING ("file_lm")
-#define FILEMGMT_COLUMN_FILE_DD STRING ("file_dd")
-#define FILEMGMT_COLUMN_FILE_SIZE STRING ("file_size")
-#define FILEMGMT_COLUMN_FILE_MD5 STRING ("file_md5")
-#define FILEMGMT_COLUMN_PERMISSIONS STRING ("permission")
-#define FILEMGMT_COLUMN_OWNER STRING ("owner")
+#define FILEMGMT_QUERY_INSERT "INSERT INTO " FILEMGMT_TABLE_NAME " VALUES (?, ?, ?, ?);"
 
 #define FILEMGMT_TABLE_CREATE                                                                      \
-    DATABASE_CREATE_TABLE (                                                                        \
-      FILEMGMT_TABLE_NAME,                                                                         \
-      " file_name VARCHAR(256)"                                                                    \
-      ", file_cd DATE"                                                                             \
-      ", file_ud DATE"                                                                             \
-      ", file_la DATE"                                                                             \
-      ", file_lm DATE"                                                                             \
-      ", file_dd DATE"                                                                             \
-      ", file_size BIGINT"                                                                         \
-      ", file_md5 VARCHAR(32)"                                                                     \
-      ", permission BIGINT"                                                                        \
-      ", owner VARCHAR(32)")
+    "CREATE TABLE IF NOT EXISTS " FILEMGMT_TABLE_NAME " (" FILEMGMT_COLUMN_FILENAME                \
+    " TEXT, " FILEMGMT_COLUMN_DATE " INTEGER, " FILEMGMT_COLUMN_SIZE                               \
+    " INTEGER, " FILEMGMT_COLUMN_HASH " BLOB);"
 
-#define FILEMGMT_BIND DATABASE_COMMON_BIND_STMT (FILEMGMT_TABLE_NAME)
+#define FILEMGMT_FOLDER_NAME "backup"
+#define FILEMGMT_FOLDER_META_NAME "meta"
 
-#define FILEMGMT_TABLE_CHECK DATABASE_COMMON_TABLE_EXISTS (FILEMGMT_TABLE_NAME)
-
-#define FILEMGMT_FOLDER_NAME "backup/"
-#define FILEMGMT_HASH_FOLDER "backup-sha/"
-#define FILEMGMT_TEMP_FORMAT "%s/download-fn(%ld).tmp"
 #define FILEMGMT_TEMP_DIR "temp"
-#define FILEMGMT_HASH_FORMAT "%s/temp-(%d).sha1"
+#define FILEMGMT_TEMP_FORMAT "%s/file(%ld).tmp"
+#define FILEMGMT_HASH_FORMAT "%s/hash(%ld).tmp"
 
 int
-filemgmt_binds_setup (MYSQL *mysql);
+filemgmt_file_query_sqlite3 (
+  const char *query,
+  int query_length,
+  char *file_name,
+  int file_name_length,
+  char *error_message);
 int
 filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_stats);
 int

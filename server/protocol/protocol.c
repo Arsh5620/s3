@@ -18,22 +18,20 @@ dbp_connection_initialize_sync (unsigned short port)
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
 
     if (
-      database_init (DBP_CONFIG_FILENAME) == MYSQL_SUCCESS
-      && database_table_verify (
-           AUTH_TABLE_CHECK, AUTH_TABLE_CREATE, AUTH_TABLE_NAME, auth_binds_setup)
-           == SUCCESS
-      && database_table_verify (
-           FILEMGMT_TABLE_CHECK, FILEMGMT_TABLE_CREATE, FILEMGMT_TABLE_NAME, filemgmt_binds_setup)
+      database_init (DBP_DATABASE_FILENAME) == SUCCESS
+      && database_make_schema (
+           2,
+           AUTH_TABLE_CREATE,
+           sizeof (AUTH_TABLE_CREATE),
+           FILEMGMT_TABLE_CREATE,
+           sizeof (FILEMGMT_TABLE_CREATE))
            == SUCCESS)
     {
         protocol.init_complete = TRUE;
     }
     else
     {
-        my_print (
-          MESSAGE_OUT_LOGS,
-          LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_FAILURE_OTHER),
-          PROTOCOL_MYSQL_FAILED_CONNECT);
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_CATASTROPHIC, PROTOCOL_MYSQL_FAILED_CONNECT);
     }
     return (protocol);
 }
@@ -120,42 +118,42 @@ dbp_handle_response_string (dbp_response_s *response)
 
     switch (response->response_code)
     {
-        DBP_ASSIGN (link, DBP_RESPONSE_DATA_SEND, DBP_RESPONSE_STRING_DATA_SEND);
+        DBP_CASE (link, DBP_RESPONSE_DATA_SEND, DBP_RESPONSE_STRING_DATA_SEND);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_PACKET_OK, DBP_RESPONSE_STRING_PACKET_OK);
+        DBP_CASE (link, DBP_RESPONSE_PACKET_OK, DBP_RESPONSE_STRING_PACKET_OK);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_ACTION_INVALID, DBP_RESPONSE_STRING_ACTION_INVALID);
+        DBP_CASE (link, DBP_RESPONSE_ACTION_INVALID, DBP_RESPONSE_STRING_ACTION_INVALID);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_HEADER_EMPTY, DBP_RESPONSE_STRING_HEADER_EMPTY);
+        DBP_CASE (link, DBP_RESPONSE_HEADER_EMPTY, DBP_RESPONSE_STRING_HEADER_EMPTY);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_PARSE_ERROR, DBP_RESPONSE_STRING_PARSE_ERROR);
+        DBP_CASE (link, DBP_RESPONSE_PARSE_ERROR, DBP_RESPONSE_STRING_PARSE_ERROR);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_THIN_ATTRIBS, DBP_RESPONSE_STRING_THIN_ATTRIBS);
+        DBP_CASE (link, DBP_RESPONSE_THIN_ATTRIBS, DBP_RESPONSE_STRING_THIN_ATTRIBS);
 
-        DBP_ASSIGN (
+        DBP_CASE (
           link, DBP_RESPONSE_ATTRIB_VALUE_INVALID, DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
 
-        DBP_ASSIGN (
+        DBP_CASE (
           link, DBP_RESPONSE_FILE_EXISTS_ALREADY, DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_FILE_NOT_FOUND, DBP_RESPONSE_STRING_FILE_NOT_FOUND);
+        DBP_CASE (link, DBP_RESPONSE_FILE_NOT_FOUND, DBP_RESPONSE_STRING_FILE_NOT_FOUND);
 
-        DBP_ASSIGN (
+        DBP_CASE (
           link, DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS, DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_CORRUPTED_PACKET, DBP_RESPONSE_STRING_CORRUPTED_PACKET);
+        DBP_CASE (link, DBP_RESPONSE_CORRUPTED_PACKET, DBP_RESPONSE_STRING_CORRUPTED_PACKET);
 
-        DBP_ASSIGN (
+        DBP_CASE (
           link, DBP_RESPONSE_CORRUPTED_DATA_HEADERS, DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_SETUP_ENV_FAILED, DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
+        DBP_CASE (link, DBP_RESPONSE_SETUP_ENV_FAILED, DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
 
-        DBP_ASSIGN (
+        DBP_CASE (
           link, DBP_RESPONSE_GENERAL_SERVER_ERROR, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
 
-        DBP_ASSIGN (link, DBP_RESPONSE_DATA_NONE_NEEDED, DBP_RESPONSE_STRING_DATA_NONE_NEEDED);
+        DBP_CASE (link, DBP_RESPONSE_DATA_NONE_NEEDED, DBP_RESPONSE_STRING_DATA_NONE_NEEDED);
 
-        DBP_ASSIGN (
+        DBP_CASE (
           link, DBP_RESPONSE_FAILED_AUTHENTICATION, DBP_RESPONSE_STRING_FAILED_AUTHENTICATION);
 
     default:
@@ -208,8 +206,7 @@ dbp_connection_shutdown (dbp_protocol_s protocol, enum dbp_shutdown_enum type)
             reason = PROTOCOL_SHUTDOWN_REASON_UNKNOWN;
             break;
         }
-        my_print (
-          MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
     }
 }
 
@@ -232,8 +229,8 @@ dbp_setupenv (dbp_request_s *request)
     }
 
     int error;
-    client_filename
-      = data_get_string_s (request->header_list, request->header_table, DBP_ATTRIB_FILENAME, &error);
+    client_filename = data_get_string_s (
+      request->header_list, request->header_table, DBP_ATTRIB_FILENAME, &error);
 
     if (error == SUCCESS)
     {

@@ -172,5 +172,5 @@
 #define MESSAGE_OUT_BOTH 0b0011
 
 void
-my_print (long handle_type, enum logger_level log_level, char *format, ...);
+my_print (long log_type, enum logger_level log_level, char *format, ...);
 #endif 

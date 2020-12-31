@@ -25,7 +25,7 @@
 #define DBP_PROTOCOL_MAGIC 0xD0
 #define DBP_PROTOCOL_MAGIC_LEN (8)
 #define DBP_PROTOCOL_HEADER_MAXLEN (256 << 4)
-#define DBP_CONFIG_FILENAME "config.a"
+#define DBP_DATABASE_FILENAME "schema.db"
 #define DBP_RESPONSE_FORMAT_STRING "%.*s=\"%.*s\"\r\n"
 #define DBP_RESPONSE_FORMAT_LONG "%.*s=\"%ld\"\r\n"
 #define DBP_RESPONSE_KEY_NAME "response"
@@ -131,7 +131,7 @@ typedef struct
 #define DBP_ATTRIBS_STRUCT_COUNT DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME "file_name"
 
-#define DBP_ASSIGN(string_dest, code, string)                                                      \
+#define DBP_CASE(string_dest, code, string)                                                      \
     case code:                                                                                     \
     {                                                                                              \
         string_dest = STRING (string);                                                             \
@@ -309,11 +309,11 @@ int
 dbp_request_data_headers (dbp_protocol_s *protocol, dbp_request_s *request);
 
 int
-auth_binds_setup (MYSQL *mysql);
-int
 dbp_auth_query (dbp_request_s *request);
 int
 dbp_auth_transaction (dbp_request_s *request);
+int
+dbp_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length);
 
 int
 dbp_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);

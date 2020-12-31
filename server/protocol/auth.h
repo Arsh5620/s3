@@ -1,26 +1,20 @@
 #ifndef AUTH_INCLUDE_GAURD
 #define AUTH_INCLUDE_GAURD
-#include "./protocol.h"
+#include "protocol.h"
 #include "../databases/database.h"
 
-#define AUTH_TABLE_NAME "auth"
+#define AUTH_TABLE_NAME "authentication"
 
-#define AUTH_BIND DATABASE_COMMON_BIND_STMT (AUTH_TABLE_NAME)
-
-#define AUTH_TABLE_CHECK DATABASE_COMMON_TABLE_EXISTS (AUTH_TABLE_NAME)
+#define AUTH_COLUMN_SECRET "secret"
+#define AUTH_COLUMN_USERNAME "username"
 
 #define AUTH_TABLE_CREATE                                                                          \
-    DATABASE_CREATE_TABLE (                                                                        \
-      AUTH_TABLE_NAME,                                                                             \
-      " username VARCHAR(256)"                                                                     \
-      ", secret VARCHAR(256)")
+    "CREATE TABLE IF NOT EXISTS " AUTH_TABLE_NAME " (" AUTH_COLUMN_USERNAME                        \
+    " TEXT, " AUTH_COLUMN_SECRET " TEXT);"
 
-#define AUTH_COLUMN_USERNAME STRING ("username")
-#define AUTH_COLUMN_SECRET STRING ("secret")
-
-#define AUTH_QUERY_VERIFY                                                                          \
-    "SELECT * FROM " AUTH_TABLE_NAME " WHERE "                                                     \
-    " username = ? AND"                                                                            \
-    " secret = ? LIMIT 1"
+#define AUTH_QUERY                                                                                 \
+    "SELECT COUNT(*), 'Hello world!' FROM " AUTH_TABLE_NAME " WHERE"                                              \
+    " " AUTH_COLUMN_USERNAME " = ? AND"                                                            \
+    " " AUTH_COLUMN_SECRET " = ? LIMIT 1;"
 
 #endif // AUTH_INCLUDE_GAURD

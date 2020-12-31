@@ -24,7 +24,7 @@ assert (int c1, char *fn, int err)
     {
         my_print (
           MESSAGE_OUT_BOTH,
-          LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, err),
+          LOGGER_LEVEL_CATASTROPHIC,
           NETWORK_ASSERT_MESSAGE,
           fn,
           strerror (errno),
@@ -43,7 +43,7 @@ assert_ssl (int c1, int c2, char *fn, int err)
 
         my_print (
           MESSAGE_OUT_BOTH,
-          LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, err),
+          LOGGER_LEVEL_CATASTROPHIC,
           NETWORK_ASSERT_SSL_MESSAGE,
           fn,
           errno,
@@ -126,8 +126,7 @@ network_connect_init_sync (int port)
     result = listen (connection.server, NETWORK_QUEQUE);
     assert (result, "listen", SERVER_LISTEN_FAILED);
 
-    my_print (
-      MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
     return connection;
 }
 

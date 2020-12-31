@@ -1,19 +1,6 @@
 #include "./auth.h"
 #include "../crypto/sha.h"
 
-database_table_bind_s auth_table_binds;
-
-int
-auth_binds_setup (MYSQL *mysql)
-{
-    auth_table_binds = database_bind_setup (mysql, AUTH_BIND);
-    if (auth_table_binds.error)
-    {
-        return (FAILED);
-    }
-    return (SUCCESS);
-}
-
 int
 dbp_auth_transaction (dbp_request_s *request)
 {
@@ -54,35 +41,26 @@ dbp_auth_query (dbp_request_s *request)
         return (DBP_RESPONSE_SERVER_ERROR_NOAUTH);
     }
 
-    database_bind_clean (auth_table_binds); // to erase any previous values
+    char sha_hash[SHA256LENGTH] = {0};
+    sha_256 (password, (uchar *) sha_hash, SHA256LENGTH);
 
-    string_s columns[] = {AUTH_COLUMN_USERNAME, AUTH_COLUMN_SECRET};
-    database_table_bind_s bind_copy = database_bind_select_copy (auth_table_binds, columns, 2);
+    error = dbp_auth_query_sqlite3 (
+      username.address, username.length, sha_hash, sizeof(sha_hash));
+    return (error == SUCCESS ? DBP_RESPONSE_SUCCESS : DBP_RESPONSE_FAILED_AUTHENTICATION);
+}
 
-    if (database_bind_add_data (auth_table_binds, AUTH_COLUMN_USERNAME, username) == MYSQL_ERROR)
+int
+dbp_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length)
+{
+    int error;
+    sqlite3_stmt *stmt = database_get_stmt (AUTH_QUERY, sizeof (AUTH_QUERY), &error);
+
+    if (error != SUCCESS)
     {
-        return (FILEMGMT_SQL_COULD_NOT_BIND);
+        return error;
     }
 
-    char sha_hash[SHA256LENGTH + 1] = {0};
-    sha_256_compute (password, (uchar *) sha_hash, SHA256LENGTH);
-
-    // printf("Computed hash is \"%s\"\n", sha_hash);
-    string_s sha_hash_s = STRING (sha_hash);
-
-    if (database_bind_add_data (auth_table_binds, AUTH_COLUMN_SECRET, sha_hash_s) == MYSQL_ERROR)
-    {
-        return (FILEMGMT_SQL_COULD_NOT_BIND);
-    }
-
-    int result = database_table_query (
-      database_table_row_exists,
-      STRING (AUTH_QUERY_VERIFY),
-      auth_table_binds.bind_params,
-      2,
-      bind_copy.bind_params);
-
-    database_bind_free (bind_copy);
-
-    return (result == TRUE ? DBP_RESPONSE_SUCCESS : DBP_RESPONSE_FAILED_AUTHENTICATION);
+    sqlite3_bind_text (stmt, 1, username, username_length, SQLITE_TRANSIENT);
+    sqlite3_bind_text (stmt, 2, password, password_length, SQLITE_TRANSIENT);
+    return database_finish_stmt (stmt, SQLITE_ROW, "Authentication failed");
 }
