@@ -59,7 +59,7 @@ enum dbp_attribs_enum
     DBP_ATTRIB_UPDATEAT,
     DBP_ATTRIB_UPDATETRIM,
     DBP_ATTRIB_USERNAME,
-    DBP_ATTRIB_SECRET
+    DBP_ATTRIB_PASSWORD
 };
 
 enum dbp_shutdown_enum

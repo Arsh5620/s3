@@ -121,7 +121,7 @@ dbp_response_write_header (dbp_response_s *response, char *buffer, ulong buffer_
                   DBP_RESPONSE_FORMAT_STRING,
                   pair.key_length,
                   pair.key,
-                  pair.value_length,
+                  (int) pair.value_length,
                   pair.value);
             }
             else

@@ -50,12 +50,12 @@ dbp_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list)
     for (int i = 0; i < source_list.count; ++i)
     {
         deserializer_value_t result = *(deserializer_value_t *) my_list_get (source_list, i);
-        if (result.key == 0 || result.key_size == 0 || result.value_2 == NULL)
+        if (result.key == 0 || result.key_size == 0)
         {
             output_handle (
               OUTPUT_HANDLE_LOGS,
               LOGGER_LEVEL_WARN,
-              "Binary deserializer: Ignored empty key or value pair");
+              "Binary deserializer: Ignored empty key, %s:%s", result.key, result.value_2);
             return FAILED;
         }
 

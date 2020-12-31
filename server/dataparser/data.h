@@ -43,25 +43,18 @@ typedef struct
 #define DBP_KEY(str, code)                                                                         \
     (data_keys_s) { .string = str, .strlen = sizeof (str) - 1, .attrib_code = code }
 
-int
-data_convert (key_value_pair_s *pair, enum data_type type, char *out, ulong length);
-key_value_pair_s *
-data_get_key_value (my_list_s result_list, hash_table_s result_table, long key);
-data_result_s
-data_parse_files (char *filename, data_keys_s *keys, int key_count);
-hash_table_s
-data_make_table (my_list_s list, data_keys_s *data, ulong length);
-size_t
-data_key_compare (void *memory, char *str, size_t strlen);
 void
 data_free (data_result_s result);
-int
-data_get_and_convert (
-  my_list_s result_list,
-  hash_table_s result_table,
-  long key,
-  enum data_type type,
-  char *memory,
-  long length);
-
+size_t
+data_key_compare (void *memory, char *str, size_t strlen);
+hash_table_s
+data_make_table (my_list_s list, data_keys_s *data, ulong length);
+data_result_s
+data_parse_files (char *filename, data_keys_s *keys, int key_count);
+char *
+data_get_string (my_list_s result_list, hash_table_s result_table, long key, int *error);
+string_s
+data_get_string_s (my_list_s result_list, hash_table_s result_table, long key, int *error);
+key_value_pair_s
+data_get_kvpair (my_list_s list, hash_table_s hash_table, long key, int *error);
 #endif // CONFIG_INCLUDE_GAURD

@@ -231,23 +231,19 @@ dbp_setupenv (dbp_request_s *request)
         return (DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE);
     }
 
-    int result = data_get_and_convert (
-      request->header_list,
-      request->header_table,
-      DBP_ATTRIB_FILENAME,
-      DATA_TYPE_STRING_S,
-      (char *) &client_filename,
-      sizeof (string_s));
+    int error;
+    client_filename
+      = data_get_string_s (request->header_list, request->header_table, DBP_ATTRIB_FILENAME, &error);
 
-    if (result == SUCCESS)
+    if (error == SUCCESS)
     {
         if (client_filename.address != NULL && client_filename.length == 0)
         {
             return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
         }
-        result = filemgmt_setup_environment (client_filename, &request->file_info);
+        error = filemgmt_setup_environment (client_filename, &request->file_info);
 
-        if (result != SUCCESS)
+        if (error != SUCCESS)
         {
             return (DBP_RESPONSE_SETUP_ENV_FAILED);
         }
@@ -264,8 +260,8 @@ dbp_setupenv (dbp_request_s *request)
         }
         }
 
-        result = filemgmt_mkdirs (&request->file_info);
-        if (result != SUCCESS)
+        error = filemgmt_mkdirs (&request->file_info);
+        if (error != SUCCESS)
         {
             return (DBP_RESPONSE_SETUP_ENV_FAILED);
         }

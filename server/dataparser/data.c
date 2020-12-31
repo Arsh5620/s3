@@ -3,118 +3,45 @@
 #include <assert.h>
 #include "data.h"
 
-int
-data_get_and_convert (
-  my_list_s result_list,
-  hash_table_s result_table,
-  long key,
-  enum data_type type,
-  char *memory,
-  long length)
+char *
+data_get_string (my_list_s result_list, hash_table_s result_table, long key, int *error)
 {
-    key_value_pair_s *pair = data_get_key_value (result_list, result_table, key);
-    if (pair == NULL)
-    {
-        return (DATA_KEY_NOT_FOUND);
-    }
-    if (data_convert (pair, type, memory, length) == FAILED)
-    {
-        return (DATA_CANNOT_CONVERT);
-    }
-    return (SUCCESS);
+    return data_get_kvpair (result_list, result_table, key, error).value;
 }
 
-int
-data_convert (key_value_pair_s *pair, enum data_type type, char *out, ulong length)
+string_s
+data_get_string_s (my_list_s result_list, hash_table_s result_table, long key, int *error)
 {
-    switch (type)
-    {
-    case DATA_TYPE_CHAR_PCOPY:
-    {
-        *(char **) (out) = pair->value;
-    }
-    break;
-    case DATA_TYPE_STRING_S:
-    {
-        if (length < sizeof (string_s))
-        {
-            return (FAILED);
-        }
-
-        string_s str = {0};
-        str.address = pair->value;
-        str.length = pair->value_length;
-        memcpy (out, &str, sizeof (string_s));
-    }
-    break;
-    case DATA_TYPE_INT:
-    {
-        if (length < sizeof (int))
-        {
-            return (FAILED);
-        }
-
-        *(int *) (out) = (int) strtol (pair->value, NULL, 10);
-    }
-    break;
-    case DATA_TYPE_LONG:
-    {
-        if (length < sizeof (long))
-        {
-            return (FAILED);
-        }
-
-        *(long *) (out) = (long) strtol (pair->value, NULL, 10);
-    }
-    break;
-    case DATA_TYPE_SHORT:
-    {
-        if (length < sizeof (short))
-        {
-            return (FAILED);
-        }
-
-        *(short *) (out) = (short) strtol (pair->value, NULL, 10);
-    }
-    break;
-    case DATA_TYPE_DOUBLE:
-    {
-        if (length < sizeof (double))
-        {
-            return (FAILED);
-        }
-
-        *(double *) (out) = strtod (pair->value, NULL);
-    }
-    break;
-    case DATA_TYPE_BOOLEAN:
-    {
-        if (length < sizeof (boolean))
-        {
-            return (FAILED);
-        }
-
-        *(boolean *) (out) = (*pair->value == '0' ? FALSE : TRUE);
-    }
-    break;
-
-    default:
-        assert (type);
-        break;
-    }
-    return (SUCCESS);
+    key_value_pair_s pair = data_get_kvpair (result_list, result_table, key, error);
+    return (string_s){.address = pair.value, .length = pair.value_length};
 }
 
-key_value_pair_s *
-data_get_key_value (my_list_s result_list, hash_table_s result_table, long key)
+key_value_pair_s
+data_get_kvpair (my_list_s list, hash_table_s hash_table, long key, int *error)
 {
     hash_input_u key_u = {.number = key};
-    hash_table_bucket_s bucket = hash_table_get (result_table, key_u, 0);
+    hash_table_bucket_s bucket = hash_table_get (hash_table, key_u, 0);
+    key_value_pair_s *pair;
+
     if (bucket.is_occupied == 1)
     {
-        return ((key_value_pair_s *) my_list_get (result_list, bucket.value.number));
+        pair = ((key_value_pair_s *) my_list_get (list, bucket.value.number));
     }
-    return (NULL);
+    else
+    {
+        if (error != NULL)
+        {
+            *error = (DATA_KEY_NOT_FOUND);
+        }
+        
+        return (key_value_pair_s){0};
+    }
+
+    if (error != NULL)
+    {
+        *error = SUCCESS;
+    }
+    return *pair;
 }
 
 data_result_s

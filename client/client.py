@@ -93,9 +93,17 @@ def binary_serialize(pair_string):
         print(key_value)
         if (len(key_value) >= 2):
             serialize.serializer_add(
-                serialize_memory, key_value[0], key_value[1])
+                serialize_memory, key_value[0], key_value[1] if not is_int(key_value[1]) else int(key_value[1]))
     serialize.serializer_add_eof(serialize_memory)
     return serialize_memory
+
+
+def is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 
 while(1):

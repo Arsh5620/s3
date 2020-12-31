@@ -18,7 +18,7 @@ int
 dbp_auth_transaction (dbp_request_s *request)
 {
     boolean user = dbp_attrib_contains (request->header_table, DBP_ATTRIB_USERNAME);
-    boolean secret = dbp_attrib_contains (request->header_table, DBP_ATTRIB_SECRET);
+    boolean secret = dbp_attrib_contains (request->header_table, DBP_ATTRIB_PASSWORD);
 
     if (user == TRUE && secret == TRUE)
     {
@@ -37,28 +37,19 @@ dbp_auth_transaction (dbp_request_s *request)
 int
 dbp_auth_query (dbp_request_s *request)
 {
-    string_s username = {0}, secret = {0};
-    if (
-      data_get_and_convert (
-        request->header_list,
-        request->header_table,
-        DBP_ATTRIB_USERNAME,
-        DATA_TYPE_STRING_S,
-        (char *) &username,
-        sizeof (string_s))
-      != SUCCESS)
+    int error;
+    string_s username = data_get_string_s (
+      request->header_list, request->header_table, DBP_ATTRIB_USERNAME, &error);
+
+    if (error != SUCCESS)
     {
         return (DBP_RESPONSE_SERVER_ERROR_NOAUTH);
     }
-    if (
-      data_get_and_convert (
-        request->header_list,
-        request->header_table,
-        DBP_ATTRIB_SECRET,
-        DATA_TYPE_STRING_S,
-        (char *) &secret,
-        sizeof (string_s))
-      != SUCCESS)
+
+    string_s password = data_get_string_s (
+      request->header_list, request->header_table, DBP_ATTRIB_PASSWORD, &error);
+
+    if (error != SUCCESS)
     {
         return (DBP_RESPONSE_SERVER_ERROR_NOAUTH);
     }
@@ -74,7 +65,7 @@ dbp_auth_query (dbp_request_s *request)
     }
 
     char sha_hash[SHA256LENGTH + 1] = {0};
-    sha_256_compute (secret, (uchar *) sha_hash, SHA256LENGTH);
+    sha_256_compute (password, (uchar *) sha_hash, SHA256LENGTH);
 
     // printf("Computed hash is \"%s\"\n", sha_hash);
     string_s sha_hash_s = STRING (sha_hash);

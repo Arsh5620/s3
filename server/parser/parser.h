@@ -38,7 +38,7 @@ typedef struct
     char *value;
 
     int key_length;
-    int value_length;
+    long value_length;
 
     char is_valid;
 } key_value_pair_s;

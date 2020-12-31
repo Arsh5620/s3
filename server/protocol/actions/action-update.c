@@ -16,29 +16,26 @@ dbp_prehook_update (dbp_request_s *request)
 
     dbp_action_update_s *update_attribs = (dbp_action_update_s *) request->additional_data;
 
-    if (data_get_and_convert (
-          request->header_list,
-          request->header_table,
-          DBP_ATTRIB_UPDATEAT,
-          DATA_TYPE_LONG,
-          (char *) &update_attribs->update_at,
-          sizeof (long)))
+    int error;
+    update_attribs->update_at
+      = data_get_kvpair (request->header_list, request->header_table, DBP_ATTRIB_UPDATEAT, &error)
+          .value_length;
+
+    if (error != SUCCESS)
     {
         return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
     }
 
-    if (data_get_and_convert (
-          request->header_list,
-          request->header_table,
-          DBP_ATTRIB_UPDATETRIM,
-          DATA_TYPE_BOOLEAN,
-          (char *) &update_attribs->trim,
-          sizeof (boolean)))
+    update_attribs->trim
+      = (data_get_kvpair (request->header_list, request->header_table, DBP_ATTRIB_UPDATETRIM, &error)
+          .value_length != FALSE);
+
+    if (error != SUCCESS)
     {
         return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
     }
 
-    if (update_attribs->update_at > -1 && update_attribs->update_at <= file_stats.st_size)
+    if (update_attribs->update_at >= 0 && update_attribs->update_at <= file_stats.st_size)
     {
         return (SUCCESS);
     }

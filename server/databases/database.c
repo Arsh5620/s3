@@ -25,31 +25,22 @@ database_get_handle ()
 int
 database_setup_login (my_list_s list, hash_table_s table, database_connection_s *conninfo)
 {
-    ASSERT (data_get_and_convert (
-      list,
-      table,
-      CONFIG_USERNAME,
-      DATA_TYPE_CHAR_PCOPY,
-      (char *) &conninfo->user,
-      sizeof (char *)));
-    ASSERT (data_get_and_convert (
-      list,
-      table,
-      CONFIG_PASSWORD,
-      DATA_TYPE_CHAR_PCOPY,
-      (char *) &conninfo->passwd,
-      sizeof (char *)));
-    ASSERT (data_get_and_convert (
-      list, table, CONFIG_DATABASE, DATA_TYPE_CHAR_PCOPY, (char *) &conninfo->db, sizeof (char *)));
-    ASSERT (data_get_and_convert (
-      list,
-      table,
-      CONFIG_MACHINE,
-      DATA_TYPE_CHAR_PCOPY,
-      (char *) &conninfo->host,
-      sizeof (char *)));
-    ASSERT (data_get_and_convert (
-      list, table, CONFIG_PORT, DATA_TYPE_SHORT, (char *) &conninfo->port, sizeof (short)));
+    int error = 0;
+
+    conninfo->user = data_get_string (list, table, CONFIG_USERNAME, &error);
+    ASSERT (error);
+
+    conninfo->passwd = data_get_string (list, table, CONFIG_PASSWORD, &error);
+    ASSERT (error);
+
+    conninfo->db = data_get_string (list, table, CONFIG_DATABASE, &error);
+    ASSERT (error);
+
+    conninfo->host = data_get_string (list, table, CONFIG_MACHINE, &error);
+    ASSERT (error);
+
+    conninfo->port = strtol (data_get_string (list, table, CONFIG_PORT, &error), NULL, 10);
+    ASSERT (error);
 
     return (SUCCESS);
 }
