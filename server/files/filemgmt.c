@@ -4,15 +4,11 @@
 #include "../files/path.h"
 
 int
-filemgmt_file_query_sqlite3 (
-  const char *query,
-  int query_length,
-  char *file_name,
-  int file_name_length,
-  char *error_message)
+filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length)
 {
     int error;
-    sqlite3_stmt *stmt = database_get_stmt (query, query_length, &error);
+    sqlite3_stmt *stmt
+      = database_get_stmt (FILEMGMT_QUERY_EXISTS, sizeof (FILEMGMT_QUERY_EXISTS), &error);
 
     if (error != SUCCESS)
     {
@@ -21,7 +17,24 @@ filemgmt_file_query_sqlite3 (
 
     sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
 
-    return database_finish_stmt (stmt, SQLITE_ROW, error_message);
+    return database_finish_stmt (stmt, SQLITE_ROW, "File not found");
+}
+
+int
+filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length)
+{
+    int error;
+    sqlite3_stmt *stmt
+      = database_get_stmt (FILEMGMT_QUERY_DELETE, sizeof (FILEMGMT_QUERY_DELETE), &error);
+
+    if (error != SUCCESS)
+    {
+        return error;
+    }
+
+    sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
+
+    return database_finish_stmt (stmt, SQLITE_DONE, "File could not be deleted");
 }
 
 int
@@ -47,12 +60,7 @@ filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_lengt
 int
 filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_stats)
 {
-    int result = filemgmt_file_query_sqlite3 (
-      FILEMGMT_QUERY_EXISTS,
-      sizeof (FILEMGMT_QUERY_EXISTS),
-      file_name.address,
-      file_name.length,
-      "File not found");
+    int result = filemgmt_file_exists_sqlite3 (file_name.address, file_name.length);
 
     if (result == SUCCESS)
     {
@@ -106,12 +114,7 @@ filemgmt_rename_file (string_s dest, string_s src)
 int
 filemgmt_remove_meta (string_s file_name)
 {
-    return filemgmt_file_query_sqlite3 (
-      FILEMGMT_QUERY_DELETE,
-      sizeof (FILEMGMT_QUERY_DELETE),
-      file_name.address,
-      file_name.length,
-      "File could not be deleted");
+    return filemgmt_file_delete_sqlite3 (file_name.address, file_name.length);
 }
 
 int

@@ -18,7 +18,7 @@
 
 enum network_errors_enum
 {
-    NETWORK_ERROR_SUCCESS = 0,
+    NETWORK_SUCCESS = 0,
     NETWORK_ERROR_READ_PARTIAL = 128,
     NETWORK_ERROR_READ_CONNRESET,
     NETWORK_ERROR_READ_ERROR,
@@ -57,21 +57,6 @@ typedef struct network_connection_data
     uint error_code;
 } network_data_s;
 
-/**
- * for atomic data types the buffer will be cast into one of the avail types
- */
-typedef struct
-{
-    union
-    {
-        char char_t;
-        short short_t;
-        int int_t;
-        long long_t;
-    } u;
-    uint error_code;
-} network_data_atom_s;
-
 network_s
 network_connect_init_sync (int port);
 void
@@ -79,17 +64,14 @@ network_connect_accept_sync (network_s *connection);
 
 network_data_s
 network_read_stream (network_s *connection, ulong size);
+/**
+ * size must be a power of 2, so 1, 2, 4, 8
+ */
+long
+network_read_primitives (network_s *network, int size, int *error);
 void
 network_data_free (network_data_s data);
 
 int
 network_write_stream (network_s *network, char *buffer, ulong buffer_length);
-
-#define NETWORK_READ_DECLARE(type) network_data_atom_s network_read_##type (network_s *network);
-
-NETWORK_READ_DECLARE (char);
-NETWORK_READ_DECLARE (short);
-NETWORK_READ_DECLARE (int);
-NETWORK_READ_DECLARE (long);
-
 #endif

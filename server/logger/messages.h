@@ -3,10 +3,15 @@
 
 #include "../logger/logs.h"
 #include "../general/define.h"
+#include <sqlite3.h>
 
 #define PROTOCOL_LOG_INIT_COMPLETE "logging sub-system has been started"
 
 #define PROTOCOL_NETWORK_SBS_INIT "setting up network sub-system now"
+
+#define PROTOCOL_SETUP_FINISH "protocol initialize sync setup complete"
+
+#define PROTOCOL_DATABASE_SETUP "setting up connection to sqlite using version " SQLITE_VERSION
 
 #define PROTOCOL_MYSQL_LOGIN_INFO                                                                  \
     "attempting to connect to mysql server: \n"                                                    \
@@ -17,12 +22,12 @@
 
 #define PROTOCOL_MYSQL_FAILED_CONNECT "failed to connect to mysql server, program will now exit"
 
-#define PROTOCOL_NETWORK_WAIT_CONNECT "server is waiting for a client to connect"
+#define PROTOCOL_NETWORK_WAIT_CONNECT "entering connection accept loop, waiting for a client..."
 
 #define PROTOCOL_NETWORK_CLIENT_CONNECT                                                            \
     "a client connected from address \"%s\" and port number (%d)"
 
-#define PROTOCOL_SERVER_SHUTDOWN "server is about to shutdown, finishing cleanup before exit"
+#define PROTOCOL_SERVER_SHUTDOWN "server is about to shutdown, finishing cleanup before exiting"
 
 #define PROTOCOL_CLIENT_CONNECT_ABORTED "client connection has been terminated for reason: \"%s\""
 
@@ -37,7 +42,9 @@
 
 #define PROTOCOL_ABORTED_CORRUPTION "connection terminated because of corruption: [0x%.16lx]"
 
-#define PROTOCOL_READ_HEADERS_FAILED "error while reading the key value pairs in the buffer"
+#define PROTOCOL_READ_HEADERS_FAILED "network error while reading the header information"
+
+#define REQUEST_ACTION_TYPE "packet action type : %d"
 
 #define PROTOCOL_SHUTDOWN_REASON_FLOW "expected as per program flow"
 
@@ -45,44 +52,19 @@
 
 #define PROTOCOL_SHUTDOWN_REASON_UNKNOWN "reason unknown"
 
-#define DATABASE_MYSQL_LIB_INIT_FAILED "could not initialize mysql client library"
+#define DATABASE_FILE_FOUND "database file %s, either found or created"
 
-#define DATABASE_MYSQL_INIT_FAILED "could not initialize a mysql handle to attempt connection"
+#define DATABASE_SCHEMA_CHECK "checking table with query: %s"
 
-#define DATABASE_MYSQL_AUTH_FAILED "could not connect or authenticate with mysql server, error: %s"
+#define DESERIALIZER_PRINT_HEADERS "found %d key value pairs after deserializing header : "
 
-#define DATABASE_MYSQL_CONNECTED "successfully connected to the mysql server"
-
-#define DATABASE_INTEGRITY_CHECK "checking database for tables and schema"
-
-#define DATABASE_INTEGRITY_FAILED "failed to create database/table schema, integrity check failed"
-
-#define DATABASE_INTEGRITY_PING "checking database for connection and response, pinging server"
-
-#define DATABASE_CONNECTED_SERVER                                                                  \
-    "connected to mysql database, ping successful, server name: \"%s\""
-
-#define DATABASE_INT_DB_SELECT_FAILED "failed to select the correct database, error: %s"
-
-#define DATABASE_INT_DB_CREATED "database not found, created database: \"%s\""
-
-#define DATABASE_INT_DB_CREATE_FAILED "database \"%s\" already exists"
-
-#define DATABASE_INT_DB_CREATE_ACCESS                                                              \
-    "selecting database failed, "                                                                  \
-    "mysql \"CREATE\" access required"
-
-#define DATABASE_INT_TABLE_CREATED "table \"%s\" has been created"
-
-#define DATABASE_INT_TABLE_CREATE_FAILED "table \"%s\" could not be created, error: %s"
-
-#define DATABASE_INT_TABLE_FOUND "table \"%s\" already exists"
-
-#define DATABASE_INT_TABLE_NOT_FOUND "table \"%s\" does not exists"
+#define DESERIALIZER_PRINT_HEADERS_ROW_STRING "\t\tkey, value: %.*s, %.*s"
 
 #define NOTIFICATION_GENERAL "client sent a notification: \"%.*s\""
 
 #define NETWORK_ASSERT_MESSAGE "network function \"%s\" error: %s, errno: %d"
+
+#define NETWORK_READ_ERROR "network returned an error while trying to perform a read operation"
 
 #define NETWORK_ASSERT_SSL_MESSAGE "tls ssl function \"%s\" failed errno: %d, more information:\n%s"
 
@@ -92,6 +74,10 @@
 #define NETWORK_PORT_LISTENING                                                                     \
     "network initialization complete on port number (%d), "                                        \
     "server now listening with a queque length of (%d)"
+
+#define NETWORK_MODE_INFORMATION "network is running in %s mode"
+
+#define NETWORK_MODE_SSL_INITED "network successfully initialized SSL mode"
 
 #define MYSQLBIND_QUERY_FAILED                                                                     \
     "mysql bind setup failed, setup required"                                                      \
@@ -111,14 +97,9 @@
     "requested column for find does not exists in "                                                \
     "the table, column name: %.*s and length %d"
 
-#define MYSQLBIND_BIND_COPY_REQUEST "copy of binds requested for %d columns"
-
-#define MYSQLBIND_BIND_COPY_REQUEST_INFO                                                           \
-    "column information for bind copy: name \"%.*s\" with length %d"
-
 #define MYSQLBIND_BIND_FREE "bind release requested for %d columns"
 
-#define FILEMGMT_RECORD_EXISTS "file \"%.*s\" already exists"
+#define FILEMGMT_RECORD_EXISTS "file \"%.*s\" found"
 
 #define MEMORY_ALLOCATION_LOG                                                                      \
     "{\n\t{address:\"%p\", new address:\"%p\"}\n\t, "                                              \
@@ -137,7 +118,7 @@
 
 #define DBP_RESPONSE_STRING_HEADER_EMPTY "Packet is empty."
 
-#define DBP_RESPONSE_STRING_PARSE_ERROR "Invalid header format."
+#define DBP_RESPONSE_STRING_DESERIALIZER_ERROR "Invalid header format."
 
 #define DBP_RESPONSE_STRING_THIN_ATTRIBS "Required attributes not present."
 
@@ -173,4 +154,4 @@
 
 void
 my_print (long log_type, enum logger_level log_level, char *format, ...);
-#endif 
+#endif

@@ -24,6 +24,8 @@ database_init (const char *database_filename)
         database_print_sqlite_error ("Sqlite open failed, error message : %s");
         return FAILED;
     }
+
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DATABASE_FILE_FOUND, database_filename);
     return SUCCESS;
 }
 
@@ -40,6 +42,8 @@ database_make_schema (int number_tables, ...)
         char *query = va_arg (vargs, char *);
         int query_length = va_arg (vargs, int);
         int error = sqlite3_prepare_v2 (sqlite_connection, query, query_length, &stmt, NULL);
+
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DATABASE_SCHEMA_CHECK, query);
 
         if (error != SQLITE_OK)
         {

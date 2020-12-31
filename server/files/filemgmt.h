@@ -49,12 +49,11 @@ typedef struct filemgmt_file_name
 #define FILEMGMT_HASH_FORMAT "%s/hash(%ld).tmp"
 
 int
-filemgmt_file_query_sqlite3 (
-  const char *query,
-  int query_length,
-  char *file_name,
-  int file_name_length,
-  char *error_message);
+filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length);
+int
+filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length);
+int
+filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_length);
 int
 filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_stats);
 int

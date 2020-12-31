@@ -42,7 +42,7 @@
 // one-to-one mapping to the actions_supported
 enum dbp_actions_enum
 {
-    DBP_ACTION_CREATE = 128,
+    DBP_ACTION_CREATE = 1,
     DBP_ACTION_DELETE,
     DBP_ACTION_NOTIFICATION,
     DBP_ACTION_REQUEST,
@@ -53,7 +53,7 @@ enum dbp_actions_enum
 
 enum dbp_attribs_enum
 {
-    DBP_ATTRIB_ACTION = 128,
+    DBP_ATTRIB_ACTION = 1,
     DBP_ATTRIB_FILENAME,
     DBP_ATTRIB_CRC,
     DBP_ATTRIB_UPDATEAT,
@@ -82,7 +82,7 @@ enum dbp_response_code
     DBP_RESPONSE_WARNINGS = 32,
     DBP_RESPONSE_ACTION_INVALID,
     DBP_RESPONSE_HEADER_EMPTY,
-    DBP_RESPONSE_PARSE_ERROR,
+    DBP_RESPONSE_DESERIALIZER_ERROR,
     DBP_RESPONSE_THIN_ATTRIBS,
     DBP_RESPONSE_ATTRIB_VALUE_INVALID,
     DBP_RESPONSE_FILE_EXISTS_ALREADY,
@@ -283,6 +283,10 @@ hash_table_s
 dbp_header_hash (my_list_s list);
 dbp_header_s
 dbp_header_parse8 (size_t magic);
+my_list_s
+dbp_deserialize_headers (network_data_s headers, int *error);
+void
+dbp_print_headers (my_list_s list);
 
 int
 dbp_action_prehook (dbp_request_s *request);

@@ -165,9 +165,9 @@ dbp_response_accept_status (dbp_response_s *response)
 
     if (connection)
     {
-        network_data_atom_s data_read = network_read_long (connection);
+        long long data_read = network_read_primitives (connection, sizeof (long long), NULL);
 
-        if (data_read.u.long_t == 0XD0FFFFFFFFFFFFFF)
+        if (data_read == 0XD0FFFFFFFFFFFFFF)
         {
             return (SUCCESS);
         }

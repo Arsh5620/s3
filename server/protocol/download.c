@@ -21,12 +21,15 @@ dbp_request_data (dbp_protocol_s *protocol, dbp_request_s *request)
 int
 dbp_request_data_headers (dbp_protocol_s *protocol, dbp_request_s *request)
 {
-    network_data_atom_s data = network_read_long (&protocol->connection);
-    if (((data.u.long_t >> (6 * 8)) & 0xFFFF) != 0xd0d1)
+    int error;
+    long long magic = network_read_primitives (&protocol->connection, sizeof (long long), &error);
+
+    if (((magic >> (6 * 8)) & 0xFFFF) != 0xd0d1)
     {
         return (FAILED);
     }
-    if (request->header_info.data_length != ((data.u.long_t) & 0x0000FFFFFFFFFFFF))
+
+    if (request->header_info.data_length != (magic & 0x0000FFFFFFFFFFFF))
     {
         return (FAILED);
     }

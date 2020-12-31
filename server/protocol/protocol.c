@@ -13,9 +13,11 @@ dbp_connection_initialize_sync (unsigned short port)
 
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
 
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
+
     protocol.connection = network_connect_init_sync (port);
 
-    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
 
     if (
       database_init (DBP_DATABASE_FILENAME) == SUCCESS
@@ -33,6 +35,8 @@ dbp_connection_initialize_sync (unsigned short port)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_CATASTROPHIC, PROTOCOL_MYSQL_FAILED_CONNECT);
     }
+
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, PROTOCOL_SETUP_FINISH);
     return (protocol);
 }
 
@@ -70,23 +74,20 @@ dbp_connection_accept_loop (dbp_protocol_s *protocol)
             dbp_request_s request = {0};
             protocol->current_response = &response;
             protocol->current_request = &request;
-            response.instance = (char *) protocol;
             request.instance = (char *) protocol;
+            response.instance = (char *) protocol;
             response.file_info = &request.file_info;
 
             error = dbp_next_request (protocol);
-            // printf("dbp_next returned value: %d, ", error);
-
             error = dbp_handle_response (&response, error);
+
             if (error != SUCCESS)
             {
                 shutdown = DBP_CONNECTION_SHUTDOWN_CORRUPTION;
             }
 
             dbp_handle_close (&request, &response);
-            // printf("dbp_handle_response value: %d\n", error);
         }
-
         dbp_connection_shutdown (*protocol, shutdown);
     }
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
@@ -126,15 +127,13 @@ dbp_handle_response_string (dbp_response_s *response)
 
         DBP_CASE (link, DBP_RESPONSE_HEADER_EMPTY, DBP_RESPONSE_STRING_HEADER_EMPTY);
 
-        DBP_CASE (link, DBP_RESPONSE_PARSE_ERROR, DBP_RESPONSE_STRING_PARSE_ERROR);
+        DBP_CASE (link, DBP_RESPONSE_DESERIALIZER_ERROR, DBP_RESPONSE_STRING_DESERIALIZER_ERROR);
 
         DBP_CASE (link, DBP_RESPONSE_THIN_ATTRIBS, DBP_RESPONSE_STRING_THIN_ATTRIBS);
 
-        DBP_CASE (
-          link, DBP_RESPONSE_ATTRIB_VALUE_INVALID, DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
+        DBP_CASE (link, DBP_RESPONSE_ATTRIB_VALUE_INVALID, DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
 
-        DBP_CASE (
-          link, DBP_RESPONSE_FILE_EXISTS_ALREADY, DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
+        DBP_CASE (link, DBP_RESPONSE_FILE_EXISTS_ALREADY, DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY);
 
         DBP_CASE (link, DBP_RESPONSE_FILE_NOT_FOUND, DBP_RESPONSE_STRING_FILE_NOT_FOUND);
 
@@ -283,6 +282,9 @@ dbp_next_request (dbp_protocol_s *protocol)
     request->header_table = data_make_table (request->header_list, attribs, DBP_ATTRIBS_COUNT);
 
     result = dbp_request_read_action (request);
+
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
+
     if (result != DBP_RESPONSE_SUCCESS)
     {
         return (result);

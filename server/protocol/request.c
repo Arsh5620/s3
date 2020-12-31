@@ -4,8 +4,16 @@
 ulong
 dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
 {
-    network_data_atom_s header_read = network_read_long (&protocol.connection);
-    request->header_info = dbp_header_parse8 (header_read.u.long_t);
+    int error;
+    long long magic = network_read_primitives (&protocol.connection, sizeof (long long), &error);
+
+    if (error != SUCCESS)
+    {
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
+        return (DBP_RESPONSE_ERROR_READ);
+    }
+
+    request->header_info = dbp_header_parse8 (magic);
 
     if (request->header_info.magic != DBP_PROTOCOL_MAGIC)
     {
@@ -17,31 +25,77 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
         return (DBP_RESPONSE_CORRUPTED_PACKET);
     }
 
-    network_data_s header_raw
+    /**
+     * headers is needed even after we have deserialized the binary information
+     * because the deserializer will only create a struct with pointers to the original data
+     */
+    network_data_s headers
       = network_read_stream (&protocol.connection, request->header_info.header_length);
+    request->header_raw = headers;
 
-    request->header_raw = header_raw;
-    if (header_raw.error_code)
+    if (headers.error_code)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
         return (DBP_RESPONSE_ERROR_READ);
     }
 
-    deserializer_t deserializer
-      = deserializer_init (header_raw.data_address, header_raw.data_length);
-    my_list_s header_list_src = my_list_new (16, sizeof (deserializer_value_t));
-    my_list_s header_list_binary = my_list_new (16, sizeof (key_value_pair_s));
+    request->header_list = dbp_deserialize_headers (headers, &error);
 
-    deserialize_all (&deserializer, &header_list_src);
-    if (dbp_copy_keyvaluepairs (header_list_src, &header_list_binary) != SUCCESS)
+    if (error != SUCCESS)
+    {
+        return error;
+    }
+    else
+    {
+        dbp_print_headers (request->header_list);
+        return (DBP_RESPONSE_SUCCESS);
+    }
+}
+
+void
+dbp_print_headers (my_list_s list)
+{
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
+
+    for (size_t i = 0; i < list.count; i++)
+    {
+        key_value_pair_s *pair = (key_value_pair_s *) my_list_get (list, i);
+
+        my_print (
+          MESSAGE_OUT_LOGS,
+          LOGGER_LEVEL_DEBUG,
+          DESERIALIZER_PRINT_HEADERS_ROW_STRING,
+          pair->key_length,
+          pair->key,
+          pair->value_length,
+          pair->value);
+    }
+}
+
+my_list_s
+dbp_deserialize_headers (network_data_s headers, int *error)
+{
+    deserializer_t deserializer = deserializer_init (headers.data_address, headers.data_length);
+    my_list_s binary_list = my_list_new (16, sizeof (deserializer_value_t));
+    my_list_s kvpairs_list = my_list_new (16, sizeof (key_value_pair_s));
+
+    deserialize_all (&deserializer, &binary_list);
+    if (dbp_copy_keyvaluepairs (binary_list, &kvpairs_list) != SUCCESS)
     {
         /* this means that an error occured while processing the input */
-        return (DBP_RESPONSE_PARSE_ERROR);
+        if (error != NULL)
+        {
+            *error = DBP_RESPONSE_DESERIALIZER_ERROR;
+        }
     }
 
-    my_list_free (header_list_src);
-    request->header_list = header_list_binary;
-    return (DBP_RESPONSE_SUCCESS);
+    my_list_free (binary_list);
+    if (error != NULL)
+    {
+        *error = SUCCESS;
+    }
+
+    return kvpairs_list;
 }
 
 int
@@ -55,7 +109,9 @@ dbp_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list)
             my_print (
               MESSAGE_OUT_LOGS,
               LOGGER_LEVEL_WARN,
-              "Binary deserializer: Ignored empty key, %s:%s", result.key, result.value_2);
+              "Binary deserializer: Ignored empty key, %s:%s",
+              result.key,
+              result.value_2);
             return FAILED;
         }
 
@@ -97,7 +153,7 @@ dbp_request_read_action (dbp_request_s *request)
           DBP_ACTIONS_COUNT,
           pair.value,
           pair.value_length,
-          data_key_compare);
+          data_string_compare);
     }
 
     if (actionval == DBP_ACTION_NOTVALID)

@@ -62,6 +62,17 @@ network_connect_init_sync (int port)
     network_s connection = {0};
     int result = 0;
 
+    my_print (
+      MESSAGE_OUT_LOGS,
+      LOGGER_LEVEL_DEBUG,
+      NETWORK_MODE_INFORMATION,
+#ifdef DEBUG
+      "Plain"
+#else
+      "SSL"
+#endif
+    );
+
 #ifndef DEBUG
 
     // check for certificate and private-key should already be done.
@@ -98,6 +109,7 @@ network_connect_init_sync (int port)
           NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key", SERVER_TLS_CERT_KEY_CHK_FAILED);
     }
 
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
 #endif
 
     connection.server = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -201,7 +213,7 @@ network_read_stream (network_s *connection, ulong size)
             }
             else
             {
-                data.error_code = NETWORK_ERROR_SUCCESS;
+                data.error_code = NETWORK_SUCCESS;
             }
             break;
         }
@@ -264,7 +276,7 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
         break;
         }
     }
-    return (NETWORK_ERROR_SUCCESS);
+    return (NETWORK_SUCCESS);
 }
 
 /*
@@ -279,21 +291,21 @@ network_data_free (network_data_s data)
     }
 }
 
-#define NETWORK_READ(type)                                                                         \
-    network_data_atom_s network_read_##type (network_s *network)                                   \
-    {                                                                                              \
-        network_data_s d0 = network_read_stream (network, sizeof (type));                          \
-        network_data_atom_s d1 = {0};                                                              \
-        if (d0.error_code == NETWORK_ERROR_SUCCESS)                                                \
-        {                                                                                          \
-            d1.u.type##_t = *(type *) d0.data_address;                                             \
-        }                                                                                          \
-        d1.error_code = d0.error_code;                                                             \
-        network_data_free (d0);                                                                    \
-        return d1;                                                                                 \
+long
+network_read_primitives (network_s *network, int size, int *error)
+{
+    network_data_s data = network_read_stream (network, size);
+    long return_value = 0;
+    
+    if (data.error_code == NETWORK_SUCCESS)
+    {
+        memcpy (&return_value, data.data_address, data.data_length);
     }
 
-NETWORK_READ (char);
-NETWORK_READ (short);
-NETWORK_READ (int);
-NETWORK_READ (long);
+    if (error != NULL)
+    {
+        *error = data.error_code;
+    }
+    network_data_free (data);
+    return return_value;
+}

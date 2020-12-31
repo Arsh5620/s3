@@ -33,7 +33,7 @@ data_get_kvpair (my_list_s list, hash_table_s hash_table, long key, int *error)
         {
             *error = (DATA_KEY_NOT_FOUND);
         }
-        
+
         return (key_value_pair_s){0};
     }
 
@@ -44,19 +44,6 @@ data_get_kvpair (my_list_s list, hash_table_s hash_table, long key, int *error)
     return *pair;
 }
 
-data_result_s
-data_parse_files (char *filename, data_keys_s *keys, int key_count)
-{
-    FILE *config = fopen (filename, FILE_MODE_READBINARY);
-    my_list_s parsed = parser_parse_file (config);
-    fclose (config);
-    hash_table_s table = data_make_table (parsed, keys, key_count);
-    data_result_s result;
-    result.list = parsed;
-    result.hash = table;
-    return (result);
-}
-
 void
 data_free (data_result_s result)
 {
@@ -65,7 +52,7 @@ data_free (data_result_s result)
 }
 
 size_t
-data_key_compare (void *memory, char *str, size_t strlen)
+data_string_compare (void *memory, char *str, size_t strlen)
 {
     data_keys_s *s = (data_keys_s *) memory;
 
@@ -91,35 +78,32 @@ data_key_compare (void *memory, char *str, size_t strlen)
 hash_table_s
 data_make_table (my_list_s list, data_keys_s *data, ulong length)
 {
-    int count = list.count;
-    hash_table_s table = hash_table_init (10, 0);
+    hash_table_s table = hash_table_init (10, FALSE);
 
-    for (long i = 0; i < count; ++i)
+    for (long i = 0; i < list.count; ++i)
     {
         key_value_pair_s pair = *(key_value_pair_s *) my_list_get (list, i);
 
         int index = binary_search (
-          data, sizeof (data_keys_s), length, pair.key, pair.key_length, data_key_compare);
+          data, sizeof (data_keys_s), length, pair.key, pair.key_length, data_string_compare);
 
-        // will be -1 if an attribute is not supported (YET!)
-        // which is also ignored.
-        if (index != -1)
+        if (index != BINARYSEARCH_NORESULT)
         {
             data_keys_s attr = data[index];
 
-            hash_table_bucket_s b
+            hash_table_bucket_s bucket
               = hash_table_get (table, (hash_input_u){.number = attr.attrib_code}, 0);
 
-            if (b.is_occupied)
+            if (bucket.is_occupied && bucket.key.number == attr.attrib_code)
             {
                 continue;
             }
 
-            hash_table_bucket_s bucket = {0};
-            bucket.key.number = attr.attrib_code;
-            bucket.value.number = i;
+            hash_table_bucket_s new = {0};
+            new.key.number = attr.attrib_code;
+            new.value.number = i;
 
-            hash_table_add (&table, bucket);
+            hash_table_add (&table, new);
         }
     }
     return (table);

@@ -46,11 +46,9 @@ typedef struct
 void
 data_free (data_result_s result);
 size_t
-data_key_compare (void *memory, char *str, size_t strlen);
+data_string_compare (void *memory, char *str, size_t strlen);
 hash_table_s
 data_make_table (my_list_s list, data_keys_s *data, ulong length);
-data_result_s
-data_parse_files (char *filename, data_keys_s *keys, int key_count);
 char *
 data_get_string (my_list_s result_list, hash_table_s result_table, long key, int *error);
 string_s
