@@ -110,7 +110,7 @@ while(1):
     key_value_pairs = ("action=create\n"
                        "filename=" + file_name_1 + "\n"
                        "crc=00565423\n" + auth)
-    key_value_pair_nonparseable = ("action.==create\n"
+    key_value_pair_nonparseable = ("==create\n"
                                    "filename~ " + file_name_1 + "\n"
                                    "folder\n"
                                    "crc=jkhkjhkk\n")

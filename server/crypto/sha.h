@@ -3,9 +3,12 @@
 #include <openssl/sha.h>
 #include "../general/string.h"
 
-#define SHA256LENGTH	256/4 // reason we are dividing by 4 is to use hex
+#define SHA256LENGTH 256 / 4 // reason we are dividing by 4 is to use hex
 
-uchar *sha_256_compute(string_s string, uchar *buffer, long max_len);
-void sha_256_copy_hex(uchar *dest, uchar *source);
-uchar sha_int_to_hex(uchar unit);
-#endif 	//SHA_INCLUDE_GAURD
+uchar *
+sha_256_compute (string_s string, uchar *buffer, long max_len);
+void
+sha_256_copy_hex (uchar *dest, uchar *source);
+uchar
+sha_int_to_hex (uchar unit);
+#endif // SHA_INCLUDE_GAURD

@@ -3,36 +3,36 @@
 #include <stdio.h>
 #include "output.h"
 
-void output_handle(long handle_type
-	, enum logger_level log_level, char *format, ...)
+void
+output_handle (long handle_type, enum logger_level log_level, char *format, ...)
 {
-	char stdout_print	= (handle_type & OUTPUT_HANDLE_STDOUT) > 0;
-	char logs_print		= (handle_type & OUTPUT_HANDLE_LOGS) > 0;
+    char stdout_print = (handle_type & OUTPUT_HANDLE_STDOUT) > 0;
+    char logs_print = (handle_type & OUTPUT_HANDLE_LOGS) > 0;
 
-	if (stdout_print == 0 && logs_print == 0)
-	{	
-		return; // do nothing.
-	}
+    if (stdout_print == 0 && logs_print == 0)
+    {
+        return; // do nothing.
+    }
 
-	if (stdout_print)
-	{
-		va_list args;
-		va_start(args, format);
-		vfprintf(stdout, format, args);
-		fprintf(stdout, LOG_FILE_NEWLINE);
-		va_end(args);
-	}
+    if (stdout_print)
+    {
+        va_list args;
+        va_start (args, format);
+        vfprintf (stdout, format, args);
+        fprintf (stdout, LOG_FILE_NEWLINE);
+        va_end (args);
+    }
 
-	if (logs_print) 
-	{
-		va_list args;
-		va_start(args, format);
-		logs_write(LOG_LEVEL(log_level), format, args);
-		va_end(args);
+    if (logs_print)
+    {
+        va_list args;
+        va_start (args, format);
+        logs_write (LOG_LEVEL (log_level), format, args);
+        va_end (args);
 
-		if (LOG_LEVEL(log_level) == LOGGER_LEVEL_CATASTROPHIC) 
-		{
-			exit(LOG_EXIT_GET(log_level));
-		}
-	}
+        if (LOG_LEVEL (log_level) == LOGGER_LEVEL_CATASTROPHIC)
+        {
+            exit (LOG_EXIT_GET (log_level));
+        }
+    }
 }

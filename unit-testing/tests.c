@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include "tests.h"
 
-int main()
+int
+main ()
 {
-	int result	= test_fecc();
-	exit(result);
+    int result = test_fecc ();
+    exit (result);
 }
