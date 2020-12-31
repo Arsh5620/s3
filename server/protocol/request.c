@@ -9,8 +9,8 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
 
     if (request->header_info.magic != DBP_PROTOCOL_MAGIC)
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_ERROR,
           PROTOCOL_ABORTED_CORRUPTION,
           request->header_info.magic);
@@ -23,7 +23,7 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
     request->header_raw = header_raw;
     if (header_raw.error_code)
     {
-        output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
         return (DBP_RESPONSE_ERROR_READ);
     }
 
@@ -52,8 +52,8 @@ dbp_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list)
         deserializer_value_t result = *(deserializer_value_t *) my_list_get (source_list, i);
         if (result.key == 0 || result.key_size == 0)
         {
-            output_handle (
-              OUTPUT_HANDLE_LOGS,
+            my_print (
+              MESSAGE_OUT_LOGS,
               LOGGER_LEVEL_WARN,
               "Binary deserializer: Ignored empty key, %s:%s", result.key, result.value_2);
             return FAILED;

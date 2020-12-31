@@ -1,5 +1,5 @@
-#ifndef OUTPUT_INCLUDE_GAURD
-#define OUTPUT_INCLUDE_GAURD
+#ifndef MESSAGES_INCLUDE_GAURD
+#define MESSAGES_INCLUDE_GAURD
 
 #include "../logger/logs.h"
 #include "../general/define.h"
@@ -167,10 +167,10 @@
 
 #define DBP_RESPONSE_STRING_FAILED_AUTHENTICATION "Failed authentication."
 
-#define OUTPUT_HANDLE_STDOUT 0b0001
-#define OUTPUT_HANDLE_LOGS 0b0010
-#define OUTPUT_HANDLE_BOTH 0b0011
+#define MESSAGE_OUT_STDOUT 0b0001
+#define MESSAGE_OUT_LOGS 0b0010
+#define MESSAGE_OUT_BOTH 0b0011
 
 void
-output_handle (long handle_type, enum logger_level log_level, char *format, ...);
-#endif // OUTPUT_INCLUDE_GAURD
+my_print (long handle_type, enum logger_level log_level, char *format, ...);
+#endif 

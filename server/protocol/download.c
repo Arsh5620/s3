@@ -114,7 +114,7 @@ dbp_file_download (dbp_request_s *request)
 
     if (temp == NULL)
     {
-        output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
         return (FAILED);
     }
 
@@ -135,8 +135,8 @@ dbp_file_download (dbp_request_s *request)
     // file download size in bits/second
     double speed = (((double) fileinfo.size / 1024 / 128) * (1000 / time_elapsed));
 
-    output_handle (
-      OUTPUT_HANDLE_LOGS,
+    my_print (
+      MESSAGE_OUT_LOGS,
       LOGGER_LEVEL_INFO,
       PROTOCOL_DOWNLOAD_COMPLETE,
       request->file_info.file_name.length,

@@ -3,7 +3,7 @@
 // the relocation data.
 #include <string.h>
 #include "./filemgmt.h"
-#include "../output/output.h"
+#include "../logger/messages.h"
 #include "../files/path.h"
 
 database_table_bind_s filemgmt_binds = {0};
@@ -59,8 +59,8 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
 
     if (result != FALSE)
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_DEBUG,
           FILEMGMT_RECORD_EXISTS,
           file_name.length,

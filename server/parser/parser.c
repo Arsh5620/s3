@@ -4,7 +4,7 @@
 #include "../general/string.h"
 #include "../files/file.h"
 #include "../memdbg/memory.h"
-#include "../output/output.h"
+#include "../logger/messages.h"
 
 my_list_s
 parser_parse (lexer_status_s *status_r, char *buffer, int length)
@@ -155,8 +155,8 @@ parser_print_lineinfo (lexer_s lexer, lexer_status_s status, char error, char *m
     long max_n = lexer.size - status.base_index;
     long length = ((char *) memchr (base_pointer, '\n', max_n) - base_pointer);
 
-    output_handle (
-      OUTPUT_HANDLE_LOGS,
+    my_print (
+      MESSAGE_OUT_LOGS,
       LOGGER_LEVEL_WARN,
       PARSER_STDOUT_ERROR_STRING,
       error ? status.err_no : status.warnno,
@@ -169,8 +169,8 @@ parser_print_lineinfo (lexer_s lexer, lexer_status_s status, char error, char *m
 
     char c = 0;
 
-    output_handle (
-      OUTPUT_HANDLE_LOGS,
+    my_print (
+      MESSAGE_OUT_LOGS,
       LOGGER_LEVEL_WARN,
       PARSER_OUT_LINE_INFO,
       stat,

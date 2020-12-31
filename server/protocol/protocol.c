@@ -11,11 +11,11 @@ dbp_connection_initialize_sync (unsigned short port)
     dbp_protocol_s protocol = {0};
     protocol.logs = logs_open ();
 
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
 
     protocol.connection = network_connect_init_sync (port);
 
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
 
     if (
       database_init (DBP_CONFIG_FILENAME) == MYSQL_SUCCESS
@@ -30,8 +30,8 @@ dbp_connection_initialize_sync (unsigned short port)
     }
     else
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_FAILURE_OTHER),
           PROTOCOL_MYSQL_FAILED_CONNECT);
     }
@@ -44,7 +44,7 @@ const long profiler_exit = 1000000;
 void
 dbp_connection_accept_loop (dbp_protocol_s *protocol)
 {
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
 
     while (network_connect_accept_sync (&protocol->connection), TRUE)
     {
@@ -52,8 +52,8 @@ dbp_connection_accept_loop (dbp_protocol_s *protocol)
         char *client_ip = inet_ntoa (client.sin_addr);
         ushort client_port = ntohs (client.sin_port);
 
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_INFO,
           PROTOCOL_NETWORK_CLIENT_CONNECT,
           client_ip,
@@ -91,7 +91,7 @@ dbp_connection_accept_loop (dbp_protocol_s *protocol)
 
         dbp_connection_shutdown (*protocol, shutdown);
     }
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
 }
 
 void
@@ -208,8 +208,8 @@ dbp_connection_shutdown (dbp_protocol_s protocol, enum dbp_shutdown_enum type)
             reason = PROTOCOL_SHUTDOWN_REASON_UNKNOWN;
             break;
         }
-        output_handle (
-          OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
+        my_print (
+          MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
     }
 }
 
@@ -218,7 +218,7 @@ dbp_close (dbp_protocol_s protocol)
 {
     close (protocol.connection.client);
     close (protocol.connection.server);
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DBP_CONNECTION_SHUTDOWN_CLEANUP);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DBP_CONNECTION_SHUTDOWN_CLEANUP);
     logs_close ();
 }
 

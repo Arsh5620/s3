@@ -11,7 +11,7 @@
 
 #include "./network.h"
 #include "../memdbg/memory.h"
-#include "../output/output.h"
+#include "../logger/messages.h"
 #include "../logger/logs.h"
 
 /*
@@ -22,8 +22,8 @@ assert (int c1, char *fn, int err)
 {
     if (c1 == GENERAL_ERROR)
     {
-        output_handle (
-          OUTPUT_HANDLE_BOTH,
+        my_print (
+          MESSAGE_OUT_BOTH,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, err),
           NETWORK_ASSERT_MESSAGE,
           fn,
@@ -41,8 +41,8 @@ assert_ssl (int c1, int c2, char *fn, int err)
         char *buffer = m_calloc (buff_len, MEMORY_FILE_LINE);
         ERR_error_string_n (ERR_get_error (), buffer, buff_len);
 
-        output_handle (
-          OUTPUT_HANDLE_BOTH,
+        my_print (
+          MESSAGE_OUT_BOTH,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, err),
           NETWORK_ASSERT_SSL_MESSAGE,
           fn,
@@ -126,8 +126,8 @@ network_connect_init_sync (int port)
     result = listen (connection.server, NETWORK_QUEQUE);
     assert (result, "listen", SERVER_LISTEN_FAILED);
 
-    output_handle (
-      OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
+    my_print (
+      MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
     return connection;
 }
 
@@ -160,8 +160,8 @@ network_connect_accept_sync (network_s *connection)
         assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_accept", SERVER_TLS_SSL_ACCEPT_FAILED);
     }
 
-    output_handle (
-      OUTPUT_HANDLE_LOGS,
+    my_print (
+      MESSAGE_OUT_LOGS,
       LOGGER_LEVEL_INFO,
       NETWORK_ASSERT_SSL_LEVEL_MESSAGE,
       SSL_get_cipher (connection->ssl_tls));

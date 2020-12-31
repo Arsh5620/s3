@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "./auth.h"
 #include "../networking/network.h"
-#include "../output/output.h"
+#include "../logger/messages.h"
 #include "../files/file.h"
 #include "../general/binarysearch.h"
 #include "../general/define.h"

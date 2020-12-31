@@ -6,7 +6,7 @@
 
 #include "./memory.h"
 #include "../general/define.h"
-#include "../output/output.h"
+#include "../logger/messages.h"
 
 #ifdef DEBUG
 
@@ -56,8 +56,8 @@ memory_track_update (
     if (entry.is_occupied != TRUE)
     {
         char *errorm = MEMORY_ALLOCATION_NOENTRY;
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_DEBUG,
           MEMORY_ALLOCATION_ERROR,
           address,
@@ -161,8 +161,8 @@ void
 memory_log_handle (malloc_enum type, malloc_node_s *node, malloc_update_s *update)
 {
 #ifdef MEMORY_DEBUG_LOG
-    output_handle (
-      OUTPUT_HANDLE_LOGS,
+    my_print (
+      MESSAGE_OUT_LOGS,
       LOGGER_LEVEL_DEBUG,
       MEMORY_ALLOCATION_LOG,
       node->address,

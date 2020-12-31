@@ -5,7 +5,7 @@
 #include "./database.h"
 #include "../general/binarysearch.h"
 #include "../memdbg/memory.h"
-#include "../output/output.h"
+#include "../logger/messages.h"
 
 static MYSQL *sql_connection;
 
@@ -58,8 +58,8 @@ database_init (char *config_file)
 
     database_setup_login (result.list, result.hash, &connect);
 
-    output_handle (
-      OUTPUT_HANDLE_LOGS,
+    my_print (
+      MESSAGE_OUT_LOGS,
       LOGGER_LEVEL_DEBUG,
       PROTOCOL_MYSQL_LOGIN_INFO,
       connect.host,
@@ -74,8 +74,8 @@ database_init (char *config_file)
 
     if (mysql_library_init (0, NULL, NULL))
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_MYSQL_LIBINIT),
           DATABASE_MYSQL_LIB_INIT_FAILED);
     }
@@ -83,8 +83,8 @@ database_init (char *config_file)
     sql_connection = mysql_init (NULL);
     if (sql_connection == NULL)
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_MYSQL_INIT),
           DATABASE_MYSQL_INIT_FAILED);
     }
@@ -101,21 +101,21 @@ database_init (char *config_file)
         NULL,
         0))
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_LOGIN_FAIL),
           DATABASE_MYSQL_AUTH_FAILED,
           mysql_error (sql_connection));
     }
 
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DATABASE_MYSQL_CONNECTED);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DATABASE_MYSQL_CONNECTED);
 
     data_free (result);
 
     if (database_verify_integrity () != MYSQL_SUCCESS)
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_INTEGRITY_CHECK_FAIL),
           DATABASE_INTEGRITY_FAILED);
     }
@@ -126,14 +126,14 @@ database_init (char *config_file)
 int
 database_verify_integrity ()
 {
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DATABASE_INTEGRITY_CHECK);
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DATABASE_INTEGRITY_PING);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DATABASE_INTEGRITY_CHECK);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DATABASE_INTEGRITY_PING);
 
     int connection_enabled = mysql_ping (sql_connection);
     if (connection_enabled == 0)
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_INFO,
           DATABASE_CONNECTED_SERVER,
           mysql_get_server_info (sql_connection));
@@ -145,8 +145,8 @@ database_verify_integrity ()
 
         if (MYSQL_SUCCESS != mysql_select_db (sql_connection, DATABASE_DB_NAME))
         {
-            output_handle (
-              OUTPUT_HANDLE_LOGS,
+            my_print (
+              MESSAGE_OUT_LOGS,
               LOGGER_LEVEL_ERROR,
               DATABASE_INT_DB_SELECT_FAILED,
               mysql_error (sql_connection));
@@ -155,14 +155,14 @@ database_verify_integrity ()
 
         if (result)
         {
-            output_handle (
-              OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_DB_CREATED, DATABASE_DB_NAME);
+            my_print (
+              MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_DB_CREATED, DATABASE_DB_NAME);
             return (MYSQL_SUCCESS);
         }
         else
         {
-            output_handle (
-              OUTPUT_HANDLE_LOGS,
+            my_print (
+              MESSAGE_OUT_LOGS,
               LOGGER_LEVEL_INFO,
               DATABASE_INT_DB_CREATE_FAILED,
               DATABASE_DB_NAME);
@@ -171,8 +171,8 @@ database_verify_integrity ()
     }
     else
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_ERROR, DATABASE_INT_DB_CREATE_ACCESS, DATABASE_DB_NAME);
+        my_print (
+          MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, DATABASE_INT_DB_CREATE_ACCESS, DATABASE_DB_NAME);
     }
     return (MYSQL_ERROR);
 }
@@ -182,12 +182,12 @@ database_create_tables (char *statement, char *table)
 {
     if (MYSQL_SUCCESS == mysql_query (sql_connection, statement))
     {
-        output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_TABLE_CREATED, table);
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_TABLE_CREATED, table);
     }
     else
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_ERROR,
           DATABASE_INT_TABLE_CREATE_FAILED,
           DATABASE_DB_NAME,
@@ -208,11 +208,11 @@ database_check_tables (char *statment, char *table)
 
     if (query == MYSQL_SUCCESS)
     {
-        output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_TABLE_FOUND, table);
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_TABLE_FOUND, table);
     }
     else
     {
-        output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_TABLE_NOT_FOUND, table);
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, DATABASE_INT_TABLE_NOT_FOUND, table);
         return (MYSQL_TABLE_NOT_FOUND);
     }
     return (MYSQL_SUCCESS);
@@ -403,8 +403,8 @@ database_bind_setup (MYSQL *mysql, char *select_query)
      */
     if (query != 0)
     {
-        output_handle (
-          OUTPUT_HANDLE_BOTH,
+        my_print (
+          MESSAGE_OUT_BOTH,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_BIND_QUERY_FAIL),
           MYSQLBIND_QUERY_FAILED,
           mysql_error (mysql));
@@ -420,8 +420,8 @@ database_bind_setup (MYSQL *mysql, char *select_query)
     MYSQL_RES *result = mysql_store_result (mysql);
     if (result == NULL)
     {
-        output_handle (
-          OUTPUT_HANDLE_BOTH,
+        my_print (
+          MESSAGE_OUT_BOTH,
           LOG_EXIT_SET (LOGGER_LEVEL_CATASTROPHIC, DATABASE_BIND_QUERY_FAIL),
           MYSQLBIND_QUERY_RESULT_FAILED,
           mysql_error (mysql));
@@ -442,8 +442,8 @@ database_bind_setup (MYSQL *mysql, char *select_query)
         database_bind_fields_s field = database_bind_field (column, NULL);
         table_binds.fields[iterator++] = field;
 
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_DEBUG,
           MYSQLBIND_QUERY_COLUMN_DISCOVERED,
           table_binds.table_name.length,
@@ -463,13 +463,13 @@ database_bind_setup (MYSQL *mysql, char *select_query)
 database_table_bind_s
 database_bind_select_copy (database_table_bind_s source, string_s *columns, int count)
 {
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG, MYSQLBIND_BIND_COPY_REQUEST, count);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, MYSQLBIND_BIND_COPY_REQUEST, count);
 
     for (size_t i = 0; i < count; ++i)
     {
         string_s string = columns[i];
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_DEBUG,
           MYSQLBIND_BIND_COPY_REQUEST_INFO,
           string.length,
@@ -481,8 +481,8 @@ database_bind_select_copy (database_table_bind_s source, string_s *columns, int 
 
     if (count > source.count)
     {
-        output_handle (
-          OUTPUT_HANDLE_LOGS,
+        my_print (
+          MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_ERROR,
           MYSQLBIND_COLUMN_COUNT_ERROR,
           source.count,
@@ -502,8 +502,8 @@ database_bind_select_copy (database_table_bind_s source, string_s *columns, int 
 
         if (bucket.key.address == NULL)
         {
-            output_handle (
-              OUTPUT_HANDLE_LOGS,
+            my_print (
+              MESSAGE_OUT_LOGS,
               LOGGER_LEVEL_ERROR,
               MYSQLBIND_COLUMN_NOT_FOUND,
               string.length,
@@ -583,7 +583,7 @@ database_bind_free (database_table_bind_s bind)
     m_free (bind.bind_params, MEMORY_FILE_LINE);
 
     hash_table_free (bind.hash_table);
-    output_handle (OUTPUT_HANDLE_LOGS, LOGGER_LEVEL_DEBUG, MYSQLBIND_BIND_FREE, bind.count);
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, MYSQLBIND_BIND_FREE, bind.count);
 }
 
 hash_table_s

@@ -1,13 +1,13 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "output.h"
+#include "messages.h"
 
 void
-output_handle (long handle_type, enum logger_level log_level, char *format, ...)
+my_print (long handle_type, enum logger_level log_level, char *format, ...)
 {
-    char stdout_print = (handle_type & OUTPUT_HANDLE_STDOUT) > 0;
-    char logs_print = (handle_type & OUTPUT_HANDLE_LOGS) > 0;
+    char stdout_print = (handle_type & MESSAGE_OUT_STDOUT) > 0;
+    char logs_print = (handle_type & MESSAGE_OUT_LOGS) > 0;
 
     if (stdout_print == 0 && logs_print == 0)
     {
