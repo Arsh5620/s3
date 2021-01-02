@@ -16,7 +16,6 @@
 #include "../memdbg/memory.h"
 #include "../general/string.h"
 #include "../ssbs/list.h"
-#include "../parser/parser.h"
 #include "../databases/database.h"
 #include "../dataparser/data.h"
 #include "../files/path.h"

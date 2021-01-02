@@ -4,7 +4,6 @@
 // refer to CONFIGFORMAT for further information
 
 #include "../files/file.h"
-#include "../parser/parser.h"
 #include "../ssbs/list.h"
 #include "../data-structures/hash_table.h"
 #include "../general/binarysearch.h"
@@ -39,6 +38,17 @@ typedef struct
     my_list_s list;
     hash_table_s hash;
 } data_result_s;
+
+typedef struct
+{
+    char *key;
+    char *value;
+
+    int key_length;
+    long value_length;
+
+    char is_valid;
+} key_value_pair_s;
 
 #define DBP_KEY(str, code)                                                                         \
     (data_keys_s) { .string = str, .strlen = sizeof (str) - 1, .attrib_code = code }
