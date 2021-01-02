@@ -4,7 +4,7 @@ long
 dbp_action_request_writer (dbp_response_s *response)
 {
     string_s writer = response->writer_buffer;
-    FILE *file = fopen (response->file_name->real_hash_file_name.address, FILE_MODE_READBINARY);
+    FILE *file = fopen (response->file_name->real_file_name.address, FILE_MODE_READBINARY);
 
     if (response->header_info.data_length == 0)
     {

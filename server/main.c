@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <argp.h>
+#include <signal.h>
 #include "./protocol/protocol.h"
-#include "argp.h"
 
 struct argp_option argument_options[] = {
   {"disable_debug_logs",
@@ -24,7 +25,7 @@ error_t
 argument_parser (int key, char *arg, struct argp_state *state)
 {
     dbp_log_settings_s *settings = (dbp_log_settings_s *) state->input;
-    
+
     switch (key)
     {
     case 'd':
@@ -48,8 +49,10 @@ int
 main (int argc, char *argv[])
 {
     dbp_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = TRUE};
-
     argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
+
+    sigaction (SIGPIPE, &(struct sigaction){SIG_IGN}, NULL);
+
     dbp_protocol_s protocol = dbp_connection_initialize_sync (NETWORK_PORT, settings);
     if (protocol.init_complete)
         dbp_connection_accept_loop (&protocol);
