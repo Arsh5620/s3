@@ -6,13 +6,19 @@ dbp_request_data (dbp_protocol_s *protocol, dbp_request_s *request)
 {
     if (dbp_request_data_headers (protocol, request) == SUCCESS)
     {
-        dbp_file_download (request);
+        if (dbp_file_download (request) == SUCCESS)
+        {
+            return (DBP_RESPONSE_SUCCESS);
+        }
+        else
+        {
+            return DBP_RESPONSE_SERVER_INTERNAL_ERROR;
+        }
     }
     else
     {
         return (DBP_RESPONSE_CORRUPTED_DATA_HEADERS);
     }
-    return (DBP_RESPONSE_SUCCESS);
 }
 
 /*
@@ -22,14 +28,16 @@ int
 dbp_request_data_headers (dbp_protocol_s *protocol, dbp_request_s *request)
 {
     int error;
-    long long magic = network_read_primitives (&protocol->connection, sizeof (long long), &error);
+    int magic = network_read_primitives (&protocol->connection, sizeof (int32_t), &error);
 
-    if (((magic >> (6 * 8)) & 0xFFFF) != 0xd0d1)
+    if (magic != 0X444E4553) // SEND in ascii
     {
         return (FAILED);
     }
 
-    if (request->header_info.data_length != (magic & 0x0000FFFFFFFFFFFF))
+    size_t data_length = network_read_primitives(&protocol->connection, sizeof(size_t), & error);
+
+    if (request->header_info.data_length != data_length)
     {
         return (FAILED);
     }
@@ -111,7 +119,7 @@ dbp_file_download (dbp_request_s *request)
     file_info_s fileinfo = {0};
     file_sha1 hash = {0};
     fileinfo.size = request->header_info.data_length;
-    temp_file = request->file_info.temp_file_name.address;
+    temp_file = request->file_name.temp_file_name.address;
 
     FILE *temp = fopen (temp_file, FILE_MODE_WRITEBINARY);
 
@@ -127,7 +135,7 @@ dbp_file_download (dbp_request_s *request)
     int download_status
       = file_download (temp, &protocol->connection, fileinfo.size, &hash, dbp_file_hash_sha1);
 
-    dbp_file_hash_writesha1 (request->file_info.temp_hash_file_name.address, hash.hash_list);
+    dbp_file_hash_writesha1 (request->file_name.temp_hash_file_name.address, hash.hash_list);
 
     m_free (hash.hash_buffer, MEMORY_FILE_LINE);
 
@@ -142,8 +150,8 @@ dbp_file_download (dbp_request_s *request)
       MESSAGE_OUT_LOGS,
       LOGGER_LEVEL_INFO,
       PROTOCOL_DOWNLOAD_COMPLETE,
-      request->file_info.file_name.length,
-      request->file_info.file_name.address,
+      request->file_name.file_name.length,
+      request->file_name.file_name.address,
       fileinfo.size,
       download_status,
       time_elapsed,

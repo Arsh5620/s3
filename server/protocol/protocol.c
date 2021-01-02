@@ -76,7 +76,7 @@ dbp_connection_accept_loop (dbp_protocol_s *protocol)
             protocol->current_request = &request;
             request.instance = (char *) protocol;
             response.instance = (char *) protocol;
-            response.file_info = &request.file_info;
+            response.file_name = &request.file_name;
 
             error = dbp_next_request (protocol);
             error = dbp_handle_response (&response, error);
@@ -105,11 +105,11 @@ dbp_handle_close (dbp_request_s *request, dbp_response_s *response)
         m_free (request->additional_data, MEMORY_FILE_LINE);
         request->additional_data = NULL_ZERO;
     }
-    M_FREE (request->file_info.file_name.address);
-    M_FREE (request->file_info.real_hash_file_name.address);
-    M_FREE (request->file_info.real_file_name.address);
-    M_FREE (request->file_info.temp_file_name.address);
-    M_FREE (request->file_info.temp_hash_file_name.address);
+    M_FREE (request->file_name.file_name.address);
+    M_FREE (request->file_name.real_hash_file_name.address);
+    M_FREE (request->file_name.real_file_name.address);
+    M_FREE (request->file_name.temp_file_name.address);
+    M_FREE (request->file_name.temp_hash_file_name.address);
 }
 
 long
@@ -153,7 +153,10 @@ dbp_handle_response_string (dbp_response_s *response)
         DBP_CASE (
           link, DBP_RESPONSE_SERVER_INTERNAL_ERROR, DBP_RESPONSE_STRING_SERVER_INTERNAL_ERROR);
 
-        DBP_CASE (link, DBP_RESPONSE_DATA_NONE_NEEDED, DBP_RESPONSE_STRING_DATA_NONE_NEEDED);
+        DBP_CASE (
+          link,
+          DBP_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT,
+          DBP_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT);
 
         DBP_CASE (
           link, DBP_RESPONSE_FAILED_AUTHENTICATION, DBP_RESPONSE_STRING_FAILED_AUTHENTICATION);
@@ -222,10 +225,10 @@ dbp_close (dbp_protocol_s protocol)
 }
 
 int
-dbp_setupenv (dbp_request_s *request)
+dbp_setup_environment (dbp_request_s *request)
 {
     string_s client_filename = {0};
-    if (filemgmt_setup_temp_files (&request->file_info) != SUCCESS)
+    if (filemgmt_setup_temp_files (&request->file_name) != SUCCESS)
     {
         return (DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE);
     }
@@ -240,7 +243,7 @@ dbp_setupenv (dbp_request_s *request)
         {
             return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
         }
-        error = filemgmt_setup_environment (client_filename, &request->file_info);
+        error = filemgmt_setup_environment (client_filename, &request->file_name);
 
         if (error != SUCCESS)
         {
@@ -259,7 +262,7 @@ dbp_setupenv (dbp_request_s *request)
         }
         }
 
-        error = filemgmt_mkdirs (&request->file_info);
+        error = filemgmt_mkdirs (&request->file_name);
         if (error != SUCCESS)
         {
             return (DBP_RESPONSE_SETUP_ENVIRONMENT_FAILED);
@@ -307,9 +310,8 @@ dbp_next_request (dbp_protocol_s *protocol)
     {
         return (result);
     }
-    // TODO
 
-    result = dbp_setupenv (request);
+    result = dbp_setup_environment (request);
     if (result != SUCCESS)
     {
         return (result);
@@ -342,11 +344,15 @@ dbp_next_request (dbp_protocol_s *protocol)
         {
             return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
         }
-        // client must reply with 0XD0FFFFFFFFFFFFFF to accept data
-        int status = dbp_response_accept_status (response);
-        if (status == FAILED)
+
+        if (dbp_response_accept_status (response) == SUCCESS)
         {
-            return (DBP_RESPONSE_DATA_NOT_ACCEPTED);
+            result = dbp_action_send (request, response);
+
+            if (result != DBP_RESPONSE_SUCCESS)
+            {
+                return result;
+            }
         }
     }
 
@@ -364,8 +370,32 @@ dbp_next_request (dbp_protocol_s *protocol)
         return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
 
-    // TODO still have release resources used by file mgmt.
     return (DBP_RESPONSE_SUCCESS);
+}
+
+int
+dbp_action_send (dbp_request_s *request, dbp_response_s *response)
+{
+    int result = 0;
+    response->response_code = DBP_RESPONSE_PACKET_DATA_READY;
+    long (*writer) (dbp_response_s *) = NULL;
+
+    switch (request->action)
+    {
+    case DBP_ACTION_REQUEST:
+        writer = dbp_action_request_writer;
+        break;
+
+    default:
+        result = DBP_RESPONSE_SUCCESS;
+        break;
+    }
+
+    if (writer != NULL && dbp_response_write (response, writer) != SUCCESS)
+    {
+        return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
+    }
+    return result;
 }
 
 int
@@ -387,7 +417,7 @@ dbp_action_posthook (dbp_request_s *request, dbp_response_s *response)
         result = dbp_posthook_delete (request, response);
         break;
     case DBP_ACTION_REQUEST:
-        result = dbp_posthook_request (request, response);
+        return DBP_RESPONSE_SUCCESS;
         break;
     case DBP_ACTION_SERVER:
         result = dbp_posthook_serverinfo (request, response);

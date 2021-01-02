@@ -14,11 +14,11 @@ enum filemgmt_errors_enum
 
 typedef struct filemgmt_file_name
 {
-    string_s file_name;
-    string_s real_file_name;
-    string_s real_hash_file_name;
-    string_s temp_file_name;
-    string_s temp_hash_file_name;
+    string_s file_name;           // The name of the file as per the client
+    string_s real_file_name;      // The name of the file as the per the server
+    string_s real_hash_file_name; // The name of the hash file as per the server
+    string_s temp_file_name;      // Temporary file name used during file download
+    string_s temp_hash_file_name; // Temporary hash file name used during download
 } filemgmt_file_name_s;
 
 #define FILEMGMT_TABLE_NAME "metadata"
@@ -41,8 +41,8 @@ typedef struct filemgmt_file_name
     " TEXT, " FILEMGMT_COLUMN_DATE " INTEGER, " FILEMGMT_COLUMN_SIZE                               \
     " INTEGER, " FILEMGMT_COLUMN_HASH " BLOB);"
 
-#define FILEMGMT_FOLDER_NAME "backup"
-#define FILEMGMT_FOLDER_META_NAME "meta"
+#define FILEMGMT_FOLDER_NAME "backup/files"
+#define FILEMGMT_FOLDER_META_NAME "backup/hashes"
 
 #define FILEMGMT_TEMP_DIR "temp"
 #define FILEMGMT_TEMP_FORMAT "%s/file(%ld).tmp"

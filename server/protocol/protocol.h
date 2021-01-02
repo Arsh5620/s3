@@ -70,11 +70,11 @@ enum dbp_shutdown_enum
 
 enum dbp_response_code
 {
-    DBP_RESPONSE_SUCCESS // internal, no response to the client
-    ,
-    DBP_RESPONSE_DATA_SEND = 1,
-    DBP_RESPONSE_PACKET_OK, // The packet was received and processed, no further action required on
-                            // server end
+    DBP_RESPONSE_SUCCESS,   // Internal, no response to the client
+    DBP_RESPONSE_DATA_SEND, // The server has acknowledged the request and is now expecting data
+                            // packets
+    DBP_RESPONSE_PACKET_OK, // The packet was received and processed, no
+                            // further action required on server end
     DBP_RESPONSE_PACKET_DATA_MORE,  // Requesting send permission from client
     DBP_RESPONSE_PACKET_DATA_READY, // Sending data
 
@@ -89,7 +89,7 @@ enum dbp_response_code
     DBP_RESPONSE_FILE_NOT_FOUND,
     DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS,
     DBP_RESPONSE_NOTIFY_TOOBIG,
-    DBP_RESPONSE_DATA_NONE_NEEDED,
+    DBP_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT,
     DBP_RESPONSE_DATA_NOT_ACCEPTED,
     DBP_RESPONSE_MIX_AUTH_ERROR,
     DBP_RESPONSE_SERVER_ERROR_NOAUTH,
@@ -176,9 +176,12 @@ typedef struct
      * accepts the file before we can continue, the prehook function
      * must set this value to TRUE for the protocol to wait for client
      * confirmation.
+     * Then once we receive a confirmation, it is set in the same variable
+     * so in the data send function we can check the value of this to
+     * check if we should start writing
      */
     boolean data_write_confirm;
-    filemgmt_file_name_s file_info;
+    filemgmt_file_name_s file_name;
 
     /*
      * instance is a pointer to the dbp_protocol_s that will have
@@ -197,9 +200,9 @@ typedef struct
      * failure after a call to the requested action.
      */
     long response_code;
-    filemgmt_file_name_s *file_info;
-    string_s writer;
-    long data_written;
+    filemgmt_file_name_s *file_name;
+    string_s writer_buffer;
+    long total_write_completed;
     char *instance;
 } dbp_response_s;
 
@@ -240,6 +243,9 @@ ulong
 dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request);
 int
 dbp_request_read_action (dbp_request_s *request);
+
+long
+dbp_action_request_writer (dbp_response_s *in);
 
 int
 dbp_posthook_notification (dbp_request_s *request, dbp_response_s *response);
@@ -292,6 +298,8 @@ int
 dbp_action_prehook (dbp_request_s *request);
 int
 dbp_action_posthook (dbp_request_s *request, dbp_response_s *response);
+int
+dbp_action_send (dbp_request_s *request, dbp_response_s *response);
 
 int
 dbp_handle_response (dbp_response_s *response, enum dbp_response_code code);

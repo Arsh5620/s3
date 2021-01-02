@@ -13,7 +13,7 @@
     " TEXT, " AUTH_COLUMN_SECRET " TEXT);"
 
 #define AUTH_QUERY                                                                                 \
-    "SELECT COUNT(*), 'Hello world!' FROM " AUTH_TABLE_NAME " WHERE"                                              \
+    "SELECT COUNT(*), 'Hello world!' FROM " AUTH_TABLE_NAME " WHERE"                               \
     " " AUTH_COLUMN_USERNAME " = ? AND"                                                            \
     " " AUTH_COLUMN_SECRET " = ? LIMIT 1;"
 

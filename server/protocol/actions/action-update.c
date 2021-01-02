@@ -7,7 +7,7 @@ dbp_prehook_update (dbp_request_s *request)
     struct stat file_stats = {0};
 
     if (!filemgmt_file_exists (
-          request->file_info.file_name, request->file_info.real_file_name, &file_stats))
+          request->file_name.file_name, request->file_name.real_file_name, &file_stats))
     {
         return (DBP_RESPONSE_FILE_NOT_FOUND);
     }
@@ -50,7 +50,7 @@ dbp_posthook_update (dbp_request_s *request, dbp_response_s *response)
 {
     dbp_action_update_s *update_attribs = (dbp_action_update_s *) request->additional_data;
 
-    string_s real_file = request->file_info.real_file_name;
+    string_s real_file = request->file_name.real_file_name;
     if (update_attribs->trim && truncate (real_file.address, update_attribs->update_at))
     {
         return (DBP_RESPONSE_SERVER_INTERNAL_ERROR);
@@ -58,7 +58,7 @@ dbp_posthook_update (dbp_request_s *request, dbp_response_s *response)
 
     int result = file_append (
       real_file.address,
-      request->file_info.temp_file_name.address,
+      request->file_name.temp_file_name.address,
       update_attribs->update_at,
       request->header_info.data_length);
 

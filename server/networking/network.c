@@ -296,7 +296,7 @@ network_read_primitives (network_s *network, int size, int *error)
 {
     network_data_s data = network_read_stream (network, size);
     long return_value = 0;
-    
+
     if (data.error_code == NETWORK_SUCCESS)
     {
         memcpy (&return_value, data.data_address, data.data_length);

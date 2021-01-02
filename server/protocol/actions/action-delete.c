@@ -7,10 +7,10 @@ dbp_prehook_delete (dbp_request_s *request)
 {
     if (request->header_info.data_length)
     {
-        return (DBP_RESPONSE_DATA_NONE_NEEDED);
+        return (DBP_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT);
     }
 
-    if (filemgmt_remove_meta (request->file_info.file_name) != SUCCESS)
+    if (filemgmt_remove_meta (request->file_name.file_name) != SUCCESS)
     {
         return (DBP_RESPONSE_SERVER_INTERNAL_ERROR);
     }

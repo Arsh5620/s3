@@ -11,6 +11,7 @@ sys.path.insert(0, parentdir)  # noqa
 from python import serializetypes  # noqa
 # pylint: disable=import-error
 from python import serialize  # noqa
+from python import deserialize  # noqa
 import inspect
 
 sock = socket.socket()
@@ -65,15 +66,11 @@ class PacketResponseReader:
         recv_data = ssock.recv(recv_data_size_int)
         self.data_length = recv_data_size_int
 
-        header_data = recv_header_keys.decode("ascii").rstrip(' \0')
+        header_list = deserialize.deserialize_all(recv_header_keys)
         self.return_data = recv_data.decode("ascii")
 
-        header_list = header_data.split("\r\n")
-
         for pair in header_list:
-            pair_split = pair.split('=')
-            if (len(pair_split) == 2):
-                self.dictionary[pair_split[0].strip()] = pair_split[1].strip()
+            self.dictionary[pair.key] = pair.value
 
     def getDictionary(self):
         return(self.dictionary)
@@ -108,7 +105,6 @@ def is_int(s):
 
 while(1):
     magic0 = 0xD010000000000000
-    magic1 = 0xD0D1000000000000
     magic_invalid0 = 0x0008000000000000
     magic_invalid1 = 0x00D1000000000000
 
@@ -152,17 +148,18 @@ while(1):
           "9. Send file update packet\n"
           "A. Delete the file\n"
           "B. Request the file\n"
-          "C. Request server info\n")
+          "C. Request server info\n"
+          "Ctrl + C Exit client\n")
 
     data_entered = input()  # wait for the client to press enter before sending the packet
 
     magic_packet = magic0
-    magic_data = magic1
+    magic_data = "SEND"
     header_pairs = key_value_pairs
     if (data_entered == "1"):
         magic_packet = magic_invalid0
     elif (data_entered == "2"):
-        magic_data = magic_invalid1
+        magic_data = "NOSEND"
     elif (data_entered == "3"):
         header_pairs = key_value_pair_nonparseable
     elif (data_entered == "4"):
@@ -185,10 +182,8 @@ while(1):
     elif (data_entered == "C"):
         header_pairs = key_value_pair_server
     else:
-        print("Incorrect option selected, kill "
-              "program with Ctrl + C if does not exit")
-        ssock.recv(1)  # just to check if the sock is open
-        exit()
+        print("Not a valid option\n")
+        continue
 
     filename = './file'
     fin = open(filename, 'rb')  # open file one.pdf to send
@@ -208,11 +203,11 @@ while(1):
 
     packet_response = PacketResponseReader()
     response_data_code = packet_response.getDictionary()["response"]
-    print("Server response code is : " + response_data_code)
+    print("Server response code is : " + str(response_data_code))
     print("Server response said : " + packet_response.getData())
-    if (response_data_code == "\"1\""):
-        magic_data += file_len
-        ssock.send(magic_data.to_bytes(8, byteorder="little"))
+    if (response_data_code == 1):
+        ssock.send(magic_data.encode("ascii"))
+        ssock.send(file_len.to_bytes(8, byteorder=sys.byteorder))
         file_data = fin.read()
 
         ssock.send(file_data)
@@ -221,19 +216,17 @@ while(1):
         print("")
         print("Response for data received")
         data_response_code = packet_response2.getDictionary()["response"]
-        print("Response code for data sent : " + data_response_code)
+        print("Response code for data sent : " + str(data_response_code))
         print("Response data for data sent : " + packet_response2.getData())
-        if (data_response_code == "\"2\""):
+        if (data_response_code == 2):
             print("Server accepted the data that was sent")
         else:
             print("Server rejected the data that was sent")
-    elif (response_data_code == "\"3\""):
-        ssock.send(0XD0FFFFFFFFFFFFFF.to_bytes(8, byteorder="little"))
+    elif (response_data_code == 3):
+        ssock.send("ACCEPT\0\0".encode("ascii"))
         print("Server is sending data now:")
         packet_data = PacketResponseReader()
         data_response_code = packet_data.getDictionary()["response"]
-        print("Response code for data sent : " + data_response_code)
+        print("Response code for data sent : " + str(data_response_code))
         print("Response data for data sent : " + packet_data.getData())
-    else:
-        print("Server did not reply proper.")
     print("****")

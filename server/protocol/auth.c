@@ -44,8 +44,7 @@ dbp_auth_query (dbp_request_s *request)
     char sha_hash[SHA256LENGTH] = {0};
     sha_256 (password, (uchar *) sha_hash, SHA256LENGTH);
 
-    error = dbp_auth_query_sqlite3 (
-      username.address, username.length, sha_hash, sizeof(sha_hash));
+    error = dbp_auth_query_sqlite3 (username.address, username.length, sha_hash, sizeof (sha_hash));
     return (error == SUCCESS ? DBP_RESPONSE_SUCCESS : DBP_RESPONSE_FAILED_AUTHENTICATION);
 }
 

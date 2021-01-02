@@ -16,7 +16,7 @@ dbp_prehook_serverinfo (dbp_request_s *request)
 {
     if (request->header_info.data_length != 0)
     {
-        return (DBP_RESPONSE_DATA_NONE_NEEDED);
+        return (DBP_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT);
     }
     return (SUCCESS);
 }

@@ -144,7 +144,8 @@
 
 #define PARSER_STDOUT_ERROR_STRING "status code: %ld, line no: %ld, index no: %ld, line length: %d"
 
-#define DBP_RESPONSE_STRING_DATA_NONE_NEEDED "Data not required."
+#define DBP_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT                                            \
+    "Unexpected data from client for the requested action type."
 
 #define DBP_RESPONSE_STRING_FAILED_AUTHENTICATION "Failed authentication."
 
