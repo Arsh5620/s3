@@ -62,10 +62,11 @@ file_download (
   FILE *file,
   network_s *network,
   ulong size,
-  file_sha1 *hash,
-  void (*sha1_hash) (file_sha1 *, network_data_s, boolean))
+  file_hash_s *hash,
+  void (*hashing_function) (file_hash_s *, network_data_s, boolean))
 {
     ulong read_required = 0, index = 0;
+
     do
     {
         read_required = size - index;
@@ -88,19 +89,24 @@ file_download (
             return (FILE_NETWORK_ERROR);
         }
 
-        int written = fwrite (data.data_address, 1, data.data_length, file);
-
-        if (written != data.data_length)
+        if (fwrite (data.data_address, sizeof (char), data.data_length, file) != data.data_length)
         {
             return (FILE_WRITE_ERROR);
         }
 
-        sha1_hash (hash, data, FALSE);
+        if (hashing_function != NULL)
+        {
+            hashing_function (hash, data, FALSE);
+        }
+
         network_data_free (data);
         index += data.data_length;
     } while (index < size);
 
-    sha1_hash (hash, (network_data_s){0}, TRUE);
+    if (hashing_function != NULL)
+    {
+        hashing_function (hash, (network_data_s){0}, TRUE);
+    }
 
     fflush (file);
     return (FILE_SUCCESS);

@@ -36,8 +36,8 @@
     "could not open the temporary file for writing data from the client"
 
 #define PROTOCOL_DOWNLOAD_COMPLETE                                                                 \
-    "client sent file name \"%.*s\" for (%d) bytes "                                               \
-    "[status: %d, time: %.3fms, speed: %.2fMb/s]"
+    "downloaded file name \"%.*s\", (%d) bytes, "                                               \
+    "[status: %d, time: %ld ms]"
 
 #define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS "could not open directory \"%s\", permission denied"
 

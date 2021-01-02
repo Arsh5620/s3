@@ -37,12 +37,32 @@ typedef struct file_info
     string_s name;
 } file_info_s;
 
-typedef struct file_hash_sha1
+typedef struct file_hash
 {
-    my_list_s hash_list; // sha1 hash for every 1 MB of file block
+    /**
+     * hash_function is called on a given data buffer to compute the
+     * hash of that buffer, while hash_compute_length is the length
+     * of the output of a given hashing algorithm, such as
+     * hash_compute_length for sha1 is 20
+     */
+    void (*hash_function) (void *hash, char *hash_buffer, int hash_buffer_length);
+    int hash_compute_length;
+
+    /**
+     * hash_list will store all the hashes for the given file,
+     * while hash_buffer, hash_index, and hash_size is used to
+     * buffer the data so that we have enough data to perform
+     * the hash.
+     * So, like right now we are using 1MB as the buffer size
+     * , so until we have 1MB of data we will keep on buffering
+     * but once we have enough data we will call the hash_function
+     * and it will create a hash that we will then add to the hash_list
+     * and then we will clear the buffer and start over again.
+     */
+    my_list_s hash_list;
     char *hash_buffer;
     ulong hash_index, hash_size;
-} file_sha1;
+} file_hash_s;
 
 typedef struct
 {
@@ -79,8 +99,8 @@ file_download (
   FILE *file,
   network_s *network,
   ulong size,
-  file_sha1 *hash,
-  void (*sha1_hash) (file_sha1 *, network_data_s, boolean));
+  file_hash_s *hash,
+  void (*sha1_hash) (file_hash_s *, network_data_s, boolean));
 string_s
 file_path_concat (string_s path1, string_s path2);
 
