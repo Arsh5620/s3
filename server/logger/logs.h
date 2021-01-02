@@ -32,8 +32,14 @@ enum logger_level
     LOGGER_LEVEL_CATASTROPHIC // any error where program WILL exit.
 };
 
+typedef struct
+{
+    boolean print_debug_logs;
+    boolean print_stack_frames;
+} dbp_log_settings_s;
+
 logger_s
-logs_open ();
+logs_open (dbp_log_settings_s settings);
 void
 logs_close ();
 char **

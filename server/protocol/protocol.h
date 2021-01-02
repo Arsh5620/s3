@@ -217,11 +217,6 @@ typedef struct
     dbp_response_s *current_response;
 } dbp_protocol_s;
 
-typedef struct
-{
-    boolean print_debug_logs;
-} dbp_protocol_settings_s;
-
 void
 dbp_print_counter ();
 
@@ -232,7 +227,7 @@ dbp_handle_close (dbp_request_s *request, dbp_response_s *response);
 ulong
 dbp_next_request (dbp_protocol_s *protocol);
 dbp_protocol_s
-dbp_connection_initialize_sync (unsigned short port);
+dbp_connection_initialize_sync (unsigned short port,dbp_log_settings_s settings);
 void
 dbp_connection_accept_loop (dbp_protocol_s *protocol);
 void

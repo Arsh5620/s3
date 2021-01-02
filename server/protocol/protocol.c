@@ -5,11 +5,11 @@
  * It will however exit for any error that is not recoverable.
  */
 dbp_protocol_s
-dbp_connection_initialize_sync (unsigned short port)
+dbp_connection_initialize_sync (unsigned short port, dbp_log_settings_s settings)
 {
     /* variables are inited right to left first */
     dbp_protocol_s protocol = {0};
-    protocol.logs = logs_open ();
+    protocol.logs = logs_open (settings);
 
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
 

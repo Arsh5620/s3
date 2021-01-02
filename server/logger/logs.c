@@ -11,7 +11,9 @@
 #include "../memdbg/memory.h"
 #include "../files/file.h"
 
+// In c static means that the variables are only available in the same translation unit
 static logger_s logs = {0};
+static dbp_log_settings_s log_settings;
 
 // logs_gettime_s will allocate 64 bytes and format the current
 // time according to format, check strftime for more information
@@ -89,8 +91,9 @@ logs_open_file (logger_s *log)
 }
 
 logger_s
-logs_open ()
+logs_open (dbp_log_settings_s settings)
 {
+    log_settings = settings;
     if (logs.init == TRUE)
     {
         return logs;
@@ -123,6 +126,11 @@ char *log_levels[]
 boolean
 logs_write (enum logger_level level, char *string, va_list args)
 {
+    if (log_settings.print_debug_logs == FALSE && level == LOGGER_LEVEL_DEBUG)
+    {
+        return TRUE;
+    }
+
     if (logs.init == FALSE && level >= LOGGER_LEVEL_WARN)
     {
         vprintf (string, args); // prints to the console output
@@ -152,13 +160,16 @@ logs_write (enum logger_level level, char *string, va_list args)
     write = fwrite (buffer, sizeof (char), length, logs.file_p);
     fwrite (LOG_FILE_NEWLINE, sizeof (char), sizeof (LOG_FILE_NEWLINE) - 1, logs.file_p);
 
-    int count = 0;
-    char **data = get_backtrace (&count);
-
-    for (size_t i = 0; i < count; i++)
+    if (log_settings.print_stack_frames)
     {
-        fwrite (data[i], sizeof (char), strlen (data[i]), logs.file_p);
-        fwrite (LOG_FILE_NEWLINE, sizeof (char), sizeof (LOG_FILE_NEWLINE) - 1, logs.file_p);
+        int count = 0;
+        char **data = get_backtrace (&count);
+
+        for (size_t i = 0; i < count; i++)
+        {
+            fwrite (data[i], sizeof (char), strlen (data[i]), logs.file_p);
+            fwrite (LOG_FILE_NEWLINE, sizeof (char), sizeof (LOG_FILE_NEWLINE) - 1, logs.file_p);
+        }
     }
 
     free (buffer);
@@ -188,7 +199,7 @@ get_backtrace (int *backtrace_count)
 #ifdef __linux__
     int backtrace_size = 256;
     void *backtrace_memory = m_malloc (backtrace_size);
-    *backtrace_count = backtrace ((void**)backtrace_memory, backtrace_size);
+    *backtrace_count = backtrace ((void **) backtrace_memory, backtrace_size);
 
     char **symbols = backtrace_symbols (backtrace_memory, backtrace_size);
     m_free (backtrace_memory);
