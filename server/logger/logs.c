@@ -116,11 +116,11 @@ logs_open ()
 }
 
 char *log_levels[]
-  = {" [INFO] -> ", " [DEBUG] -> ", " [WARN] -> ", " [ERROR] -> ", " [CATASTROPHIC] -> "};
+  = {"[INFO] -> ", "[DEBUG] -> ", "[WARN] -> ", "[ERROR] -> ", "[CATASTROPHIC] -> "};
 
 // this function returns TRUE for no error, and FALSE if an error occur
 boolean
-logs_write (enum logger_level level, char *string, va_list args)
+logs_write (enum logger_level level, char *location_information, char *string, va_list args)
 {
     if (logs.init == FALSE && level >= LOGGER_LEVEL_WARN)
     {
@@ -135,6 +135,8 @@ logs_write (enum logger_level level, char *string, va_list args)
     int write = fwrite (date, 1, length, logs.file_p);
     free (date);
 
+    fwrite (location_information, sizeof (char), strlen (location_information), logs.file_p);
+
     char *log_level;
     if (level >= LOGGER_LEVEL_INFO && level <= LOGGER_LEVEL_CATASTROPHIC)
     {
@@ -145,11 +147,11 @@ logs_write (enum logger_level level, char *string, va_list args)
         log_level = "LOG_LEVEL_NOT_KNOWN";
     }
 
-    fwrite (log_level, 1, strlen (log_level), logs.file_p);
+    fwrite (log_level, sizeof (char), strlen (log_level), logs.file_p);
 
     char *buffer = string_svprintf2 (string, args, &length);
-    write = fwrite (buffer, 1, length, logs.file_p);
-    fwrite (LOG_FILE_NEWLINE, 1, 2, logs.file_p);
+    write = fwrite (buffer, sizeof (char), length, logs.file_p);
+    fwrite (LOG_FILE_NEWLINE, sizeof (char), sizeof (LOG_FILE_NEWLINE) - 1, logs.file_p);
     free (buffer);
 
     if (length != write)

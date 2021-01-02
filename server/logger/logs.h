@@ -39,6 +39,6 @@ logs_close ();
 char *
 logs_gettime_s (char *format, char ns, long *len);
 boolean
-logs_write (enum logger_level level, char *string, va_list args);
+logs_write (enum logger_level level, char *location_information, char *string, va_list args);
 
 #endif
