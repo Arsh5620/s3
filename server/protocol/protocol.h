@@ -48,7 +48,7 @@ enum dbp_actions_enum
     DBP_ACTION_REQUEST,
     DBP_ACTION_SERVER,
     DBP_ACTION_UPDATE,
-    DBP_ACTION_NOTVALID = -1
+    DBP_ACTION_INVALID = -1
 };
 
 enum dbp_attribs_enum
@@ -70,20 +70,20 @@ enum dbp_shutdown_enum
 
 enum dbp_response_code
 {
-    DBP_RESPONSE_SUCCESS // internal no response to send to client
+    DBP_RESPONSE_SUCCESS // internal, no response to the client
     ,
     DBP_RESPONSE_DATA_SEND = 1,
-    DBP_RESPONSE_PACKET_OK,
-    DBP_RESPONSE_PACKET_DATA_MORE // when requesting permission to send data
-    ,
-    DBP_RESPONSE_PACKET_DATA_READY // when actually sending data
+    DBP_RESPONSE_PACKET_OK, // The packet was received and processed, no further action required on
+                            // server end
+    DBP_RESPONSE_PACKET_DATA_MORE,  // Requesting send permission from client
+    DBP_RESPONSE_PACKET_DATA_READY, // Sending data
+
     /* warnings but we can continue the connection */
-    ,
     DBP_RESPONSE_WARNINGS = 32,
     DBP_RESPONSE_ACTION_INVALID,
     DBP_RESPONSE_HEADER_EMPTY,
     DBP_RESPONSE_DESERIALIZER_ERROR,
-    DBP_RESPONSE_THIN_ATTRIBS,
+    DBP_RESPONSE_MISSING_ATTRIBS,
     DBP_RESPONSE_ATTRIB_VALUE_INVALID,
     DBP_RESPONSE_FILE_EXISTS_ALREADY,
     DBP_RESPONSE_FILE_NOT_FOUND,
@@ -93,20 +93,20 @@ enum dbp_response_code
     DBP_RESPONSE_DATA_NOT_ACCEPTED,
     DBP_RESPONSE_MIX_AUTH_ERROR,
     DBP_RESPONSE_SERVER_ERROR_NOAUTH,
-    DBP_RESPONSE_FAILED_AUTHENTICATION
+    DBP_RESPONSE_FAILED_AUTHENTICATION,
+
     /* errors and the connection will need to be closed */
-    ,
     DBP_RESPONSE_ERRORS = 128,
     DBP_RESPONSE_CORRUPTED_PACKET,
     DBP_RESPONSE_CORRUPTED_DATA_HEADERS,
-    DBP_RESPONSE_SETUP_ENV_FAILED,
-    DBP_RESPONSE_GENERAL_SERVER_ERROR,
-    DBP_RESPONSE_GENERAL_DIR_ERROR,
-    DBP_RESPONSE_GENERAL_FILE_ERROR,
-    DBP_RESPONSE_SQL_INTERNAL_ERROR,
-    DBP_RESPONSE_SQL_NOT_AVAIL,
-    DBP_RESPONSE_ERROR_WRITE,
-    DBP_RESPONSE_ERROR_READ,
+    DBP_RESPONSE_SETUP_ENVIRONMENT_FAILED,
+    DBP_RESPONSE_SERVER_INTERNAL_ERROR,
+    DBP_RESPONSE_SERVER_DIR_ERROR,
+    DBP_RESPONSE_SERVER_FILE_ERROR,
+    DBP_RESPONSE_SQLITE_INTERNAL_ERROR,
+    DBP_RESPONSE_SQLITE_NO_CONNECTION,
+    DBP_RESPONSE_NETWORK_ERROR_WRITE,
+    DBP_RESPONSE_NETWORK_ERROR_READ,
     DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE,
     DBP_RESPONSE_ERROR_WRITING_HEADERS
 };
@@ -131,7 +131,7 @@ typedef struct
 #define DBP_ATTRIBS_STRUCT_COUNT DBP_ATTRIBS_COUNT - 1
 #define DBP_KEY_FILENAME "file_name"
 
-#define DBP_CASE(string_dest, code, string)                                                      \
+#define DBP_CASE(string_dest, code, string)                                                        \
     case code:                                                                                     \
     {                                                                                              \
         string_dest = STRING (string);                                                             \

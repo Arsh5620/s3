@@ -129,7 +129,7 @@ dbp_handle_response_string (dbp_response_s *response)
 
         DBP_CASE (link, DBP_RESPONSE_DESERIALIZER_ERROR, DBP_RESPONSE_STRING_DESERIALIZER_ERROR);
 
-        DBP_CASE (link, DBP_RESPONSE_THIN_ATTRIBS, DBP_RESPONSE_STRING_THIN_ATTRIBS);
+        DBP_CASE (link, DBP_RESPONSE_MISSING_ATTRIBS, DBP_RESPONSE_STRING_MISSING_ATTRIBS);
 
         DBP_CASE (link, DBP_RESPONSE_ATTRIB_VALUE_INVALID, DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID);
 
@@ -145,10 +145,13 @@ dbp_handle_response_string (dbp_response_s *response)
         DBP_CASE (
           link, DBP_RESPONSE_CORRUPTED_DATA_HEADERS, DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
 
-        DBP_CASE (link, DBP_RESPONSE_SETUP_ENV_FAILED, DBP_RESPONSE_STRING_SETUP_ENV_FAILED);
+        DBP_CASE (
+          link,
+          DBP_RESPONSE_SETUP_ENVIRONMENT_FAILED,
+          DBP_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED);
 
         DBP_CASE (
-          link, DBP_RESPONSE_GENERAL_SERVER_ERROR, DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR);
+          link, DBP_RESPONSE_SERVER_INTERNAL_ERROR, DBP_RESPONSE_STRING_SERVER_INTERNAL_ERROR);
 
         DBP_CASE (link, DBP_RESPONSE_DATA_NONE_NEEDED, DBP_RESPONSE_STRING_DATA_NONE_NEEDED);
 
@@ -174,7 +177,7 @@ dbp_handle_response (dbp_response_s *response, enum dbp_response_code code)
 
     if (dbp_response_write (response, dbp_handle_response_string) != SUCCESS)
     {
-        return (DBP_RESPONSE_ERROR_WRITE);
+        return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
 
     if (response->response_code > DBP_RESPONSE_ERRORS)
@@ -241,7 +244,7 @@ dbp_setupenv (dbp_request_s *request)
 
         if (error != SUCCESS)
         {
-            return (DBP_RESPONSE_SETUP_ENV_FAILED);
+            return (DBP_RESPONSE_SETUP_ENVIRONMENT_FAILED);
         }
 
         switch (request->action)
@@ -259,7 +262,7 @@ dbp_setupenv (dbp_request_s *request)
         error = filemgmt_mkdirs (&request->file_info);
         if (error != SUCCESS)
         {
-            return (DBP_RESPONSE_SETUP_ENV_FAILED);
+            return (DBP_RESPONSE_SETUP_ENVIRONMENT_FAILED);
         }
     }
     return (SUCCESS);
@@ -295,7 +298,7 @@ dbp_next_request (dbp_protocol_s *protocol)
 
     if (assert == FALSE)
     {
-        return (DBP_RESPONSE_THIN_ATTRIBS);
+        return (DBP_RESPONSE_MISSING_ATTRIBS);
     }
 
     result = dbp_auth_transaction (request);
@@ -323,7 +326,7 @@ dbp_next_request (dbp_protocol_s *protocol)
     {
         if (dbp_handle_response (response, DBP_RESPONSE_DATA_SEND) != SUCCESS)
         {
-            return (DBP_RESPONSE_ERROR_WRITE);
+            return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
         }
 
         result = dbp_request_data (protocol, request);
@@ -337,7 +340,7 @@ dbp_next_request (dbp_protocol_s *protocol)
     {
         if (dbp_handle_response (response, DBP_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
         {
-            return (DBP_RESPONSE_ERROR_WRITE);
+            return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
         }
         // client must reply with 0XD0FFFFFFFFFFFFFF to accept data
         int status = dbp_response_accept_status (response);
@@ -358,7 +361,7 @@ dbp_next_request (dbp_protocol_s *protocol)
       response->response_code != DBP_RESPONSE_PACKET_DATA_READY
       && dbp_handle_response (response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
     {
-        return (DBP_RESPONSE_ERROR_WRITE);
+        return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
 
     // TODO still have release resources used by file mgmt.
@@ -389,8 +392,8 @@ dbp_action_posthook (dbp_request_s *request, dbp_response_s *response)
     case DBP_ACTION_SERVER:
         result = dbp_posthook_serverinfo (request, response);
         break;
-    case DBP_ACTION_NOTVALID:
-        result = DBP_RESPONSE_GENERAL_SERVER_ERROR;
+    case DBP_ACTION_INVALID:
+        result = DBP_RESPONSE_SERVER_INTERNAL_ERROR;
         break;
     }
     return (result);
@@ -420,8 +423,8 @@ dbp_action_prehook (dbp_request_s *request)
     case DBP_ACTION_SERVER:
         result = dbp_prehook_serverinfo (request);
         break;
-    case DBP_ACTION_NOTVALID:
-        result = DBP_RESPONSE_GENERAL_SERVER_ERROR;
+    case DBP_ACTION_INVALID:
+        result = DBP_RESPONSE_SERVER_INTERNAL_ERROR;
         break;
     }
     return (result);

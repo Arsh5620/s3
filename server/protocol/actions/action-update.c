@@ -53,7 +53,7 @@ dbp_posthook_update (dbp_request_s *request, dbp_response_s *response)
     string_s real_file = request->file_info.real_file_name;
     if (update_attribs->trim && truncate (real_file.address, update_attribs->update_at))
     {
-        return (DBP_RESPONSE_GENERAL_SERVER_ERROR);
+        return (DBP_RESPONSE_SERVER_INTERNAL_ERROR);
     }
 
     int result = file_append (
@@ -65,7 +65,7 @@ dbp_posthook_update (dbp_request_s *request, dbp_response_s *response)
     // TODO free memory used.
     if (result != FILE_SUCCESS)
     {
-        return (DBP_RESPONSE_GENERAL_SERVER_ERROR);
+        return (DBP_RESPONSE_SERVER_INTERNAL_ERROR);
     }
     return (SUCCESS);
 }

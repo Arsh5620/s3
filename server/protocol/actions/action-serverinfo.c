@@ -27,7 +27,7 @@ dbp_posthook_serverinfo (dbp_request_s *request, dbp_response_s *response)
     response->response_code = DBP_RESPONSE_PACKET_DATA_READY;
     if (dbp_response_write (response, dbp_server_request_writer) != SUCCESS)
     {
-        return (DBP_RESPONSE_ERROR_WRITE);
+        return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
     return (SUCCESS);
 }

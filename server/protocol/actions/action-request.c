@@ -37,7 +37,7 @@ dbp_posthook_request (dbp_request_s *request, dbp_response_s *response)
 
     if (dbp_response_write (response, dbp_action_request_writer) != SUCCESS)
     {
-        return (DBP_RESPONSE_ERROR_WRITE);
+        return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
 
     return (SUCCESS);

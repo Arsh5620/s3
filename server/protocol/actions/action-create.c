@@ -28,7 +28,7 @@ dbp_posthook_create (dbp_request_s *request, dbp_response_s *response)
       filemgmt_rename_file (dest, source) || filemgmt_rename_file (sha1_dest, sha1_src)
       || filemgmt_file_add (request->file_info.file_name))
     {
-        return (DBP_RESPONSE_GENERAL_FILE_ERROR);
+        return (DBP_RESPONSE_SERVER_FILE_ERROR);
     }
     return (SUCCESS);
 }

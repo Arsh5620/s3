@@ -120,7 +120,7 @@
 
 #define DBP_RESPONSE_STRING_DESERIALIZER_ERROR "Invalid header format."
 
-#define DBP_RESPONSE_STRING_THIN_ATTRIBS "Required attributes not present."
+#define DBP_RESPONSE_STRING_MISSING_ATTRIBS "Required attributes not present."
 
 #define DBP_RESPONSE_STRING_DATA_SEND "Send data"
 
@@ -130,13 +130,13 @@
 
 #define DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS "Data header corrupted, conn-rejected."
 
-#define DBP_RESPONSE_STRING_SETUP_ENV_FAILED "Server error, cannot create environment."
+#define DBP_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED "Server error, cannot create environment."
 
 #define DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID "Invalid values."
 
 #define DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY "File already exists."
 
-#define DBP_RESPONSE_STRING_GENERAL_SERVER_ERROR "Server error."
+#define DBP_RESPONSE_STRING_SERVER_INTERNAL_ERROR "Internal server error."
 
 #define DBP_RESPONSE_STRING_FILE_NOT_FOUND "File does not exists"
 

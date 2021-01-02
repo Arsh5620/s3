@@ -10,7 +10,7 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
     if (error != SUCCESS)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
-        return (DBP_RESPONSE_ERROR_READ);
+        return (DBP_RESPONSE_NETWORK_ERROR_READ);
     }
 
     request->header_info = dbp_header_parse8 (magic);
@@ -36,7 +36,7 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
     if (headers.error_code)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
-        return (DBP_RESPONSE_ERROR_READ);
+        return (DBP_RESPONSE_NETWORK_ERROR_READ);
     }
 
     request->header_list = dbp_deserialize_headers (headers, &error);
@@ -143,7 +143,7 @@ dbp_request_read_action (dbp_request_s *request)
     }
 
     data_keys_s action = attribs[0];
-    int actionval = DBP_ACTION_NOTVALID;
+    int actionval = DBP_ACTION_INVALID;
     if (action.strlen == pair.key_length && memcmp (pair.key, action.string, action.strlen) == 0)
     {
         // now here to check the action that the client is requesting.
@@ -156,7 +156,7 @@ dbp_request_read_action (dbp_request_s *request)
           data_string_compare);
     }
 
-    if (actionval == DBP_ACTION_NOTVALID)
+    if (actionval == DBP_ACTION_INVALID)
     {
         return (DBP_RESPONSE_ACTION_INVALID);
     }

@@ -78,7 +78,7 @@ dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *in
     {
         if (data_written < 0)
         {
-            return (DBP_RESPONSE_ERROR_WRITE);
+            return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
         }
 
         if (header_written == FALSE)

@@ -12,7 +12,7 @@ dbp_prehook_delete (dbp_request_s *request)
 
     if (filemgmt_remove_meta (request->file_info.file_name) != SUCCESS)
     {
-        return (DBP_RESPONSE_GENERAL_SERVER_ERROR);
+        return (DBP_RESPONSE_SERVER_INTERNAL_ERROR);
     }
     return (DBP_RESPONSE_SUCCESS);
 }
