@@ -4,7 +4,7 @@
 #include "messages.h"
 
 void
-my_print_internal (long logs_type, enum logger_level log_level, char *location, char *format, ...)
+my_print (long logs_type, enum logger_level log_level, char *format, ...)
 {
     char stdout_print = (logs_type & MESSAGE_OUT_STDOUT) > 0;
     char logs_print = (logs_type & MESSAGE_OUT_LOGS) > 0;
@@ -20,8 +20,6 @@ my_print_internal (long logs_type, enum logger_level log_level, char *location, 
         va_start (args, format);
         vfprintf (stdout, format, args);
         fprintf (stdout, LOG_FILE_NEWLINE);
-        fprintf (stdout, location);
-        fprintf (stdout, LOG_FILE_NEWLINE);
         va_end (args);
     }
 
@@ -29,7 +27,7 @@ my_print_internal (long logs_type, enum logger_level log_level, char *location, 
     {
         va_list args;
         va_start (args, format);
-        logs_write (log_level, location, format, args);
+        logs_write (log_level, format, args);
         va_end (args);
 
         if (log_level == LOGGER_LEVEL_CATASTROPHIC)

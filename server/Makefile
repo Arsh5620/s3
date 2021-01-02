@@ -25,7 +25,7 @@ $(OBJFILES): %.o: %.c $(HEADERFILES)
 	$(CC) -c $< -o $@ $(COMMONFLAGS) $(CFLAGS)
 
 build-file: $(OBJFILES)
-	$(CC) -pg -o $(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
+	$(CC) -pg -rdynamic  -o$(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
 
 clean: 
 	git clean -xid -e "backup*"

@@ -127,7 +127,7 @@ file_reader_init (FILE *file)
 
     reader.file = file;
     reader.maxlength = FILE_BUFFER_LENGTH;
-    reader.buffer = m_malloc (FILE_BUFFER_LENGTH, MEMORY_FILE_LINE);
+    reader.buffer = m_malloc (FILE_BUFFER_LENGTH);
     reader.stats = file_stat (file);
     return (reader);
 }
@@ -176,7 +176,7 @@ file_path_concat (string_s path1, string_s path2)
 
     file_path_s normalized_path = path_parse (path_s);
     string_s result = path_construct (normalized_path.path_list);
-    m_free (path, MEMORY_FILE_LINE);
+    m_free (path);
     path_free (normalized_path);
 
     return (result);
@@ -192,7 +192,7 @@ int
 file_append (char *dest, char *src, ulong index, ulong size)
 {
     ulong maxread = FILE_BUFFER_LENGTH;
-    char *buffer = m_malloc (maxread, MEMORY_FILE_LINE);
+    char *buffer = m_malloc (maxread);
     ulong written = 0;
 
     FILE *src_file = fopen (src, FILE_MODE_READBINARY);

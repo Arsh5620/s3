@@ -29,7 +29,7 @@ dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *))
 {
     network_s *connection = &((dbp_protocol_s *) response->instance)->connection;
 
-    char *memory = m_calloc (NETWORK_WRITE_BUFFER, MEMORY_FILE_LINE);
+    char *memory = m_calloc (NETWORK_WRITE_BUFFER);
     response->writer_buffer.address = memory;
     response->writer_buffer.length = DBP_PROTOCOL_MAGIC_LEN;
     response->writer_buffer.max_length = NETWORK_WRITE_BUFFER;
@@ -97,7 +97,7 @@ dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *))
         response->writer_buffer.length = 0;
     }
 
-    m_free (memory, MEMORY_FILE_LINE);
+    m_free (memory);
     my_list_free (response->header_list);
     response->header_list = (my_list_s){0};
 

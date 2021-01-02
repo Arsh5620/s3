@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <execinfo.h>
 
 #include "./logs.h"
 #include "../general/string.h"
@@ -116,11 +117,11 @@ logs_open ()
 }
 
 char *log_levels[]
-  = {"[INFO] -> ", "[DEBUG] -> ", "[WARN] -> ", "[ERROR] -> ", "[CATASTROPHIC] -> "};
+  = {" [INFO] -> ", " [DEBUG] -> ", " [WARN] -> ", " [ERROR] -> ", " [CATASTROPHIC] -> "};
 
 // this function returns TRUE for no error, and FALSE if an error occur
 boolean
-logs_write (enum logger_level level, char *location_information, char *string, va_list args)
+logs_write (enum logger_level level, char *string, va_list args)
 {
     if (logs.init == FALSE && level >= LOGGER_LEVEL_WARN)
     {
@@ -134,8 +135,6 @@ logs_write (enum logger_level level, char *location_information, char *string, v
     char *date = logs_gettime_s (LOG_DATE_FORMAT, TRUE, &length);
     int write = fwrite (date, 1, length, logs.file_p);
     free (date);
-
-    fwrite (location_information, sizeof (char), strlen (location_information), logs.file_p);
 
     char *log_level;
     if (level >= LOGGER_LEVEL_INFO && level <= LOGGER_LEVEL_CATASTROPHIC)
@@ -152,6 +151,16 @@ logs_write (enum logger_level level, char *location_information, char *string, v
     char *buffer = string_svprintf2 (string, args, &length);
     write = fwrite (buffer, sizeof (char), length, logs.file_p);
     fwrite (LOG_FILE_NEWLINE, sizeof (char), sizeof (LOG_FILE_NEWLINE) - 1, logs.file_p);
+
+    int count = 0;
+    char **data = get_backtrace (&count);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        fwrite (data[i], sizeof (char), strlen (data[i]), logs.file_p);
+        fwrite (LOG_FILE_NEWLINE, sizeof (char), sizeof (LOG_FILE_NEWLINE) - 1, logs.file_p);
+    }
+
     free (buffer);
 
     if (length != write)
@@ -171,6 +180,23 @@ logs_write (enum logger_level level, char *location_information, char *string, v
 
     fflush (logs.file_p);
     return (TRUE);
+}
+
+char **
+get_backtrace (int *backtrace_count)
+{
+#ifdef __linux__
+    int backtrace_size = 256;
+    void *backtrace_memory = m_malloc (backtrace_size);
+    *backtrace_count = backtrace ((void**)backtrace_memory, backtrace_size);
+
+    char **symbols = backtrace_symbols (backtrace_memory, backtrace_size);
+    m_free (backtrace_memory);
+    return symbols;
+#else
+    *backtrace_count = 0;
+    return NULL;
+#endif
 }
 
 void

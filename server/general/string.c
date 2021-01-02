@@ -23,7 +23,7 @@ string_internal_svprintf (char *string, va_list list, long *length, boolean allo
     size++; /* For '\0' */
     if (alloc_debug)
     {
-        pointer = m_calloc (size, MEMORY_FILE_LINE);
+        pointer = m_calloc (size);
     }
     else
     {
@@ -105,7 +105,7 @@ string_new_copy (char *data, ulong length)
     // +1 is for the NULL terminator
     ulong allocation_size = length + 1;
 
-    string.address = m_malloc (allocation_size, MEMORY_FILE_LINE);
+    string.address = m_malloc (allocation_size);
     memcpy (string.address, data, length);
     *(string.address + length) = NULL_ZERO;
     string.length = length;
@@ -118,7 +118,7 @@ string_s
 string_new (ulong length)
 {
     string_s string = {0};
-    string.address = m_calloc (length, MEMORY_FILE_LINE);
+    string.address = m_calloc (length);
     string.max_length = length;
     return (string);
 }
@@ -128,6 +128,6 @@ string_free (string_s string)
 {
     if (string.address)
     {
-        m_free (string.address, MEMORY_FILE_LINE);
+        m_free (string.address);
     }
 }

@@ -12,7 +12,7 @@ dbp_prehook_update (dbp_request_s *request)
         return (DBP_RESPONSE_FILE_NOT_FOUND);
     }
 
-    request->additional_data = m_malloc (sizeof (dbp_action_update_s), MEMORY_FILE_LINE);
+    request->additional_data = m_malloc (sizeof (dbp_action_update_s));
 
     dbp_action_update_s *update_attribs = (dbp_action_update_s *) request->additional_data;
 

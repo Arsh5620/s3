@@ -114,7 +114,7 @@ memory_get_allocation_size (malloc_node_s *node)
 }
 
 void *
-m_malloc (size_t size, char *file_name, long line_no)
+__malloc (size_t size, char *file_name, long line_no)
 {
     void *memory = malloc (size);
     assert (memory != NULL);
@@ -123,7 +123,7 @@ m_malloc (size_t size, char *file_name, long line_no)
 }
 
 void *
-m_calloc (size_t size, char *file_name, long line_no)
+__calloc (size_t size, char *file_name, long line_no)
 {
     void *memory = calloc (size, 1);
     assert (memory != NULL);
@@ -132,7 +132,7 @@ m_calloc (size_t size, char *file_name, long line_no)
 }
 
 void *
-m_realloc (void *address, long size, char *file_name, long line_no)
+__realloc (void *address, long size, char *file_name, long line_no)
 {
     void *memory = realloc (address, size);
     size = memory == NULL ? -1 : size;
@@ -141,7 +141,7 @@ m_realloc (void *address, long size, char *file_name, long line_no)
 }
 
 void
-m_free (void *address, char *file_name, long line_no)
+__free (void *address, char *file_name, long line_no)
 {
     if (address)
     {
@@ -189,21 +189,21 @@ memory_cleanup ()
 
 #else
 
-void inline m_free (void *address, char *file_name, long line_no) { free (address); }
+void inline __free (void *address, char *file_name, long line_no) { free (address); }
 
 void inline *
-m_malloc (size_t size, char *file_name, long line_no)
+__malloc (size_t size, char *file_name, long line_no)
 {
     return malloc (size);
 }
 
 void inline *
-m_realloc (void *address, long size, char *file_name, long line_no)
+__realloc (void *address, long size, char *file_name, long line_no)
 {
     return realloc (address, size);
 }
 void inline *
-m_calloc (size_t size, char *file_name, long line_no)
+__calloc (size_t size, char *file_name, long line_no)
 {
     return calloc (size, 1);
 }

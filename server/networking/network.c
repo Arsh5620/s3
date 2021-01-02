@@ -38,7 +38,7 @@ assert_ssl (int c1, int c2, char *fn, int err)
     if (c1 == c2)
     {
         ulong buff_len = 1024;
-        char *buffer = m_calloc (buff_len, MEMORY_FILE_LINE);
+        char *buffer = m_calloc (buff_len);
         ERR_error_string_n (ERR_get_error (), buffer, buff_len);
 
         my_print (
@@ -196,7 +196,7 @@ network_read_stream (network_s *connection, ulong size)
         data.error_code = NETWORK_REQUEST_TOO_BIG;
     }
 
-    char *memory = m_malloc (size, MEMORY_FILE_LINE);
+    char *memory = m_malloc (size);
     size_t data_read = 0;
     for (; data_read < size;)
     {
@@ -287,7 +287,7 @@ network_data_free (network_data_s data)
 {
     if (data.data_address)
     {
-        m_free (data.data_address, MEMORY_FILE_LINE);
+        m_free (data.data_address);
     }
 }
 

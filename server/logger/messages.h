@@ -153,12 +153,7 @@
 #define MESSAGE_OUT_STDOUT 0b0001
 #define MESSAGE_OUT_LOGS 0b0010
 #define MESSAGE_OUT_BOTH 0b0011
-#define MESSAGE_LOCATION "[ " __FILE__ ":" __STRINGIFY (__LINE__) " ]"
 
 void
-my_print_internal (long logs_type, enum logger_level log_level, char *location, char *format, ...);
-
-#define my_print(logs_type, log_level, format, ...)                                                \
-    my_print_internal (logs_type, log_level, MESSAGE_LOCATION, format __VA_OPT__ (, ) __VA_ARGS__)
-
+my_print (long logs_type, enum logger_level log_level, char *format, ...);
 #endif

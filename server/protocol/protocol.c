@@ -96,20 +96,20 @@ dbp_connection_accept_loop (dbp_protocol_s *protocol)
 void
 dbp_handle_close (dbp_request_s *request, dbp_response_s *response)
 {
-    m_free (request->header_raw.data_address, MEMORY_FILE_LINE);
+    m_free (request->header_raw.data_address);
     my_list_free (request->header_list);
     my_list_free (response->header_list);
     hash_table_free (request->header_table);
     if (request->additional_data)
     {
-        m_free (request->additional_data, MEMORY_FILE_LINE);
+        m_free (request->additional_data);
         request->additional_data = NULL_ZERO;
     }
-    M_FREE (request->file_name.file_name.address);
-    M_FREE (request->file_name.real_hash_file_name.address);
-    M_FREE (request->file_name.real_file_name.address);
-    M_FREE (request->file_name.temp_file_name.address);
-    M_FREE (request->file_name.temp_hash_file_name.address);
+    m_free_null_check (request->file_name.file_name.address);
+    m_free_null_check (request->file_name.real_hash_file_name.address);
+    m_free_null_check (request->file_name.real_file_name.address);
+    m_free_null_check (request->file_name.temp_file_name.address);
+    m_free_null_check (request->file_name.temp_hash_file_name.address);
 }
 
 long

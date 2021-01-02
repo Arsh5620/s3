@@ -90,7 +90,7 @@ path_parse (string_s path)
 string_s
 path_construct (my_list_s path_list)
 {
-    char *buffer = m_malloc (513, MEMORY_FILE_LINE);
+    char *buffer = m_malloc (513);
     ulong index = 0;
     for (size_t i = 0; i < path_list.count; i++)
     {
@@ -98,7 +98,7 @@ path_construct (my_list_s path_list)
 
         if (index + path.length + 1 > 512)
         {
-            m_free (buffer, MEMORY_FILE_LINE);
+            m_free (buffer);
             return ((string_s){0});
         }
 
@@ -112,7 +112,7 @@ path_construct (my_list_s path_list)
     }
     *(buffer + index) = 0;
 
-    char *new_buffer = m_realloc (buffer, index + 1, MEMORY_FILE_LINE);
+    char *new_buffer = m_realloc (buffer, index + 1);
     if (new_buffer != NULL)
     {
         buffer = new_buffer;

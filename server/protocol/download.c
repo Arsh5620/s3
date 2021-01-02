@@ -49,7 +49,7 @@ dbp_file_hash_sha1 (file_sha1 *hash, network_data_s data, boolean fin)
 {
     if (hash->hash_buffer == NULL)
     {
-        hash->hash_buffer = m_calloc (FILE_BUFFER_LENGTH, MEMORY_FILE_LINE);
+        hash->hash_buffer = m_calloc (FILE_BUFFER_LENGTH);
         hash->hash_size = (FILE_BUFFER_LENGTH);
         hash->hash_index = 0;
         // default element count is 10, and each element is 20 in length
@@ -90,7 +90,7 @@ int
 dbp_file_hash_writesha1 (char *file_name, my_list_s list)
 {
     FILE *file = fopen (file_name, FILE_MODE_WRITEBINARY);
-    char *sha1_hex = m_malloc (41, MEMORY_FILE_LINE);
+    char *sha1_hex = m_malloc (41);
     for (ulong i = 0; i < list.count; ++i)
     {
         // considering our list size is 20 bytes constant.
@@ -137,7 +137,7 @@ dbp_file_download (dbp_request_s *request)
 
     dbp_file_hash_writesha1 (request->file_name.temp_hash_file_name.address, hash.hash_list);
 
-    m_free (hash.hash_buffer, MEMORY_FILE_LINE);
+    m_free (hash.hash_buffer);
 
     clock_t endtime = clock ();
 

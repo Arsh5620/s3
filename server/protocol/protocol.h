@@ -217,12 +217,11 @@ typedef struct
     dbp_response_s *current_response;
 } dbp_protocol_s;
 
-// typedef struct dbp_common_attribs {
-// 	string_s filename;
-// 	string_s folder_name;
-// 	unsigned int crc32;
-// 	int error;
-// } dbp_common_attribs_s;
+typedef struct
+{
+    boolean print_debug_logs;
+} dbp_protocol_settings_s;
+
 void
 dbp_print_counter ();
 

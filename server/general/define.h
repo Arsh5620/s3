@@ -39,10 +39,10 @@ enum exit_codes_enum
     {                                                                                              \
         return (FAILED);                                                                           \
     }
-#define M_FREE(x)                                                                                  \
+#define m_free_null_check(x)                                                                                  \
     if ((x) != NULL)                                                                               \
     {                                                                                              \
-        m_free (x, MEMORY_FILE_LINE);                                                              \
+        m_free (x);                                                              \
     }
 
 typedef char boolean;

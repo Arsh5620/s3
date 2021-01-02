@@ -38,7 +38,7 @@ parser_release_list (my_list_s list)
         key_value_pair_s pair = *(key_value_pair_s *) my_list_get (list, i);
         if (pair.key != NULL)
         {
-            m_free (pair.key, MEMORY_FILE_LINE);
+            m_free (pair.key);
         }
     }
     my_list_free (list);
@@ -56,7 +56,7 @@ parser_push_copy (my_list_s *list, key_value_pair_s pair)
     ulong alloc = pair.key_length + pair.value_length;
 
     // + 1 is for null terminator
-    node.key = m_malloc (alloc + 1, MEMORY_FILE_LINE);
+    node.key = m_malloc (alloc + 1);
     *(node.key + alloc) = 0;
 
     node.value = node.key + pair.key_length;
