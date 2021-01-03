@@ -1,7 +1,7 @@
 #include "../protocol.h"
 
 long
-dbp_action_request_writer (dbp_response_s *response)
+s3_action_request_writer (s3_response_s *response)
 {
     string_s writer = response->writer_buffer;
     FILE *file = fopen (response->file_name->real_file_name.address, FILE_MODE_READBINARY);
@@ -29,7 +29,7 @@ dbp_action_request_writer (dbp_response_s *response)
 }
 
 int
-dbp_preprocess_request (dbp_request_s *request)
+s3_preprocess_request (s3_request_s *request)
 {
     if (!filemgmt_file_exists (
           request->file_name.file_name, request->file_name.real_file_name, NULL))

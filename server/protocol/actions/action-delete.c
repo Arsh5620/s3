@@ -3,7 +3,7 @@
 // this function does not delete the actual file, but only removes link in db
 // so the file is still recoverable, unless an overwrite to the same name
 int
-dbp_preprocess_delete (dbp_request_s *request)
+s3_preprocess_delete (s3_request_s *request)
 {
     if (request->header_info.data_length)
     {
@@ -18,7 +18,7 @@ dbp_preprocess_delete (dbp_request_s *request)
 }
 
 int
-dbp_postprocess_delete (dbp_request_s *request, dbp_response_s *response)
+s3_postprocess_delete (s3_request_s *request, s3_response_s *response)
 {
     return (DBP_RESPONSE_SUCCESS); // this function is not handled
 }

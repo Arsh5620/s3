@@ -13,7 +13,7 @@
 
 // In c static means that the variables are only available in the same translation unit
 static logger_s logs = {0};
-static dbp_log_settings_s log_settings;
+static s3_log_settings_s log_settings;
 
 // logs_gettime_s will allocate 64 bytes and format the current
 // time according to format, check strftime for more information
@@ -91,7 +91,7 @@ logs_open_file (logger_s *log)
 }
 
 logger_s
-logs_open (dbp_log_settings_s settings)
+logs_open (s3_log_settings_s settings)
 {
     log_settings = settings;
     if (logs.init == TRUE)

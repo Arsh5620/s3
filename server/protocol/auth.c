@@ -2,14 +2,14 @@
 #include "../crypto/sha.h"
 
 int
-dbp_auth_transaction (dbp_request_s *request)
+s3_auth_transaction (s3_request_s *request)
 {
-    boolean user = dbp_attrib_contains (request->header_table, DBP_ATTRIB_USERNAME);
-    boolean secret = dbp_attrib_contains (request->header_table, DBP_ATTRIB_PASSWORD);
+    boolean user = s3_attrib_contains (request->header_table, DBP_ATTRIB_USERNAME);
+    boolean secret = s3_attrib_contains (request->header_table, DBP_ATTRIB_PASSWORD);
 
     if (user == TRUE && secret == TRUE)
     {
-        return (dbp_auth_query (request));
+        return (s3_auth_query (request));
     }
     else if (user == TRUE || secret == TRUE)
     {
@@ -22,7 +22,7 @@ dbp_auth_transaction (dbp_request_s *request)
 }
 
 int
-dbp_auth_query (dbp_request_s *request)
+s3_auth_query (s3_request_s *request)
 {
     int error;
     string_s username = data_get_string_s (
@@ -44,12 +44,12 @@ dbp_auth_query (dbp_request_s *request)
     char sha_hash[SHA256LENGTH] = {0};
     sha_256 (password, (uchar *) sha_hash, SHA256LENGTH);
 
-    error = dbp_auth_query_sqlite3 (username.address, username.length, sha_hash, sizeof (sha_hash));
+    error = s3_auth_query_sqlite3 (username.address, username.length, sha_hash, sizeof (sha_hash));
     return (error == SUCCESS ? DBP_RESPONSE_SUCCESS : DBP_RESPONSE_FAILED_AUTHENTICATION);
 }
 
 int
-dbp_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length)
+s3_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length)
 {
     int error;
     sqlite3_stmt *stmt = database_get_stmt (AUTH_QUERY, sizeof (AUTH_QUERY), &error);

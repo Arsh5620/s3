@@ -39,7 +39,7 @@
 #define DBP_ATTRIBNAME_SECRET "secret"
 
 // one-to-one mapping to the actions_supported
-enum dbp_actions_enum
+enum s3_actions_enum
 {
     DBP_ACTION_CREATE = 1,
     DBP_ACTION_DELETE,
@@ -50,7 +50,7 @@ enum dbp_actions_enum
     DBP_ACTION_INVALID = -1
 };
 
-enum dbp_attribs_enum
+enum s3_attribs_enum
 {
     DBP_ATTRIB_ACTION = 1,
     DBP_ATTRIB_FILENAME,
@@ -61,13 +61,13 @@ enum dbp_attribs_enum
     DBP_ATTRIB_PASSWORD
 };
 
-enum dbp_shutdown_enum
+enum s3_shutdown_enum
 {
     DBP_CONNECTION_SHUTDOWN_FLOW,
     DBP_CONNECTION_SHUTDOWN_CORRUPTION
 };
 
-enum dbp_response_code
+enum s3_response_code
 {
     DBP_RESPONSE_SUCCESS,   // Internal, no response to the client
     DBP_RESPONSE_DATA_SEND, // The server has acknowledged the request and is now expecting data
@@ -115,7 +115,7 @@ typedef struct
     size_t data_length;
     unsigned short header_length;
     unsigned char magic;
-} dbp_header_s;
+} s3_header_s;
 
 typedef struct
 {
@@ -123,7 +123,7 @@ typedef struct
     uint crc32;
     long update_at;
     boolean trim; // 0 means false, every other value is true
-} dbp_protocol_attribs_s;
+} s3_protocol_attribs_s;
 
 #define DBP_ACTIONS_COUNT 6
 #define DBP_ATTRIBS_COUNT 7
@@ -139,13 +139,13 @@ typedef struct
 
 extern data_keys_s attribs[];
 extern data_keys_s actions[];
-extern enum dbp_attribs_enum dbp_call_asserts[][DBP_ATTRIBS_COUNT];
+extern enum s3_attribs_enum s3_call_asserts[][DBP_ATTRIBS_COUNT];
 
 typedef struct
 {
     long update_at;
     boolean trim;
-} dbp_action_update_s;
+} s3_action_update_s;
 
 typedef struct
 {
@@ -154,7 +154,7 @@ typedef struct
      * this can include but is not limited to "notification", "request"
      * , and "update" etc.
      */
-    enum dbp_actions_enum action;
+    enum s3_actions_enum action;
 
     /*
      * header_* will have all the information related to the entire header
@@ -165,7 +165,7 @@ typedef struct
      */
     my_list_s header_list;
     network_data_s header_raw;
-    dbp_header_s header_info;
+    s3_header_s header_info;
     hash_table_s header_table;
 
     char *additional_data; // action level data that can be set and used.
@@ -183,16 +183,16 @@ typedef struct
     filemgmt_file_name_s file_name;
 
     /*
-     * instance is a pointer to the dbp_protocol_s that will have
+     * instance is a pointer to the s3_protocol_s that will have
      * information in regards of the current network and its status
      */
     char *instance;
-} dbp_request_s;
+} s3_request_s;
 
 typedef struct
 {
     my_list_s header_list;
-    dbp_header_s header_info;
+    s3_header_s header_info;
 
     /*
      * response_code is the response indicator, which idicates success or
@@ -203,7 +203,7 @@ typedef struct
     string_s writer_buffer;
     long total_write_completed;
     char *instance;
-} dbp_response_s;
+} s3_response_s;
 
 typedef struct
 {
@@ -212,114 +212,114 @@ typedef struct
     network_s connection;
     logger_s logs;
 
-    dbp_request_s *current_request;
-    dbp_response_s *current_response;
-} dbp_protocol_s;
+    s3_request_s *current_request;
+    s3_response_s *current_response;
+} s3_protocol_s;
 
 void
-dbp_print_counter ();
+s3_print_counter ();
 
 void
-dbp_close (dbp_protocol_s protocol);
+s3_close (s3_protocol_s protocol);
 void
-dbp_handle_close (dbp_request_s *request, dbp_response_s *response);
+s3_handle_close (s3_request_s *request, s3_response_s *response);
 ulong
-dbp_next_request (dbp_protocol_s *protocol);
-dbp_protocol_s
-dbp_connection_initialize_sync (unsigned short port, dbp_log_settings_s settings);
+s3_next_request (s3_protocol_s *protocol);
+s3_protocol_s
+s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings);
 void
-dbp_connection_accept_loop (dbp_protocol_s *protocol);
+s3_connection_accept_loop (s3_protocol_s *protocol);
 void
-dbp_connection_shutdown (dbp_protocol_s protocol, enum dbp_shutdown_enum type);
+s3_connection_shutdown (s3_protocol_s protocol, enum s3_shutdown_enum type);
 
 ulong
-dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request);
+s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request);
 int
-dbp_request_read_action (dbp_request_s *request);
+s3_request_read_action (s3_request_s *request);
 
 long
-dbp_action_request_writer (dbp_response_s *in);
+s3_action_request_writer (s3_response_s *in);
 
 int
-dbp_postprocess_notification (dbp_request_s *request, dbp_response_s *response);
+s3_postprocess_notification (s3_request_s *request, s3_response_s *response);
 int
-dbp_postprocess_create (dbp_request_s *request, dbp_response_s *response);
+s3_postprocess_create (s3_request_s *request, s3_response_s *response);
 int
-dbp_postprocess_update (dbp_request_s *request, dbp_response_s *response);
+s3_postprocess_update (s3_request_s *request, s3_response_s *response);
 int
-dbp_postprocess_delete (dbp_request_s *request, dbp_response_s *response);
+s3_postprocess_delete (s3_request_s *request, s3_response_s *response);
 int
-dbp_postprocess_request (dbp_request_s *request, dbp_response_s *response);
+s3_postprocess_request (s3_request_s *request, s3_response_s *response);
 int
-dbp_postprocess_serverinfo (dbp_request_s *request, dbp_response_s *response);
+s3_postprocess_serverinfo (s3_request_s *request, s3_response_s *response);
 
 int
-dbp_preprocess_notification (dbp_request_s *request);
+s3_preprocess_notification (s3_request_s *request);
 int
-dbp_preprocess_create (dbp_request_s *request);
+s3_preprocess_create (s3_request_s *request);
 int
-dbp_preprocess_action (dbp_request_s *request);
+s3_preprocess_action (s3_request_s *request);
 int
-dbp_preprocess_update (dbp_request_s *request);
+s3_preprocess_update (s3_request_s *request);
 int
-dbp_preprocess_delete (dbp_request_s *request);
+s3_preprocess_delete (s3_request_s *request);
 int
-dbp_preprocess_request (dbp_request_s *request);
+s3_preprocess_request (s3_request_s *request);
 int
-dbp_preprocess_serverinfo (dbp_request_s *request);
+s3_preprocess_serverinfo (s3_request_s *request);
 
 int
-dbp_attribs_assert (hash_table_s table, enum dbp_attribs_enum *match, int count);
+s3_attribs_assert (hash_table_s table, enum s3_attribs_enum *match, int count);
 int
-dbp_attrib_contains (hash_table_s table, int attrib);
+s3_attrib_contains (hash_table_s table, int attrib);
 
 int
-dbp_file_setup_environment ();
+s3_file_setup_environment ();
 int
-dbp_file_download (dbp_request_s *request);
+s3_file_download (s3_request_s *request);
 
 hash_table_s
-dbp_header_hash (my_list_s list);
-dbp_header_s
-dbp_header_parse8 (size_t magic);
+s3_header_hash (my_list_s list);
+s3_header_s
+s3_header_parse8 (size_t magic);
 my_list_s
-dbp_deserialize_headers (network_data_s headers, int *error);
+s3_deserialize_headers (network_data_s headers, int *error);
 void
-dbp_print_headers (my_list_s list);
+s3_print_headers (my_list_s list);
 
 int
-dbp_action_preprocess (dbp_request_s *request);
+s3_action_preprocess (s3_request_s *request);
 int
-dbp_action_postprocess (dbp_request_s *request, dbp_response_s *response);
+s3_action_postprocess (s3_request_s *request, s3_response_s *response);
 int
-dbp_action_send (dbp_request_s *request, dbp_response_s *response);
+s3_action_send (s3_request_s *request, s3_response_s *response);
 
 int
-dbp_handle_response (dbp_response_s *response, enum dbp_response_code code);
+s3_handle_response (s3_response_s *response, enum s3_response_code code);
 
 int
-dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *in));
+s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *in));
 long
-dbp_response_write_header (dbp_response_s *response, char *buffer, ulong buffer_length);
+s3_response_write_header (s3_response_s *response, char *buffer, ulong buffer_length);
 ulong
-dbp_response_make_magic (dbp_response_s *response);
+s3_response_make_magic (s3_response_s *response);
 int
-dbp_response_accept_status (dbp_response_s *response);
+s3_response_accept_status (s3_response_s *response);
 int
-dbp_response_writer_update (dbp_response_s *response, string_s write);
+s3_response_writer_update (s3_response_s *response, string_s write);
 
 int
-dbp_request_data (dbp_protocol_s *protocol, dbp_request_s *request);
+s3_request_data (s3_protocol_s *protocol, s3_request_s *request);
 int
-dbp_request_data_headers (dbp_protocol_s *protocol, dbp_request_s *request);
+s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request);
 
 int
-dbp_auth_query (dbp_request_s *request);
+s3_auth_query (s3_request_s *request);
 int
-dbp_auth_transaction (dbp_request_s *request);
+s3_auth_transaction (s3_request_s *request);
 int
-dbp_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length);
+s3_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length);
 
 int
-dbp_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);
+s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);
 #endif // PROTOCOL_INCLUDE_GAURD

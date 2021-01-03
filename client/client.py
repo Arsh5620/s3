@@ -34,7 +34,7 @@ if (want_ssl == "Y"):
 else:
     ssock = sock
 
-print("Client started, and will try to connect to dbp server")
+print("Client started, and will try to connect to s3 server")
 
 ssock.connect((hostname, 4096))
 
@@ -232,9 +232,8 @@ while(1):
         data_response_code = packet_data.getDictionary()["response"]
         print("Response code for data sent : " + str(data_response_code))
     elif (response_data_code == 4):
-        packet_data = PacketResponseReader()
         binary_file = open("binary", "wb")
-        binary_file.write(packet_data.getDataBinary())
+        binary_file.write(packet_response.getDataBinary())
         binary_file.flush()
         binary_file.close()
         pass

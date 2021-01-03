@@ -2,7 +2,7 @@
 #include "../ssbs/serializer.h"
 
 int
-dbp_response_writer_update (dbp_response_s *response, string_s write)
+s3_response_writer_update (s3_response_s *response, string_s write)
 {
     string_s writer = response->writer_buffer;
     response->header_info.data_length = write.length;
@@ -25,9 +25,9 @@ dbp_response_writer_update (dbp_response_s *response, string_s write)
 }
 
 int
-dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *))
+s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
 {
-    network_s *connection = &((dbp_protocol_s *) response->instance)->connection;
+    network_s *connection = &((s3_protocol_s *) response->instance)->connection;
 
     char *memory = m_calloc (NETWORK_WRITE_BUFFER);
     response->writer_buffer.address = memory;
@@ -47,7 +47,7 @@ dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *))
     }
     my_list_push (&response->header_list, (char *) &pair);
 
-    long result = dbp_response_write_header (
+    long result = s3_response_write_header (
       response, memory + DBP_PROTOCOL_MAGIC_LEN, NETWORK_WRITE_BUFFER - DBP_PROTOCOL_MAGIC_LEN);
 
     if (result == -1)
@@ -83,7 +83,7 @@ dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *))
 
         if (header_written == FALSE)
         {
-            *(ulong *) (response->writer_buffer.address) = dbp_response_make_magic (response);
+            *(ulong *) (response->writer_buffer.address) = s3_response_make_magic (response);
         }
 
         header_written = TRUE;
@@ -105,7 +105,7 @@ dbp_response_write (dbp_response_s *response, long (*writer) (dbp_response_s *))
 }
 
 long
-dbp_response_write_header (dbp_response_s *response, char *buffer, ulong buffer_length)
+s3_response_write_header (s3_response_s *response, char *buffer, ulong buffer_length)
 {
     long index = 0;
     if (buffer != NULL)
@@ -145,7 +145,7 @@ dbp_response_write_header (dbp_response_s *response, char *buffer, ulong buffer_
 }
 
 ulong
-dbp_response_make_magic (dbp_response_s *response)
+s3_response_make_magic (s3_response_s *response)
 {
     // first we shift the magic header by 7 bytes
     ulong magic = ((ulong) DBP_PROTOCOL_MAGIC << (7 * 8));
@@ -158,9 +158,9 @@ dbp_response_make_magic (dbp_response_s *response)
 }
 
 int
-dbp_response_accept_status (dbp_response_s *response)
+s3_response_accept_status (s3_response_s *response)
 {
-    network_s *connection = &((dbp_protocol_s *) response->instance)->connection;
+    network_s *connection = &((s3_protocol_s *) response->instance)->connection;
 
     if (connection)
     {

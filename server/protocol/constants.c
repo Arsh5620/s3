@@ -20,7 +20,7 @@ data_keys_s actions[] = {
   DBP_KEY ("server", DBP_ACTION_SERVER),
   DBP_KEY ("update", DBP_ACTION_UPDATE)};
 
-enum dbp_attribs_enum dbp_call_asserts[DBP_ACTIONS_COUNT][DBP_ATTRIBS_COUNT] = {
+enum s3_attribs_enum s3_call_asserts[DBP_ACTIONS_COUNT][DBP_ATTRIBS_COUNT] = {
   // ACTION_CREATE
   {DBP_ATTRIB_ACTION,
    DBP_ATTRIB_CRC,

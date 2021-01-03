@@ -16,7 +16,7 @@
 
 #define NETWORK_QUEQUE 8
 #define NETWORK_PORT 4096
-
+#define APPLICATION_NAME "S3"
 enum exit_codes_enum
 {
     SERVER_ERROR_TOLOGS = 1,

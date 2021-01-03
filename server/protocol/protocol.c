@@ -4,11 +4,11 @@
  * This function will initialize the connection and everything
  * It will however exit for any error that is not recoverable.
  */
-dbp_protocol_s
-dbp_connection_initialize_sync (unsigned short port, dbp_log_settings_s settings)
+s3_protocol_s
+s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings)
 {
     /* variables are inited right to left first */
-    dbp_protocol_s protocol = {0};
+    s3_protocol_s protocol = {0};
     protocol.logs = logs_open (settings);
 
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
@@ -44,7 +44,7 @@ static long profiler = 0;
 const long profiler_exit = 1000000;
 
 void
-dbp_connection_accept_loop (dbp_protocol_s *protocol)
+s3_connection_accept_loop (s3_protocol_s *protocol)
 {
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
 
@@ -70,31 +70,31 @@ dbp_connection_accept_loop (dbp_protocol_s *protocol)
                 exit (1);
             }
 
-            dbp_response_s response = {0};
-            dbp_request_s request = {0};
+            s3_response_s response = {0};
+            s3_request_s request = {0};
             protocol->current_response = &response;
             protocol->current_request = &request;
             request.instance = (char *) protocol;
             response.instance = (char *) protocol;
             response.file_name = &request.file_name;
 
-            error = dbp_next_request (protocol);
-            error = dbp_handle_response (&response, error);
+            error = s3_next_request (protocol);
+            error = s3_handle_response (&response, error);
 
             if (error != SUCCESS)
             {
                 shutdown = DBP_CONNECTION_SHUTDOWN_CORRUPTION;
             }
 
-            dbp_handle_close (&request, &response);
+            s3_handle_close (&request, &response);
         }
-        dbp_connection_shutdown (*protocol, shutdown);
+        s3_connection_shutdown (*protocol, shutdown);
     }
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
 }
 
 void
-dbp_handle_close (dbp_request_s *request, dbp_response_s *response)
+s3_handle_close (s3_request_s *request, s3_response_s *response)
 {
     m_free (request->header_raw.data_address);
     my_list_free (request->header_list);
@@ -113,7 +113,7 @@ dbp_handle_close (dbp_request_s *request, dbp_response_s *response)
 }
 
 long
-dbp_handle_response_string (dbp_response_s *response)
+s3_handle_response_string (s3_response_s *response)
 {
     string_s link = {0};
 
@@ -165,11 +165,11 @@ dbp_handle_response_string (dbp_response_s *response)
         link = (string_s){0};
     }
 
-    return (dbp_response_writer_update (response, link));
+    return (s3_response_writer_update (response, link));
 }
 
 int
-dbp_handle_response (dbp_response_s *response, enum dbp_response_code code)
+s3_handle_response (s3_response_s *response, enum s3_response_code code)
 {
     if (code == DBP_RESPONSE_SUCCESS)
     {
@@ -178,7 +178,7 @@ dbp_handle_response (dbp_response_s *response, enum dbp_response_code code)
 
     response->response_code = code;
 
-    if (dbp_response_write (response, dbp_handle_response_string) != SUCCESS)
+    if (s3_response_write (response, s3_handle_response_string) != SUCCESS)
     {
         return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
@@ -194,7 +194,7 @@ dbp_handle_response (dbp_response_s *response, enum dbp_response_code code)
 }
 
 void
-dbp_connection_shutdown (dbp_protocol_s protocol, enum dbp_shutdown_enum type)
+s3_connection_shutdown (s3_protocol_s protocol, enum s3_shutdown_enum type)
 {
     if (shutdown (protocol.connection.client, SHUT_RDWR) == 0)
     {
@@ -216,7 +216,7 @@ dbp_connection_shutdown (dbp_protocol_s protocol, enum dbp_shutdown_enum type)
 }
 
 void
-dbp_close (dbp_protocol_s protocol)
+s3_close (s3_protocol_s protocol)
 {
     close (protocol.connection.client);
     close (protocol.connection.server);
@@ -225,7 +225,7 @@ dbp_close (dbp_protocol_s protocol)
 }
 
 int
-dbp_setup_environment (dbp_request_s *request)
+s3_setup_environment (s3_request_s *request)
 {
     string_s client_filename = {0};
     if (filemgmt_setup_temp_files (&request->file_name) != SUCCESS)
@@ -273,12 +273,12 @@ dbp_setup_environment (dbp_request_s *request)
 
 // returns 0 for no-error, any other number for error or conn close request
 ulong
-dbp_next_request (dbp_protocol_s *protocol)
+s3_next_request (s3_protocol_s *protocol)
 {
-    dbp_request_s *request = protocol->current_request;
-    dbp_response_s *response = protocol->current_response;
+    s3_request_s *request = protocol->current_request;
+    s3_response_s *response = protocol->current_response;
 
-    int result = dbp_request_read_headers (*protocol, request);
+    int result = s3_request_read_headers (*protocol, request);
     if (result != DBP_RESPONSE_SUCCESS)
     {
         return (result);
@@ -287,7 +287,7 @@ dbp_next_request (dbp_protocol_s *protocol)
     request->instance = (char *) protocol;
     request->header_table = data_make_table (request->header_list, attribs, DBP_ATTRIBS_COUNT);
 
-    result = dbp_request_read_action (request);
+    result = s3_request_read_action (request);
 
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
 
@@ -296,28 +296,28 @@ dbp_next_request (dbp_protocol_s *protocol)
         return (result);
     }
 
-    enum dbp_attribs_enum *asserts = dbp_call_asserts[request->action - DBP_ACTION_CREATE];
-    boolean assert = dbp_attribs_assert (request->header_table, asserts, DBP_ATTRIBS_COUNT);
+    enum s3_attribs_enum *asserts = s3_call_asserts[request->action - DBP_ACTION_CREATE];
+    boolean assert = s3_attribs_assert (request->header_table, asserts, DBP_ATTRIBS_COUNT);
 
     if (assert == FALSE)
     {
         return (DBP_RESPONSE_MISSING_ATTRIBS);
     }
 
-    result = dbp_auth_transaction (request);
+    result = s3_auth_transaction (request);
 
     if (result != DBP_RESPONSE_SUCCESS)
     {
         return (result);
     }
 
-    result = dbp_setup_environment (request);
+    result = s3_setup_environment (request);
     if (result != SUCCESS)
     {
         return (result);
     }
 
-    result = dbp_action_preprocess (request);
+    result = s3_action_preprocess (request);
 
     if (result != DBP_RESPONSE_SUCCESS)
     {
@@ -326,12 +326,12 @@ dbp_next_request (dbp_protocol_s *protocol)
 
     if (request->header_info.data_length)
     {
-        if (dbp_handle_response (response, DBP_RESPONSE_DATA_SEND) != SUCCESS)
+        if (s3_handle_response (response, DBP_RESPONSE_DATA_SEND) != SUCCESS)
         {
             return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
         }
 
-        result = dbp_request_data (protocol, request);
+        result = s3_request_data (protocol, request);
         if (result != DBP_RESPONSE_SUCCESS)
         {
             return (result);
@@ -340,14 +340,14 @@ dbp_next_request (dbp_protocol_s *protocol)
 
     if (request->data_write_confirm == TRUE)
     {
-        if (dbp_handle_response (response, DBP_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
+        if (s3_handle_response (response, DBP_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
         {
             return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
         }
 
-        if (dbp_response_accept_status (response) == SUCCESS)
+        if (s3_response_accept_status (response) == SUCCESS)
         {
-            result = dbp_action_send (request, response);
+            result = s3_action_send (request, response);
 
             if (result != DBP_RESPONSE_SUCCESS)
             {
@@ -356,7 +356,7 @@ dbp_next_request (dbp_protocol_s *protocol)
         }
     }
 
-    result = dbp_action_postprocess (request, response);
+    result = s3_action_postprocess (request, response);
 
     if (result != DBP_RESPONSE_SUCCESS)
     {
@@ -365,7 +365,7 @@ dbp_next_request (dbp_protocol_s *protocol)
 
     if (
       response->response_code != DBP_RESPONSE_PACKET_DATA_READY
-      && dbp_handle_response (response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
+      && s3_handle_response (response, DBP_RESPONSE_PACKET_OK) != SUCCESS)
     {
         return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
@@ -374,16 +374,16 @@ dbp_next_request (dbp_protocol_s *protocol)
 }
 
 int
-dbp_action_send (dbp_request_s *request, dbp_response_s *response)
+s3_action_send (s3_request_s *request, s3_response_s *response)
 {
     int result = 0;
     response->response_code = DBP_RESPONSE_PACKET_DATA_READY;
-    long (*writer) (dbp_response_s *) = NULL;
+    long (*writer) (s3_response_s *) = NULL;
 
     switch (request->action)
     {
     case DBP_ACTION_REQUEST:
-        writer = dbp_action_request_writer;
+        writer = s3_action_request_writer;
         break;
 
     default:
@@ -391,7 +391,7 @@ dbp_action_send (dbp_request_s *request, dbp_response_s *response)
         break;
     }
 
-    if (writer != NULL && dbp_response_write (response, writer) != SUCCESS)
+    if (writer != NULL && s3_response_write (response, writer) != SUCCESS)
     {
         return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
     }
@@ -406,28 +406,28 @@ dbp_action_send (dbp_request_s *request, dbp_response_s *response)
  * just return DBP_RESPONSE_SUCCESS immediately.
  */
 int
-dbp_action_postprocess (dbp_request_s *request, dbp_response_s *response)
+s3_action_postprocess (s3_request_s *request, s3_response_s *response)
 {
     int result = 0;
     switch (request->action)
     {
     case DBP_ACTION_NOTIFICATION:
-        result = dbp_postprocess_notification (request, response);
+        result = s3_postprocess_notification (request, response);
         break;
     case DBP_ACTION_CREATE:
-        result = dbp_postprocess_create (request, response);
+        result = s3_postprocess_create (request, response);
         break;
     case DBP_ACTION_UPDATE:
-        result = dbp_postprocess_update (request, response);
+        result = s3_postprocess_update (request, response);
         break;
     case DBP_ACTION_DELETE:
-        result = dbp_postprocess_delete (request, response);
+        result = s3_postprocess_delete (request, response);
         break;
     case DBP_ACTION_REQUEST:
         return DBP_RESPONSE_SUCCESS;
         break;
     case DBP_ACTION_SERVER:
-        result = dbp_postprocess_serverinfo (request, response);
+        result = s3_postprocess_serverinfo (request, response);
         break;
     case DBP_ACTION_INVALID:
         result = DBP_RESPONSE_SERVER_INTERNAL_ERROR;
@@ -452,28 +452,28 @@ dbp_action_postprocess (dbp_request_s *request, dbp_response_s *response)
  * process
  */
 int
-dbp_action_preprocess (dbp_request_s *request)
+s3_action_preprocess (s3_request_s *request)
 {
     int result = 0;
     switch (request->action)
     {
     case DBP_ACTION_NOTIFICATION:
-        result = dbp_preprocess_notification (request);
+        result = s3_preprocess_notification (request);
         break;
     case DBP_ACTION_CREATE:
-        result = dbp_preprocess_create (request);
+        result = s3_preprocess_create (request);
         break;
     case DBP_ACTION_UPDATE:
-        result = dbp_preprocess_update (request);
+        result = s3_preprocess_update (request);
         break;
     case DBP_ACTION_DELETE:
-        result = dbp_preprocess_delete (request);
+        result = s3_preprocess_delete (request);
         break;
     case DBP_ACTION_REQUEST:
-        result = dbp_preprocess_request (request);
+        result = s3_preprocess_request (request);
         break;
     case DBP_ACTION_SERVER:
-        result = dbp_preprocess_serverinfo (request);
+        result = s3_preprocess_serverinfo (request);
         break;
     case DBP_ACTION_INVALID:
         result = DBP_RESPONSE_SERVER_INTERNAL_ERROR;

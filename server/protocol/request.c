@@ -2,7 +2,7 @@
 #include "../ssbs/deserializer.h"
 
 ulong
-dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
+s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request)
 {
     int error;
     long long magic = network_read_primitives (&protocol.connection, sizeof (long long), &error);
@@ -13,7 +13,7 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
         return (DBP_RESPONSE_NETWORK_ERROR_READ);
     }
 
-    request->header_info = dbp_header_parse8 (magic);
+    request->header_info = s3_header_parse8 (magic);
 
     if (request->header_info.magic != DBP_PROTOCOL_MAGIC)
     {
@@ -39,7 +39,7 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
         return (DBP_RESPONSE_NETWORK_ERROR_READ);
     }
 
-    request->header_list = dbp_deserialize_headers (headers, &error);
+    request->header_list = s3_deserialize_headers (headers, &error);
 
     if (error != SUCCESS)
     {
@@ -47,13 +47,13 @@ dbp_request_read_headers (dbp_protocol_s protocol, dbp_request_s *request)
     }
     else
     {
-        dbp_print_headers (request->header_list);
+        s3_print_headers (request->header_list);
         return (DBP_RESPONSE_SUCCESS);
     }
 }
 
 void
-dbp_print_headers (my_list_s list)
+s3_print_headers (my_list_s list)
 {
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
 
@@ -73,14 +73,14 @@ dbp_print_headers (my_list_s list)
 }
 
 my_list_s
-dbp_deserialize_headers (network_data_s headers, int *error)
+s3_deserialize_headers (network_data_s headers, int *error)
 {
     deserializer_t deserializer = deserializer_init (headers.data_address, headers.data_length);
     my_list_s binary_list = my_list_new (16, sizeof (deserializer_value_t));
     my_list_s kvpairs_list = my_list_new (16, sizeof (key_value_pair_s));
 
     deserialize_all (&deserializer, &binary_list);
-    if (dbp_copy_keyvaluepairs (binary_list, &kvpairs_list) != SUCCESS)
+    if (s3_copy_keyvaluepairs (binary_list, &kvpairs_list) != SUCCESS)
     {
         /* this means that an error occured while processing the input */
         if (error != NULL)
@@ -99,7 +99,7 @@ dbp_deserialize_headers (network_data_s headers, int *error)
 }
 
 int
-dbp_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list)
+s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list)
 {
     for (int i = 0; i < source_list.count; ++i)
     {
@@ -129,7 +129,7 @@ dbp_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list)
 }
 
 int
-dbp_request_read_action (dbp_request_s *request)
+s3_request_read_action (s3_request_s *request)
 {
     key_value_pair_s pair = {0};
     my_list_s list = request->header_list;
@@ -166,7 +166,7 @@ dbp_request_read_action (dbp_request_s *request)
 
 // returns TRUE on success and FALSE otherwise
 int
-dbp_attrib_contains (hash_table_s table, int attrib)
+s3_attrib_contains (hash_table_s table, int attrib)
 {
     hash_input_u key = {.number = attrib};
     hash_table_bucket_s bucket = hash_table_get (table, key, NULL_ZERO);
@@ -181,12 +181,12 @@ dbp_attrib_contains (hash_table_s table, int attrib)
 // to make sure that the header contains all the required key:value
 // pairs needed by the called function.
 int
-dbp_attribs_assert (hash_table_s table, enum dbp_attribs_enum *match, int count)
+s3_attribs_assert (hash_table_s table, enum s3_attribs_enum *match, int count)
 {
     for (long i = 0; i < count; i++)
     {
-        enum dbp_attribs_enum attrib = match[i];
-        if (dbp_attrib_contains (table, attrib) == FALSE)
+        enum s3_attribs_enum attrib = match[i];
+        if (s3_attrib_contains (table, attrib) == FALSE)
         {
             return (FALSE);
         }
@@ -194,10 +194,10 @@ dbp_attribs_assert (hash_table_s table, enum dbp_attribs_enum *match, int count)
     return (TRUE);
 }
 
-dbp_header_s inline dbp_header_parse8 (size_t magic)
+s3_header_s inline s3_header_parse8 (size_t magic)
 {
     /* shr by 6 bytes, and multiply by 16 to get header size */
-    dbp_header_s header = {
+    s3_header_s header = {
       .header_length = (((magic & 0x00FF000000000000) >> (6 * 8)) * 16),
       .data_length = (magic & 0x0000FFFFFFFFFFFF),
       .magic = ((magic & 0xFF00000000000000) >> (7 * 8))};

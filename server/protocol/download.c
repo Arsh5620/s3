@@ -3,11 +3,11 @@
 #include <openssl/sha.h>
 
 int
-dbp_request_data (dbp_protocol_s *protocol, dbp_request_s *request)
+s3_request_data (s3_protocol_s *protocol, s3_request_s *request)
 {
-    if (dbp_request_data_headers (protocol, request) == SUCCESS)
+    if (s3_request_data_headers (protocol, request) == SUCCESS)
     {
-        if (dbp_file_download (request) == SUCCESS)
+        if (s3_file_download (request) == SUCCESS)
         {
             return (DBP_RESPONSE_SUCCESS);
         }
@@ -26,7 +26,7 @@ dbp_request_data (dbp_protocol_s *protocol, dbp_request_s *request)
  * headers for data has 2 byte magic, 0xd0,0xd1 and 6 byte length
  */
 int
-dbp_request_data_headers (dbp_protocol_s *protocol, dbp_request_s *request)
+s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request)
 {
     int error;
     int magic = network_read_primitives (&protocol->connection, sizeof (int32_t), &error);
@@ -46,7 +46,7 @@ dbp_request_data_headers (dbp_protocol_s *protocol, dbp_request_s *request)
 }
 
 void
-dbp_file_hash (file_hash_s *hash, network_data_s data, boolean fin)
+s3_file_hash (file_hash_s *hash, network_data_s data, boolean fin)
 {
     if (hash->hash_buffer == NULL)
     {
@@ -89,7 +89,7 @@ dbp_file_hash (file_hash_s *hash, network_data_s data, boolean fin)
 }
 
 void
-dbp_file_hash_sha1 (void *file_hash_address, char *hash_buffer, int hash_buffer_length)
+s3_file_hash_sha1 (void *file_hash_address, char *hash_buffer, int hash_buffer_length)
 {
     file_hash_s *hash = (file_hash_s *) file_hash_address;
 
@@ -100,7 +100,7 @@ dbp_file_hash_sha1 (void *file_hash_address, char *hash_buffer, int hash_buffer_
 }
 
 int
-dbp_file_hash_write (char *file_name, file_hash_s hash)
+s3_file_hash_write (char *file_name, file_hash_s hash)
 {
     FILE *file = fopen (file_name, FILE_MODE_WRITEBINARY);
     int allocation_length = hash.hash_compute_length * 2 + 1;
@@ -128,12 +128,12 @@ dbp_file_hash_write (char *file_name, file_hash_s hash)
 }
 
 int
-dbp_file_download (dbp_request_s *request)
+s3_file_download (s3_request_s *request)
 {
     file_info_s fileinfo = {0};
     file_hash_s hash = {0};
     hash.hash_compute_length = 20; // Length of SHA1 hash
-    hash.hash_function = dbp_file_hash_sha1;
+    hash.hash_function = s3_file_hash_sha1;
 
     fileinfo.size = request->header_info.data_length;
     char *temp_file = request->file_name.temp_file_name.address;
@@ -148,11 +148,11 @@ dbp_file_download (dbp_request_s *request)
 
     clock_t start_time = clock ();
 
-    dbp_protocol_s *protocol = (dbp_protocol_s *) request->instance;
+    s3_protocol_s *protocol = (s3_protocol_s *) request->instance;
     int download_status
-      = file_download (temp, &protocol->connection, fileinfo.size, &hash, dbp_file_hash);
+      = file_download (temp, &protocol->connection, fileinfo.size, &hash, s3_file_hash);
 
-    dbp_file_hash_write (request->file_name.temp_hash_file_name.address, hash);
+    s3_file_hash_write (request->file_name.temp_hash_file_name.address, hash);
 
     m_free (hash.hash_buffer);
 

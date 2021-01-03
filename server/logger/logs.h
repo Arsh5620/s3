@@ -9,7 +9,7 @@
 // DD-MM-YYYY HH:MM:SS.msms
 #define LOG_DATE_FORMAT "%F %T"
 #define LOG_DATE_FORMAT_NS "%s [%.6ld]"
-#define LOG_FILE_NAME "%s/dbp %s.log"
+#define LOG_FILE_NAME "%s/" APPLICATION_NAME " %s.log"
 #define LOG_FILE_NEWLINE "\r\n"
 #define LOG_FILE_OUTPUT "[" LOG_DATE_FORMAT ".%4d] %s "
 #define LOG_MAX_FILENAMELENGTH 256
@@ -36,10 +36,10 @@ typedef struct
 {
     boolean print_debug_logs;
     boolean print_stack_frames;
-} dbp_log_settings_s;
+} s3_log_settings_s;
 
 logger_s
-logs_open (dbp_log_settings_s settings);
+logs_open (s3_log_settings_s settings);
 void
 logs_close ();
 char **

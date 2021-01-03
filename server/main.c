@@ -24,7 +24,7 @@ struct argp_option argument_options[] = {
 error_t
 argument_parser (int key, char *arg, struct argp_state *state)
 {
-    dbp_log_settings_s *settings = (dbp_log_settings_s *) state->input;
+    s3_log_settings_s *settings = (s3_log_settings_s *) state->input;
 
     switch (key)
     {
@@ -48,13 +48,13 @@ struct argp argp
 int
 main (int argc, char *argv[])
 {
-    dbp_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = TRUE};
+    s3_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = TRUE};
     argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
 
     sigaction (SIGPIPE, &(struct sigaction){{SIG_IGN}}, NULL);
 
-    dbp_protocol_s protocol = dbp_connection_initialize_sync (NETWORK_PORT, settings);
+    s3_protocol_s protocol = s3_connection_initialize_sync (NETWORK_PORT, settings);
     if (protocol.init_complete)
-        dbp_connection_accept_loop (&protocol);
-    dbp_close (protocol);
+        s3_connection_accept_loop (&protocol);
+    s3_close (protocol);
 }

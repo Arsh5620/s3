@@ -2,7 +2,7 @@
 #include <sys/types.h>
 
 int
-dbp_preprocess_update (dbp_request_s *request)
+s3_preprocess_update (s3_request_s *request)
 {
     struct stat file_stats = {0};
 
@@ -12,9 +12,9 @@ dbp_preprocess_update (dbp_request_s *request)
         return (DBP_RESPONSE_FILE_NOT_FOUND);
     }
 
-    request->additional_data = m_malloc (sizeof (dbp_action_update_s));
+    request->additional_data = m_malloc (sizeof (s3_action_update_s));
 
-    dbp_action_update_s *update_attribs = (dbp_action_update_s *) request->additional_data;
+    s3_action_update_s *update_attribs = (s3_action_update_s *) request->additional_data;
 
     int error;
     update_attribs->update_at
@@ -46,9 +46,9 @@ dbp_preprocess_update (dbp_request_s *request)
 }
 
 int
-dbp_postprocess_update (dbp_request_s *request, dbp_response_s *response)
+s3_postprocess_update (s3_request_s *request, s3_response_s *response)
 {
-    dbp_action_update_s *update_attribs = (dbp_action_update_s *) request->additional_data;
+    s3_action_update_s *update_attribs = (s3_action_update_s *) request->additional_data;
 
     string_s real_file = request->file_name.real_file_name;
     if (update_attribs->trim && truncate (real_file.address, update_attribs->update_at))
