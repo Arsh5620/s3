@@ -9,7 +9,7 @@ tests
 /uml/*
 !/uml/chat.vpp
 client/*
-!client/client.py
+!client/*py
 server/backup
 server/backup-sha1
 server/profiler
