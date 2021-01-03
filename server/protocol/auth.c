@@ -4,8 +4,8 @@
 int
 s3_auth_transaction (s3_request_s *request)
 {
-    boolean user = s3_attrib_contains (request->header_table, DBP_ATTRIB_USERNAME);
-    boolean secret = s3_attrib_contains (request->header_table, DBP_ATTRIB_PASSWORD);
+    boolean user = s3_attrib_contains (request->header_table, S3_ATTRIB_USERNAME);
+    boolean secret = s3_attrib_contains (request->header_table, S3_ATTRIB_PASSWORD);
 
     if (user == TRUE && secret == TRUE)
     {
@@ -13,7 +13,7 @@ s3_auth_transaction (s3_request_s *request)
     }
     else if (user == TRUE || secret == TRUE)
     {
-        return (DBP_RESPONSE_MIX_AUTH_ERROR);
+        return (S3_RESPONSE_MIX_AUTH_ERROR);
     }
     else
     {
@@ -26,26 +26,26 @@ s3_auth_query (s3_request_s *request)
 {
     int error;
     string_s username = data_get_string_s (
-      request->header_list, request->header_table, DBP_ATTRIB_USERNAME, &error);
+      request->header_list, request->header_table, S3_ATTRIB_USERNAME, &error);
 
     if (error != SUCCESS)
     {
-        return (DBP_RESPONSE_SERVER_ERROR_NOAUTH);
+        return (S3_RESPONSE_SERVER_ERROR_NOAUTH);
     }
 
     string_s password = data_get_string_s (
-      request->header_list, request->header_table, DBP_ATTRIB_PASSWORD, &error);
+      request->header_list, request->header_table, S3_ATTRIB_PASSWORD, &error);
 
     if (error != SUCCESS)
     {
-        return (DBP_RESPONSE_SERVER_ERROR_NOAUTH);
+        return (S3_RESPONSE_SERVER_ERROR_NOAUTH);
     }
 
     char sha_hash[SHA256LENGTH] = {0};
     sha_256 (password, (uchar *) sha_hash, SHA256LENGTH);
 
     error = s3_auth_query_sqlite3 (username.address, username.length, sha_hash, sizeof (sha_hash));
-    return (error == SUCCESS ? DBP_RESPONSE_SUCCESS : DBP_RESPONSE_FAILED_AUTHENTICATION);
+    return (error == SUCCESS ? S3_RESPONSE_SUCCESS : S3_RESPONSE_FAILED_AUTHENTICATION);
 }
 
 int

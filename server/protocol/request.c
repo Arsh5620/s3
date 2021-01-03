@@ -10,19 +10,19 @@ s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request)
     if (error != SUCCESS)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
-        return (DBP_RESPONSE_NETWORK_ERROR_READ);
+        return (S3_RESPONSE_NETWORK_ERROR_READ);
     }
 
     request->header_info = s3_header_parse8 (magic);
 
-    if (request->header_info.magic != DBP_PROTOCOL_MAGIC)
+    if (request->header_info.magic != S3_PROTOCOL_MAGIC)
     {
         my_print (
           MESSAGE_OUT_LOGS,
           LOGGER_LEVEL_ERROR,
           PROTOCOL_ABORTED_CORRUPTION,
           request->header_info.magic);
-        return (DBP_RESPONSE_CORRUPTED_PACKET);
+        return (S3_RESPONSE_CORRUPTED_PACKET);
     }
 
     /**
@@ -36,7 +36,7 @@ s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request)
     if (headers.error_code)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
-        return (DBP_RESPONSE_NETWORK_ERROR_READ);
+        return (S3_RESPONSE_NETWORK_ERROR_READ);
     }
 
     request->header_list = s3_deserialize_headers (headers, &error);
@@ -48,7 +48,7 @@ s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request)
     else
     {
         s3_print_headers (request->header_list);
-        return (DBP_RESPONSE_SUCCESS);
+        return (S3_RESPONSE_SUCCESS);
     }
 }
 
@@ -85,7 +85,7 @@ s3_deserialize_headers (network_data_s headers, int *error)
         /* this means that an error occured while processing the input */
         if (error != NULL)
         {
-            *error = DBP_RESPONSE_DESERIALIZER_ERROR;
+            *error = S3_RESPONSE_DESERIALIZER_ERROR;
         }
     }
 
@@ -139,29 +139,29 @@ s3_request_read_action (s3_request_s *request)
     }
     else
     {
-        return (DBP_RESPONSE_HEADER_EMPTY);
+        return (S3_RESPONSE_HEADER_EMPTY);
     }
 
     data_keys_s action = attribs[0];
-    int actionval = DBP_ACTION_INVALID;
+    int actionval = S3_ACTION_INVALID;
     if (action.strlen == pair.key_length && memcmp (pair.key, action.string, action.strlen) == 0)
     {
         // now here to check the action that the client is requesting.
         actionval = binary_search (
           actions,
           sizeof (data_keys_s),
-          DBP_ACTIONS_COUNT,
+          S3_ACTIONS_COUNT,
           pair.value,
           pair.value_length,
           data_string_compare);
     }
 
-    if (actionval == DBP_ACTION_INVALID)
+    if (actionval == S3_ACTION_INVALID)
     {
-        return (DBP_RESPONSE_ACTION_INVALID);
+        return (S3_RESPONSE_ACTION_INVALID);
     }
     request->action = actions[actionval].attrib_code;
-    return (DBP_RESPONSE_SUCCESS);
+    return (S3_RESPONSE_SUCCESS);
 }
 
 // returns TRUE on success and FALSE otherwise

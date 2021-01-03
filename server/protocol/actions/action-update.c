@@ -9,7 +9,7 @@ s3_preprocess_update (s3_request_s *request)
     if (!filemgmt_file_exists (
           request->file_name.file_name, request->file_name.real_file_name, &file_stats))
     {
-        return (DBP_RESPONSE_FILE_NOT_FOUND);
+        return (S3_RESPONSE_FILE_NOT_FOUND);
     }
 
     request->additional_data = m_malloc (sizeof (s3_action_update_s));
@@ -18,21 +18,21 @@ s3_preprocess_update (s3_request_s *request)
 
     int error;
     update_attribs->update_at
-      = data_get_kvpair (request->header_list, request->header_table, DBP_ATTRIB_UPDATEAT, &error)
+      = data_get_kvpair (request->header_list, request->header_table, S3_ATTRIB_UPDATEAT, &error)
           .value_length;
 
     if (error != SUCCESS)
     {
-        return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
+        return (S3_RESPONSE_ATTRIB_VALUE_INVALID);
     }
 
     update_attribs->trim
-      = (data_get_kvpair (request->header_list, request->header_table, DBP_ATTRIB_UPDATETRIM, &error)
+      = (data_get_kvpair (request->header_list, request->header_table, S3_ATTRIB_UPDATETRIM, &error)
           .value_length != FALSE);
 
     if (error != SUCCESS)
     {
-        return (DBP_RESPONSE_ATTRIB_VALUE_INVALID);
+        return (S3_RESPONSE_ATTRIB_VALUE_INVALID);
     }
 
     if (update_attribs->update_at >= 0 && update_attribs->update_at <= file_stats.st_size)
@@ -41,7 +41,7 @@ s3_preprocess_update (s3_request_s *request)
     }
     else
     {
-        return (DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS);
+        return (S3_RESPONSE_FILE_UPDATE_OUTOFBOUNDS);
     }
 }
 
@@ -53,7 +53,7 @@ s3_postprocess_update (s3_request_s *request, s3_response_s *response)
     string_s real_file = request->file_name.real_file_name;
     if (update_attribs->trim && truncate (real_file.address, update_attribs->update_at))
     {
-        return (DBP_RESPONSE_SERVER_INTERNAL_ERROR);
+        return (S3_RESPONSE_SERVER_INTERNAL_ERROR);
     }
 
     int result = file_append (
@@ -65,7 +65,7 @@ s3_postprocess_update (s3_request_s *request, s3_response_s *response)
     // TODO free memory used.
     if (result != FILE_SUCCESS)
     {
-        return (DBP_RESPONSE_SERVER_INTERNAL_ERROR);
+        return (S3_RESPONSE_SERVER_INTERNAL_ERROR);
     }
     return (SUCCESS);
 }

@@ -6,7 +6,7 @@ s3_preprocess_create (s3_request_s *request)
     if (filemgmt_file_exists (
           request->file_name.file_name, request->file_name.real_file_name, NULL))
     {
-        return (DBP_RESPONSE_FILE_EXISTS_ALREADY);
+        return (S3_RESPONSE_FILE_EXISTS_ALREADY);
     }
     return (SUCCESS);
 }
@@ -28,7 +28,7 @@ s3_postprocess_create (s3_request_s *request, s3_response_s *response)
       filemgmt_rename_file (dest, source) || filemgmt_rename_file (sha1_dest, sha1_src)
       || filemgmt_file_add (request->file_name.file_name))
     {
-        return (DBP_RESPONSE_SERVER_FILE_ERROR);
+        return (S3_RESPONSE_SERVER_FILE_ERROR);
     }
     return (SUCCESS);
 }

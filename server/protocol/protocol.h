@@ -17,97 +17,97 @@
 #include "../general/string.h"
 #include "../ssbs/list.h"
 #include "../databases/database.h"
-#include "../dataparser/data.h"
+#include "../data/data.h"
 #include "../files/path.h"
 #include "../files/filemgmt.h"
 
-#define DBP_PROTOCOL_MAGIC 0xD0
-#define DBP_PROTOCOL_MAGIC_LEN (8)
-#define DBP_PROTOCOL_HEADER_MAXLEN (256 << 4)
-#define DBP_DATABASE_FILENAME "schema.db"
-#define DBP_RESPONSE_FORMAT_STRING "%.*s=\"%.*s\"\r\n"
-#define DBP_RESPONSE_FORMAT_LONG "%.*s=\"%ld\"\r\n"
-#define DBP_RESPONSE_KEY_NAME "response"
+#define S3_PROTOCOL_MAGIC 0xD0
+#define S3_PROTOCOL_MAGIC_LEN (8)
+#define S3_PROTOCOL_HEADER_MAXLEN (256 << 4)
+#define S3_DATABASE_FILENAME "schema.db"
+#define S3_RESPONSE_FORMAT_STRING "%.*s=\"%.*s\"\r\n"
+#define S3_RESPONSE_FORMAT_LONG "%.*s=\"%ld\"\r\n"
+#define S3_RESPONSE_KEY_NAME "response"
 
 // attribute name keys
-#define DBP_ATTRIBNAME_ACTION "action"
-#define DBP_ATTRIBNAME_CRC "crc"
-#define DBP_ATTRIBNAME_FILENAME "filename"
-#define DBP_ATTRIBNAME_UPDATEAT "updateat"
-#define DBP_ATTRIBNAME_UPDATETRIM "trim"
-#define DBP_ATTRIBNAME_USERNAME "username"
-#define DBP_ATTRIBNAME_SECRET "secret"
+#define S3_ATTRIBNAME_ACTION "action"
+#define S3_ATTRIBNAME_CRC "crc"
+#define S3_ATTRIBNAME_FILENAME "filename"
+#define S3_ATTRIBNAME_UPDATEAT "updateat"
+#define S3_ATTRIBNAME_UPDATETRIM "trim"
+#define S3_ATTRIBNAME_USERNAME "username"
+#define S3_ATTRIBNAME_SECRET "secret"
 
 // one-to-one mapping to the actions_supported
 enum s3_actions_enum
 {
-    DBP_ACTION_CREATE = 1,
-    DBP_ACTION_DELETE,
-    DBP_ACTION_NOTIFICATION,
-    DBP_ACTION_REQUEST,
-    DBP_ACTION_SERVER,
-    DBP_ACTION_UPDATE,
-    DBP_ACTION_INVALID = -1
+    S3_ACTION_CREATE = 1,
+    S3_ACTION_DELETE,
+    S3_ACTION_NOTIFICATION,
+    S3_ACTION_REQUEST,
+    S3_ACTION_SERVER,
+    S3_ACTION_UPDATE,
+    S3_ACTION_INVALID = -1
 };
 
 enum s3_attribs_enum
 {
-    DBP_ATTRIB_ACTION = 1,
-    DBP_ATTRIB_FILENAME,
-    DBP_ATTRIB_CRC,
-    DBP_ATTRIB_UPDATEAT,
-    DBP_ATTRIB_UPDATETRIM,
-    DBP_ATTRIB_USERNAME,
-    DBP_ATTRIB_PASSWORD
+    S3_ATTRIB_ACTION = 1,
+    S3_ATTRIB_FILENAME,
+    S3_ATTRIB_CRC,
+    S3_ATTRIB_UPDATEAT,
+    S3_ATTRIB_UPDATETRIM,
+    S3_ATTRIB_USERNAME,
+    S3_ATTRIB_PASSWORD
 };
 
 enum s3_shutdown_enum
 {
-    DBP_CONNECTION_SHUTDOWN_FLOW,
-    DBP_CONNECTION_SHUTDOWN_CORRUPTION
+    S3_CONNECTION_SHUTDOWN_FLOW,
+    S3_CONNECTION_SHUTDOWN_CORRUPTION
 };
 
 enum s3_response_code
 {
-    DBP_RESPONSE_SUCCESS,   // Internal, no response to the client
-    DBP_RESPONSE_DATA_SEND, // The server has acknowledged the request and is now expecting data
+    S3_RESPONSE_SUCCESS,   // Internal, no response to the client
+    S3_RESPONSE_DATA_SEND, // The server has acknowledged the request and is now expecting data
                             // packets
-    DBP_RESPONSE_PACKET_OK, // The packet was received and processed, no
+    S3_RESPONSE_PACKET_OK, // The packet was received and processed, no
                             // further action required on server end
-    DBP_RESPONSE_PACKET_DATA_MORE,  // Requesting send permission from client
-    DBP_RESPONSE_PACKET_DATA_READY, // Sending data
+    S3_RESPONSE_PACKET_DATA_MORE,  // Requesting send permission from client
+    S3_RESPONSE_PACKET_DATA_READY, // Sending data
 
     /* warnings but we can continue the connection */
-    DBP_RESPONSE_WARNINGS = 32,
-    DBP_RESPONSE_ACTION_INVALID,
-    DBP_RESPONSE_HEADER_EMPTY,
-    DBP_RESPONSE_DESERIALIZER_ERROR,
-    DBP_RESPONSE_MISSING_ATTRIBS,
-    DBP_RESPONSE_ATTRIB_VALUE_INVALID,
-    DBP_RESPONSE_FILE_EXISTS_ALREADY,
-    DBP_RESPONSE_FILE_NOT_FOUND,
-    DBP_RESPONSE_FILE_UPDATE_OUTOFBOUNDS,
-    DBP_RESPONSE_NOTIFY_TOOBIG,
-    DBP_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT,
-    DBP_RESPONSE_DATA_NOT_ACCEPTED,
-    DBP_RESPONSE_MIX_AUTH_ERROR,
-    DBP_RESPONSE_SERVER_ERROR_NOAUTH,
-    DBP_RESPONSE_FAILED_AUTHENTICATION,
+    S3_RESPONSE_WARNINGS = 32,
+    S3_RESPONSE_ACTION_INVALID,
+    S3_RESPONSE_HEADER_EMPTY,
+    S3_RESPONSE_DESERIALIZER_ERROR,
+    S3_RESPONSE_MISSING_ATTRIBS,
+    S3_RESPONSE_ATTRIB_VALUE_INVALID,
+    S3_RESPONSE_FILE_EXISTS_ALREADY,
+    S3_RESPONSE_FILE_NOT_FOUND,
+    S3_RESPONSE_FILE_UPDATE_OUTOFBOUNDS,
+    S3_RESPONSE_NOTIFY_TOOBIG,
+    S3_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT,
+    S3_RESPONSE_DATA_NOT_ACCEPTED,
+    S3_RESPONSE_MIX_AUTH_ERROR,
+    S3_RESPONSE_SERVER_ERROR_NOAUTH,
+    S3_RESPONSE_FAILED_AUTHENTICATION,
 
     /* errors and the connection will need to be closed */
-    DBP_RESPONSE_ERRORS = 128,
-    DBP_RESPONSE_CORRUPTED_PACKET,
-    DBP_RESPONSE_CORRUPTED_DATA_HEADERS,
-    DBP_RESPONSE_SETUP_ENVIRONMENT_FAILED,
-    DBP_RESPONSE_SERVER_INTERNAL_ERROR,
-    DBP_RESPONSE_SERVER_DIR_ERROR,
-    DBP_RESPONSE_SERVER_FILE_ERROR,
-    DBP_RESPONSE_SQLITE_INTERNAL_ERROR,
-    DBP_RESPONSE_SQLITE_NO_CONNECTION,
-    DBP_RESPONSE_NETWORK_ERROR_WRITE,
-    DBP_RESPONSE_NETWORK_ERROR_READ,
-    DBP_RESPONSE_CANNOT_CREATE_TEMP_FILE,
-    DBP_RESPONSE_ERROR_WRITING_HEADERS
+    S3_RESPONSE_ERRORS = 128,
+    S3_RESPONSE_CORRUPTED_PACKET,
+    S3_RESPONSE_CORRUPTED_DATA_HEADERS,
+    S3_RESPONSE_SETUP_ENVIRONMENT_FAILED,
+    S3_RESPONSE_SERVER_INTERNAL_ERROR,
+    S3_RESPONSE_SERVER_DIR_ERROR,
+    S3_RESPONSE_SERVER_FILE_ERROR,
+    S3_RESPONSE_SQLITE_INTERNAL_ERROR,
+    S3_RESPONSE_SQLITE_NO_CONNECTION,
+    S3_RESPONSE_NETWORK_ERROR_WRITE,
+    S3_RESPONSE_NETWORK_ERROR_READ,
+    S3_RESPONSE_CANNOT_CREATE_TEMP_FILE,
+    S3_RESPONSE_ERROR_WRITING_HEADERS
 };
 
 typedef struct
@@ -125,12 +125,12 @@ typedef struct
     boolean trim; // 0 means false, every other value is true
 } s3_protocol_attribs_s;
 
-#define DBP_ACTIONS_COUNT 6
-#define DBP_ATTRIBS_COUNT 7
-#define DBP_ATTRIBS_STRUCT_COUNT DBP_ATTRIBS_COUNT - 1
-#define DBP_KEY_FILENAME "file_name"
+#define S3_ACTIONS_COUNT 6
+#define S3_ATTRIBS_COUNT 7
+#define S3_ATTRIBS_STRUCT_COUNT S3_ATTRIBS_COUNT - 1
+#define S3_KEY_FILENAME "file_name"
 
-#define DBP_CASE(string_dest, code, string)                                                        \
+#define S3_CASE(string_dest, code, string)                                                        \
     case code:                                                                                     \
     {                                                                                              \
         string_dest = STRING (string);                                                             \
@@ -139,7 +139,7 @@ typedef struct
 
 extern data_keys_s attribs[];
 extern data_keys_s actions[];
-extern enum s3_attribs_enum s3_call_asserts[][DBP_ATTRIBS_COUNT];
+extern enum s3_attribs_enum s3_call_asserts[][S3_ATTRIBS_COUNT];
 
 typedef struct
 {

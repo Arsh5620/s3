@@ -12,8 +12,8 @@ struct argp_option argument_options[] = {
    NULL_ZERO,
    "This option takes no value. If the argument is present then the program will not print debug "
    "logs"},
-  {"disable_stack_logs",
-   'l',
+  {"print_stack_logs",
+   's',
    NULL_ZERO,
    NULL_ZERO,
    "This option takes no value. If the argument is present then the program will not print stack "
@@ -32,7 +32,7 @@ argument_parser (int key, char *arg, struct argp_state *state)
         settings->print_debug_logs = FALSE;
         break;
     case 'l':
-        settings->print_stack_frames = FALSE;
+        settings->print_stack_frames = TRUE;
         break;
     case ARGP_KEY_ARG:
         return 0;
@@ -42,13 +42,18 @@ argument_parser (int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-struct argp argp
-  = {argument_options, argument_parser, "server : " __SERVER_VERSION__, NULL, NULL, NULL};
+struct argp argp = {
+  argument_options,
+  argument_parser,
+  APPLICATION_NAME "server : " __SERVER_VERSION__,
+  NULL,
+  NULL,
+  NULL};
 
 int
 main (int argc, char *argv[])
 {
-    s3_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = TRUE};
+    s3_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = FALSE};
     argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
 
     sigaction (SIGPIPE, &(struct sigaction){{SIG_IGN}}, NULL);

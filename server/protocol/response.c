@@ -31,14 +31,14 @@ s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
 
     char *memory = m_calloc (NETWORK_WRITE_BUFFER);
     response->writer_buffer.address = memory;
-    response->writer_buffer.length = DBP_PROTOCOL_MAGIC_LEN;
+    response->writer_buffer.length = S3_PROTOCOL_MAGIC_LEN;
     response->writer_buffer.max_length = NETWORK_WRITE_BUFFER;
     response->total_write_completed = 0;
 
     key_value_pair_s pair = {0};
-    pair.key = DBP_RESPONSE_KEY_NAME;
+    pair.key = S3_RESPONSE_KEY_NAME;
     pair.value = 0;
-    pair.key_length = sizeof (DBP_RESPONSE_KEY_NAME) - 1;
+    pair.key_length = sizeof (S3_RESPONSE_KEY_NAME) - 1;
     pair.value_length = response->response_code;
 
     if (response->header_list.address == NULL)
@@ -48,11 +48,11 @@ s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
     my_list_push (&response->header_list, (char *) &pair);
 
     long result = s3_response_write_header (
-      response, memory + DBP_PROTOCOL_MAGIC_LEN, NETWORK_WRITE_BUFFER - DBP_PROTOCOL_MAGIC_LEN);
+      response, memory + S3_PROTOCOL_MAGIC_LEN, NETWORK_WRITE_BUFFER - S3_PROTOCOL_MAGIC_LEN);
 
     if (result == -1)
     {
-        return (DBP_RESPONSE_ERROR_WRITING_HEADERS);
+        return (S3_RESPONSE_ERROR_WRITING_HEADERS);
     }
 
     // align the header on a 16 byte boundary
@@ -63,7 +63,7 @@ s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
 
     response->writer_buffer.length += result;
 
-    response->header_info.magic = DBP_PROTOCOL_MAGIC;
+    response->header_info.magic = S3_PROTOCOL_MAGIC;
     response->header_info.header_length = result;
     response->header_info.data_length = 0;
     /*
@@ -78,7 +78,7 @@ s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
 
         if (total_write_completed < 0)
         {
-            return (DBP_RESPONSE_NETWORK_ERROR_WRITE);
+            return (S3_RESPONSE_NETWORK_ERROR_WRITE);
         }
 
         if (header_written == FALSE)
@@ -127,7 +127,7 @@ s3_response_write_header (s3_response_s *response, char *buffer, ulong buffer_le
             }
         }
 
-        if (serializer.index > DBP_PROTOCOL_HEADER_MAXLEN || serializer.index > buffer_length)
+        if (serializer.index > S3_PROTOCOL_HEADER_MAXLEN || serializer.index > buffer_length)
         {
             serializer_free (serializer);
             return (-1);
@@ -148,7 +148,7 @@ ulong
 s3_response_make_magic (s3_response_s *response)
 {
     // first we shift the magic header by 7 bytes
-    ulong magic = ((ulong) DBP_PROTOCOL_MAGIC << (7 * 8));
+    ulong magic = ((ulong) S3_PROTOCOL_MAGIC << (7 * 8));
 
     // second then we divide header_length by 16 and right shift by 6 bytes
     magic |= ((ulong) response->header_info.header_length >> 4) << (6 * 8);

@@ -10,7 +10,7 @@ s3_preprocess_notification (s3_request_s *request)
     }
     else
     {
-        return (DBP_RESPONSE_NOTIFY_TOOBIG);
+        return (S3_RESPONSE_NOTIFY_TOOBIG);
     }
 }
 

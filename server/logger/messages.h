@@ -111,44 +111,44 @@
 
 #define MEMORY_ALLOCATION_NOENTRY "address not found in table"
 
-#define DBP_CONNECTION_SHUTDOWN_CLEANUP "closing sockets / closing logging sub-system"
+#define S3_CONNECTION_SHUTDOWN_CLEANUP "closing sockets / closing logging sub-system"
 
 // RESPONSE STRINGS
 
-#define DBP_RESPONSE_STRING_ACTION_INVALID "Invalid action type."
+#define S3_RESPONSE_STRING_ACTION_INVALID "Invalid action type."
 
-#define DBP_RESPONSE_STRING_HEADER_EMPTY "Packet is empty."
+#define S3_RESPONSE_STRING_HEADER_EMPTY "Packet is empty."
 
-#define DBP_RESPONSE_STRING_DESERIALIZER_ERROR "Invalid header format."
+#define S3_RESPONSE_STRING_DESERIALIZER_ERROR "Invalid header format."
 
-#define DBP_RESPONSE_STRING_MISSING_ATTRIBS "Required attributes not present."
+#define S3_RESPONSE_STRING_MISSING_ATTRIBS "Required attributes not present."
 
-#define DBP_RESPONSE_STRING_DATA_SEND "Send data"
+#define S3_RESPONSE_STRING_DATA_SEND "Send data"
 
-#define DBP_RESPONSE_STRING_PACKET_OK "OK"
+#define S3_RESPONSE_STRING_PACKET_OK "OK"
 
-#define DBP_RESPONSE_STRING_CORRUPTED_PACKET "Packet header corrupted, conn-rejected."
+#define S3_RESPONSE_STRING_CORRUPTED_PACKET "Packet header corrupted, conn-rejected."
 
-#define DBP_RESPONSE_STRING_CORRUPTED_DATA_HEADERS "Data header corrupted, conn-rejected."
+#define S3_RESPONSE_STRING_CORRUPTED_DATA_HEADERS "Data header corrupted, conn-rejected."
 
-#define DBP_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED "Server error, cannot create environment."
+#define S3_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED "Server error, cannot create environment."
 
-#define DBP_RESPONSE_STRING_ATTIB_VALUE_INVALID "Invalid values."
+#define S3_RESPONSE_STRING_ATTIB_VALUE_INVALID "Invalid values."
 
-#define DBP_RESPONSE_STRING_FILE_EXISTS_ALREADY "File already exists."
+#define S3_RESPONSE_STRING_FILE_EXISTS_ALREADY "File already exists."
 
-#define DBP_RESPONSE_STRING_SERVER_INTERNAL_ERROR "Internal server error."
+#define S3_RESPONSE_STRING_SERVER_INTERNAL_ERROR "Internal server error."
 
-#define DBP_RESPONSE_STRING_FILE_NOT_FOUND "File does not exists"
+#define S3_RESPONSE_STRING_FILE_NOT_FOUND "File does not exists"
 
-#define DBP_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS "Update index out of bounds."
+#define S3_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS "Update index out of bounds."
 
 #define PARSER_STDOUT_ERROR_STRING "status code: %ld, line no: %ld, index no: %ld, line length: %d"
 
-#define DBP_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT                                            \
+#define S3_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT                                            \
     "Unexpected data from client for the requested action type."
 
-#define DBP_RESPONSE_STRING_FAILED_AUTHENTICATION "Failed authentication."
+#define S3_RESPONSE_STRING_FAILED_AUTHENTICATION "Failed authentication."
 
 #define MESSAGE_OUT_STDOUT 0b0001
 #define MESSAGE_OUT_LOGS 0b0010

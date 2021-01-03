@@ -50,7 +50,7 @@ typedef struct
     char is_valid;
 } key_value_pair_s;
 
-#define DBP_KEY(str, code)                                                                         \
+#define S3_KEY(str, code)                                                                         \
     (data_keys_s) { .string = str, .strlen = sizeof (str) - 1, .attrib_code = code }
 
 void

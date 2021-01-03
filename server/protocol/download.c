@@ -9,16 +9,16 @@ s3_request_data (s3_protocol_s *protocol, s3_request_s *request)
     {
         if (s3_file_download (request) == SUCCESS)
         {
-            return (DBP_RESPONSE_SUCCESS);
+            return (S3_RESPONSE_SUCCESS);
         }
         else
         {
-            return DBP_RESPONSE_SERVER_INTERNAL_ERROR;
+            return S3_RESPONSE_SERVER_INTERNAL_ERROR;
         }
     }
     else
     {
-        return (DBP_RESPONSE_CORRUPTED_DATA_HEADERS);
+        return (S3_RESPONSE_CORRUPTED_DATA_HEADERS);
     }
 }
 
@@ -31,7 +31,7 @@ s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request)
     int error;
     int magic = network_read_primitives (&protocol->connection, sizeof (int32_t), &error);
 
-    if (magic != 0X444E4553) // SEND in ascii
+    if (magic != 0x41544144) // DATA in ascii
     {
         return (FAILED);
     }
