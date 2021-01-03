@@ -317,7 +317,7 @@ dbp_next_request (dbp_protocol_s *protocol)
         return (result);
     }
 
-    result = dbp_action_prehook (request);
+    result = dbp_action_preprocess (request);
 
     if (result != DBP_RESPONSE_SUCCESS)
     {
@@ -356,7 +356,7 @@ dbp_next_request (dbp_protocol_s *protocol)
         }
     }
 
-    result = dbp_action_posthook (request, response);
+    result = dbp_action_postprocess (request, response);
 
     if (result != DBP_RESPONSE_SUCCESS)
     {
@@ -398,29 +398,36 @@ dbp_action_send (dbp_request_s *request, dbp_response_s *response)
     return result;
 }
 
+/**
+ * Post process should contain logic for processing of the data that is
+ * downloaded, including verifying the correctness of such data.
+ * 
+ * For any action types that don't want to do post processing should 
+ * just return DBP_RESPONSE_SUCCESS immediately.
+ */
 int
-dbp_action_posthook (dbp_request_s *request, dbp_response_s *response)
+dbp_action_postprocess (dbp_request_s *request, dbp_response_s *response)
 {
     int result = 0;
     switch (request->action)
     {
     case DBP_ACTION_NOTIFICATION:
-        result = dbp_posthook_notification (request, response);
+        result = dbp_postprocess_notification (request, response);
         break;
     case DBP_ACTION_CREATE:
-        result = dbp_posthook_create (request, response);
+        result = dbp_postprocess_create (request, response);
         break;
     case DBP_ACTION_UPDATE:
-        result = dbp_posthook_update (request, response);
+        result = dbp_postprocess_update (request, response);
         break;
     case DBP_ACTION_DELETE:
-        result = dbp_posthook_delete (request, response);
+        result = dbp_postprocess_delete (request, response);
         break;
     case DBP_ACTION_REQUEST:
         return DBP_RESPONSE_SUCCESS;
         break;
     case DBP_ACTION_SERVER:
-        result = dbp_posthook_serverinfo (request, response);
+        result = dbp_postprocess_serverinfo (request, response);
         break;
     case DBP_ACTION_INVALID:
         result = DBP_RESPONSE_SERVER_INTERNAL_ERROR;
@@ -429,29 +436,44 @@ dbp_action_posthook (dbp_request_s *request, dbp_response_s *response)
     return (result);
 }
 
+/**
+ * Pre process is called before the data download is started.
+ * For action types that don't contain any data and don't have a
+ * custom response writer, both the pre process and post process
+ * are the same, so post processs must be avoided.
+ *
+ * Here we should try to validate the correctness of the rest of the
+ * packet and we should return an error if the packet state is invalid,
+ * so that the data download for such packets can be avoided.
+ *
+ * Also preprocess should set any variables required if there is
+ * a custom response writer attached to the action, as the custom
+ * response writer is called between the pre process and the post
+ * process
+ */
 int
-dbp_action_prehook (dbp_request_s *request)
+dbp_action_preprocess (dbp_request_s *request)
 {
     int result = 0;
     switch (request->action)
     {
     case DBP_ACTION_NOTIFICATION:
-        result = dbp_prehook_notification (request);
+        result = dbp_preprocess_notification (request);
         break;
     case DBP_ACTION_CREATE:
-        result = dbp_prehook_create (request);
+        result = dbp_preprocess_create (request);
         break;
     case DBP_ACTION_UPDATE:
-        result = dbp_prehook_update (request);
+        result = dbp_preprocess_update (request);
         break;
     case DBP_ACTION_DELETE:
-        result = dbp_prehook_delete (request);
+        result = dbp_preprocess_delete (request);
         break;
     case DBP_ACTION_REQUEST:
-        result = dbp_prehook_request (request);
+        result = dbp_preprocess_request (request);
         break;
     case DBP_ACTION_SERVER:
-        result = dbp_prehook_serverinfo (request);
+        result = dbp_preprocess_serverinfo (request);
         break;
     case DBP_ACTION_INVALID:
         result = DBP_RESPONSE_SERVER_INTERNAL_ERROR;

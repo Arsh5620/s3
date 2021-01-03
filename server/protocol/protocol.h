@@ -172,7 +172,7 @@ typedef struct
 
     /*
      * for big file writes, we have to first confirm that the client
-     * accepts the file before we can continue, the prehook function
+     * accepts the file before we can continue, the preprocess function
      * must set this value to TRUE for the protocol to wait for client
      * confirmation.
      * Then once we receive a confirmation, it is set in the same variable
@@ -226,7 +226,7 @@ dbp_handle_close (dbp_request_s *request, dbp_response_s *response);
 ulong
 dbp_next_request (dbp_protocol_s *protocol);
 dbp_protocol_s
-dbp_connection_initialize_sync (unsigned short port,dbp_log_settings_s settings);
+dbp_connection_initialize_sync (unsigned short port, dbp_log_settings_s settings);
 void
 dbp_connection_accept_loop (dbp_protocol_s *protocol);
 void
@@ -241,32 +241,32 @@ long
 dbp_action_request_writer (dbp_response_s *in);
 
 int
-dbp_posthook_notification (dbp_request_s *request, dbp_response_s *response);
+dbp_postprocess_notification (dbp_request_s *request, dbp_response_s *response);
 int
-dbp_posthook_create (dbp_request_s *request, dbp_response_s *response);
+dbp_postprocess_create (dbp_request_s *request, dbp_response_s *response);
 int
-dbp_posthook_update (dbp_request_s *request, dbp_response_s *response);
+dbp_postprocess_update (dbp_request_s *request, dbp_response_s *response);
 int
-dbp_posthook_delete (dbp_request_s *request, dbp_response_s *response);
+dbp_postprocess_delete (dbp_request_s *request, dbp_response_s *response);
 int
-dbp_posthook_request (dbp_request_s *request, dbp_response_s *response);
+dbp_postprocess_request (dbp_request_s *request, dbp_response_s *response);
 int
-dbp_posthook_serverinfo (dbp_request_s *request, dbp_response_s *response);
+dbp_postprocess_serverinfo (dbp_request_s *request, dbp_response_s *response);
 
 int
-dbp_prehook_notification (dbp_request_s *request);
+dbp_preprocess_notification (dbp_request_s *request);
 int
-dbp_prehook_create (dbp_request_s *request);
+dbp_preprocess_create (dbp_request_s *request);
 int
-dbp_prehook_action (dbp_request_s *request);
+dbp_preprocess_action (dbp_request_s *request);
 int
-dbp_prehook_update (dbp_request_s *request);
+dbp_preprocess_update (dbp_request_s *request);
 int
-dbp_prehook_delete (dbp_request_s *request);
+dbp_preprocess_delete (dbp_request_s *request);
 int
-dbp_prehook_request (dbp_request_s *request);
+dbp_preprocess_request (dbp_request_s *request);
 int
-dbp_prehook_serverinfo (dbp_request_s *request);
+dbp_preprocess_serverinfo (dbp_request_s *request);
 
 int
 dbp_attribs_assert (hash_table_s table, enum dbp_attribs_enum *match, int count);
@@ -288,9 +288,9 @@ void
 dbp_print_headers (my_list_s list);
 
 int
-dbp_action_prehook (dbp_request_s *request);
+dbp_action_preprocess (dbp_request_s *request);
 int
-dbp_action_posthook (dbp_request_s *request, dbp_response_s *response);
+dbp_action_postprocess (dbp_request_s *request, dbp_response_s *response);
 int
 dbp_action_send (dbp_request_s *request, dbp_response_s *response);
 

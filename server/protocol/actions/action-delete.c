@@ -3,7 +3,7 @@
 // this function does not delete the actual file, but only removes link in db
 // so the file is still recoverable, unless an overwrite to the same name
 int
-dbp_prehook_delete (dbp_request_s *request)
+dbp_preprocess_delete (dbp_request_s *request)
 {
     if (request->header_info.data_length)
     {
@@ -18,7 +18,7 @@ dbp_prehook_delete (dbp_request_s *request)
 }
 
 int
-dbp_posthook_delete (dbp_request_s *request, dbp_response_s *response)
+dbp_postprocess_delete (dbp_request_s *request, dbp_response_s *response)
 {
     return (DBP_RESPONSE_SUCCESS); // this function is not handled
 }

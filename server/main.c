@@ -51,7 +51,7 @@ main (int argc, char *argv[])
     dbp_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = TRUE};
     argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
 
-    sigaction (SIGPIPE, &(struct sigaction){SIG_IGN}, NULL);
+    sigaction (SIGPIPE, &(struct sigaction){{SIG_IGN}}, NULL);
 
     dbp_protocol_s protocol = dbp_connection_initialize_sync (NETWORK_PORT, settings);
     if (protocol.init_complete)

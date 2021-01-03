@@ -12,7 +12,7 @@ dbp_server_request_writer (dbp_response_s *response)
 }
 
 int
-dbp_prehook_serverinfo (dbp_request_s *request)
+dbp_preprocess_serverinfo (dbp_request_s *request)
 {
     if (request->header_info.data_length != 0)
     {
@@ -22,7 +22,7 @@ dbp_prehook_serverinfo (dbp_request_s *request)
 }
 
 int
-dbp_posthook_serverinfo (dbp_request_s *request, dbp_response_s *response)
+dbp_postprocess_serverinfo (dbp_request_s *request, dbp_response_s *response)
 {
     response->response_code = DBP_RESPONSE_PACKET_DATA_READY;
     if (dbp_response_write (response, dbp_server_request_writer) != SUCCESS)

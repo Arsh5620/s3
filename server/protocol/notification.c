@@ -1,7 +1,7 @@
 #include "protocol.h"
 
 int
-dbp_prehook_notification (dbp_request_s *request)
+dbp_preprocess_notification (dbp_request_s *request)
 {
     if (
       request->header_info.data_length > 0 && request->header_info.data_length < FILE_BUFFER_LENGTH)
@@ -15,7 +15,7 @@ dbp_prehook_notification (dbp_request_s *request)
 }
 
 int
-dbp_posthook_notification (dbp_request_s *request, dbp_response_s *response)
+dbp_postprocess_notification (dbp_request_s *request, dbp_response_s *response)
 {
     FILE *file = fopen (request->file_name.temp_file_name.address, FILE_MODE_READBINARY);
 

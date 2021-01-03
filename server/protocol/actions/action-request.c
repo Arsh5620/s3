@@ -29,7 +29,7 @@ dbp_action_request_writer (dbp_response_s *response)
 }
 
 int
-dbp_prehook_request (dbp_request_s *request)
+dbp_preprocess_request (dbp_request_s *request)
 {
     if (!filemgmt_file_exists (
           request->file_name.file_name, request->file_name.real_file_name, NULL))

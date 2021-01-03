@@ -67,7 +67,7 @@ class PacketResponseReader:
         self.data_length = recv_data_size_int
 
         header_list = deserialize.deserialize_all(recv_header_keys)
-        self.return_data = recv_data.decode("ascii")
+        self.return_data = recv_data
 
         for pair in header_list:
             self.dictionary[pair.key] = pair.value
@@ -76,7 +76,10 @@ class PacketResponseReader:
         return(self.dictionary)
 
     def getData(self):
-        return(self.return_data)
+        return(self.return_data.decode("ascii"))
+
+    def getDataBinary(self):
+        return (self.return_data)
 
     def getDataLength(self):
         return(self.data_length)
@@ -228,5 +231,11 @@ while(1):
         packet_data = PacketResponseReader()
         data_response_code = packet_data.getDictionary()["response"]
         print("Response code for data sent : " + str(data_response_code))
-        print("Response data for data sent : " + packet_data.getData())
+    elif (response_data_code == 4):
+        packet_data = PacketResponseReader()
+        binary_file = open("binary", "wb")
+        binary_file.write(packet_data.getDataBinary())
+        binary_file.flush()
+        binary_file.close()
+        pass
     print("****")

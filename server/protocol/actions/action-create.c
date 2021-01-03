@@ -1,7 +1,7 @@
 #include "../protocol.h"
 
 int
-dbp_prehook_create (dbp_request_s *request)
+dbp_preprocess_create (dbp_request_s *request)
 {
     if (filemgmt_file_exists (
           request->file_name.file_name, request->file_name.real_file_name, NULL))
@@ -12,7 +12,7 @@ dbp_prehook_create (dbp_request_s *request)
 }
 
 int
-dbp_posthook_create (dbp_request_s *request, dbp_response_s *response)
+dbp_postprocess_create (dbp_request_s *request, dbp_response_s *response)
 {
     // so now at this time, we can assume that the file does not exists already
     // and that the data has been downloaded to a temp file.

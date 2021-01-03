@@ -2,7 +2,7 @@
 #include <sys/types.h>
 
 int
-dbp_prehook_update (dbp_request_s *request)
+dbp_preprocess_update (dbp_request_s *request)
 {
     struct stat file_stats = {0};
 
@@ -46,7 +46,7 @@ dbp_prehook_update (dbp_request_s *request)
 }
 
 int
-dbp_posthook_update (dbp_request_s *request, dbp_response_s *response)
+dbp_postprocess_update (dbp_request_s *request, dbp_response_s *response)
 {
     dbp_action_update_s *update_attribs = (dbp_action_update_s *) request->additional_data;
 
