@@ -28,7 +28,7 @@ action_types = ["create", "update", "delete",
                 "request", "server"]
 extras_update = "updateat=0\ntrim=1\n"
 extras_common = "filename=" + str(file_name) + "\n"
-file_name = "./file"
+input_file = "./file"
 
 
 def open_file(file_name):
@@ -38,11 +38,13 @@ def open_file(file_name):
 
 
 def response_status(response):
-    response_code = response.getHeaders()["response"]
+    response_code = response.get_headers()["response"]
 
     print("Server response code is : " + str(response_code))
+    print("Server response length : " +
+          str(len(response.get_data_byte_array())))
     if (response_code != 4):
-        print("Server response said : " + str(response.getDataString()))
+        print("Server response said : " + str(response.get_data_string()))
     return response_code
 
 
@@ -57,7 +59,7 @@ while (True):
           "Ctrl + C Exit client\n")
 
     selection = input()  # wait for the client to press enter before sending the packet
-    file_reader, file_length = open_file(file_name)
+    file_reader, file_length = open_file(input_file)
     extra_headers = extras_common
 
     data_length = 0
@@ -102,10 +104,10 @@ while (True):
         response = PacketResponseReader(sock)
         response_code = response_status(response)
 
-    elif (response_code == 4):
-        binary_file = open("binary", "wb")
-        binary_file.write(response.getDataByteArray())
-        binary_file.flush()
-        binary_file.close()
+        if (response_code == 4):
+            if (response.file != None):
+                os.rename(response.file.name, os.path.basename(file_name))
+            print(response.file.name)
+            print(os.path.basename(file_name))
 
     print("****")

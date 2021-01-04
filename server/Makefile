@@ -9,7 +9,7 @@ ifeq ($(RELEASE), 1)
 else ifeq ($(PROFILE), 1)
 	CFLAGS =-pg $(PROFILEFLAG)
 else
-	CFLAGS =-g -O0 $(DEBUGFLAG)
+	CFLAGS =-ggdb -O0 $(DEBUGFLAG)
 endif
 LINKFLAGS=-lmysqlclient -lssl -lcrypto -lsqlite3
 
