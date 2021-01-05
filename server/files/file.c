@@ -8,8 +8,14 @@
 #include "../memdbg/memory.h"
 #include "../general/string.h"
 
-// make a directory if not exists, returns FILE_DIR_EXISTS if the directory
-// is either created or already exists, and returns error otherwise.
+/**
+ * make a directory if not exists, returns FILE_DIR_EXISTS if the directory
+ * is either created or already exists, and returns error otherwise.
+ * 
+ * don't use this function directly, use **path_mkdir_recursive** instead
+ * as this function will only create one directory, and if the parent doesn't 
+ * exists this function WILL fail
+ */
 int
 file_dir_mkine (char *dir_name)
 {

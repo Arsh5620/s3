@@ -124,6 +124,10 @@ path_construct (my_list_s path_list)
     return (file);
 }
 
+/**
+ * this function requires that all directory names end will a forward slash /
+ * otherwise the last part of the path is interpreted as a file instead
+ */
 int
 path_mkdir_recursive (char *path)
 {

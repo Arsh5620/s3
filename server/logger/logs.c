@@ -9,7 +9,7 @@
 #include "./logs.h"
 #include "../general/string.h"
 #include "../memdbg/memory.h"
-#include "../files/file.h"
+#include "../files/path.h"
 
 // In c static means that the variables are only available in the same translation unit
 static logger_s logs = {0};
@@ -100,8 +100,8 @@ logs_open (s3_log_settings_s settings)
     }
 
     logger_s log = {0};
-    int result = file_dir_mkine (LOG_DIR_NAME);
-    if (result != FILE_DIR_EXISTS)
+    int result = path_mkdir_recursive (LOG_DIR_NAME);
+    if (result != SUCCESS)
     {
         printf ("could not open directory for writing logs, "
                 "logging subsystem unavailable.\n");

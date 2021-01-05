@@ -103,7 +103,7 @@ filemgmt_file_add (string_s file_name)
 int
 filemgmt_rename_file (string_s dest, string_s src)
 {
-    file_dir_mkine (FILEMGMT_FOLDER_NAME);
+    path_mkdir_recursive (FILEMGMT_FOLDER_NAME);
     if (file_rename (dest, src) == FAILED)
     {
         return (FAILED);
@@ -132,16 +132,27 @@ filemgmt_mkdirs (filemgmt_file_name_s *file_info)
 }
 
 int
-filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file_info)
+filemgmt_create_backup_folders ()
 {
-    if (file_dir_mkine (FILEMGMT_FOLDER_NAME) != FILE_DIR_EXISTS)
+    if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS)
     {
         return (FAILED);
     }
 
-    if (file_dir_mkine (FILEMGMT_FOLDER_META_NAME) != FILE_DIR_EXISTS)
+    if (path_mkdir_recursive (FILEMGMT_FOLDER_META_NAME) != SUCCESS)
     {
         return (FAILED);
+    }
+
+    return SUCCESS;
+}
+
+int
+filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file_info)
+{
+    if (filemgmt_create_backup_folders () != SUCCESS)
+    {
+        return FAILED;
     }
 
     my_list_s path_list = path_parse (client_filename).path_list;
@@ -166,7 +177,7 @@ filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file
 int
 filemgmt_setup_temp_files (filemgmt_file_name_s *file_info)
 {
-    if (file_dir_mkine (FILEMGMT_TEMP_DIR) != FILE_DIR_EXISTS)
+    if (path_mkdir_recursive (FILEMGMT_TEMP_DIR) != SUCCESS)
     {
         return (FAILED);
     }

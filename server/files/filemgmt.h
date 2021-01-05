@@ -41,10 +41,11 @@ typedef struct filemgmt_file_name
     " TEXT, " FILEMGMT_COLUMN_DATE " INTEGER, " FILEMGMT_COLUMN_SIZE                               \
     " INTEGER, " FILEMGMT_COLUMN_HASH " BLOB);"
 
-#define FILEMGMT_FOLDER_NAME "backup/files"
-#define FILEMGMT_FOLDER_META_NAME "backup/hashes"
+#define FILEMGMT_ROOT_FOLDER_NAME "backup/"
+#define FILEMGMT_FOLDER_NAME FILEMGMT_ROOT_FOLDER_NAME "files/"
+#define FILEMGMT_FOLDER_META_NAME FILEMGMT_ROOT_FOLDER_NAME "hashes/"
 
-#define FILEMGMT_TEMP_DIR "temp"
+#define FILEMGMT_TEMP_DIR "temp/"
 #define FILEMGMT_TEMP_FORMAT "%s/file(%ld).tmp"
 #define FILEMGMT_HASH_FORMAT "%s/hash(%ld).tmp"
 
@@ -64,6 +65,8 @@ int
 filemgmt_remove_meta (string_s file_name);
 int
 filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file_info);
+int
+filemgmt_create_backup_folders ();
 int
 filemgmt_setup_temp_files (filemgmt_file_name_s *file_info);
 int

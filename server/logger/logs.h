@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "../general/define.h"
 
-#define LOG_DIR_NAME "logs"
+#define LOG_DIR_NAME "logs/"
 // DD-MM-YYYY HH:MM:SS.msms
 #define LOG_DATE_FORMAT "%F %T"
 #define LOG_DATE_FORMAT_NS "%s [%.6ld]"

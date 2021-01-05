@@ -23,6 +23,9 @@
 
 #define PROTOCOL_MYSQL_FAILED_CONNECT "failed to connect to mysql server, program will now exit"
 
+#define PROTOCOL_BACKUP_FOLDER_NOT_CREATED                                                         \
+    "the folders to upload backup files could not be created"
+
 #define PROTOCOL_NETWORK_WAIT_CONNECT "entering connection accept loop, waiting for a client..."
 
 #define PROTOCOL_NETWORK_CLIENT_CONNECT                                                            \
@@ -36,7 +39,7 @@
     "could not open the temporary file for writing data from the client"
 
 #define PROTOCOL_DOWNLOAD_COMPLETE                                                                 \
-    "downloaded file name \"%.*s\", (%d) bytes, "                                               \
+    "downloaded file name \"%.*s\", (%d) bytes, "                                                  \
     "[status: %d, time: %ld ms]"
 
 #define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS "could not open directory \"%s\", permission denied"
@@ -131,7 +134,8 @@
 
 #define S3_RESPONSE_STRING_CORRUPTED_DATA_HEADERS "Data header corrupted, conn-rejected."
 
-#define S3_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED "Server error, cannot create environment."
+#define S3_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED                                                \
+    "Server error, cannot find or create the upload folder"
 
 #define S3_RESPONSE_STRING_ATTIB_VALUE_INVALID "Invalid values."
 
@@ -145,7 +149,7 @@
 
 #define PARSER_STDOUT_ERROR_STRING "status code: %ld, line no: %ld, index no: %ld, line length: %d"
 
-#define S3_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT                                            \
+#define S3_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT                                             \
     "Unexpected data from client for the requested action type."
 
 #define S3_RESPONSE_STRING_FAILED_AUTHENTICATION "Failed authentication."

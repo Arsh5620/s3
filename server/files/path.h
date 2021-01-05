@@ -1,6 +1,7 @@
 #include "../general/define.h"
 #include "../general/string.h"
 #include "../memdbg/memory.h"
+#include "./file.h"
 
 typedef struct
 {

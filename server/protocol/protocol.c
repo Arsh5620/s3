@@ -19,8 +19,13 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings)
 
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
 
+    if (filemgmt_create_backup_folders () != SUCCESS)
+    {
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_CATASTROPHIC, PROTOCOL_BACKUP_FOLDER_NOT_CREATED);
+    }
+
     if (
-      database_init (S3_DATABASE_FILENAME) == SUCCESS
+      database_init (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME) == SUCCESS
       && database_make_schema (
            2,
            AUTH_TABLE_CREATE,
@@ -146,20 +151,16 @@ s3_handle_response_string (s3_response_s *response)
           link, S3_RESPONSE_CORRUPTED_DATA_HEADERS, S3_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
 
         S3_CASE (
-          link,
-          S3_RESPONSE_SETUP_ENVIRONMENT_FAILED,
-          S3_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED);
+          link, S3_RESPONSE_SETUP_ENVIRONMENT_FAILED, S3_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED);
 
-        S3_CASE (
-          link, S3_RESPONSE_SERVER_INTERNAL_ERROR, S3_RESPONSE_STRING_SERVER_INTERNAL_ERROR);
+        S3_CASE (link, S3_RESPONSE_SERVER_INTERNAL_ERROR, S3_RESPONSE_STRING_SERVER_INTERNAL_ERROR);
 
         S3_CASE (
           link,
           S3_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT,
           S3_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT);
 
-        S3_CASE (
-          link, S3_RESPONSE_FAILED_AUTHENTICATION, S3_RESPONSE_STRING_FAILED_AUTHENTICATION);
+        S3_CASE (link, S3_RESPONSE_FAILED_AUTHENTICATION, S3_RESPONSE_STRING_FAILED_AUTHENTICATION);
 
     default:
         link = (string_s){0};
@@ -234,8 +235,8 @@ s3_setup_environment (s3_request_s *request)
     }
 
     int error;
-    client_filename = data_get_string_s (
-      request->header_list, request->header_table, S3_ATTRIB_FILENAME, &error);
+    client_filename
+      = data_get_string_s (request->header_list, request->header_table, S3_ATTRIB_FILENAME, &error);
 
     if (error == SUCCESS)
     {
@@ -401,8 +402,8 @@ s3_action_send (s3_request_s *request, s3_response_s *response)
 /**
  * Post process should contain logic for processing of the data that is
  * downloaded, including verifying the correctness of such data.
- * 
- * For any action types that don't want to do post processing should 
+ *
+ * For any action types that don't want to do post processing should
  * just return S3_RESPONSE_SUCCESS immediately.
  */
 int
