@@ -43,7 +43,7 @@ def response_status(response):
     print("Server response code is : " + str(response_code))
     print("Server response length : " +
           str(len(response.get_data_byte_array())))
-    if (response_code != 4):
+    if (response_code != 4 or response.get_data_length() < 400):
         print("Server response said : " + str(response.get_data_string()))
     return response_code
 

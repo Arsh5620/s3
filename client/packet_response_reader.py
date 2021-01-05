@@ -38,7 +38,7 @@ class PacketResponseReader:
 
         downloaded_size = 0
         while (downloaded_size != data_size):
-            data = socket.recv(data_size)
+            data = socket.recv(data_size - downloaded_size)
             if self.file != None:
                 self.file.write(data)
             else:

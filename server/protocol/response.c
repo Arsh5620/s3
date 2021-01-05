@@ -71,6 +71,7 @@ s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
      * "response->header_info.data_length" upon first call to this function
      */
     long total_write_completed = 0;
+    int error = NETWORK_SUCCESS; // NETWORK_SUCCESS is alias for SUCCESS
     boolean header_written = FALSE;
     while (TRUE)
     {
@@ -87,8 +88,13 @@ s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
         }
 
         header_written = TRUE;
-        network_write_stream (
+        int error = network_write_stream (
           connection, response->writer_buffer.address, response->writer_buffer.length);
+
+        if (error != NETWORK_SUCCESS)
+        {
+            break;
+        }
 
         if (response->total_write_completed == response->header_info.data_length)
         {
@@ -101,7 +107,7 @@ s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
     my_list_free (response->header_list);
     response->header_list = (my_list_s){0};
 
-    return (SUCCESS);
+    return (error);
 }
 
 long

@@ -249,9 +249,10 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
     for (ulong length = 0; bytes_written < buffer_length;)
     {
 #ifndef DEBUG
-        length = SSL_write (network->ssl_tls, buffer, buffer_length);
+        length
+          = SSL_write (network->ssl_tls, buffer + bytes_written, buffer_length - bytes_written);
 #else
-        length = write (network->client, buffer, buffer_length);
+        length = write (network->client, buffer + bytes_written, buffer_length - bytes_written);
 #endif
         if (length > 0)
         {
