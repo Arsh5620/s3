@@ -66,7 +66,7 @@ s3_connection_accept_loop (s3_protocol_s *protocol)
           client_ip,
           client_port);
 
-        int shutdown = S3_CONNECTION_SHUTDOWN_FLOW;
+        int shutdown = S3_SHUTDOWN_CLOSE;
 
         for (int error = 0; error == SUCCESS;)
         {
@@ -88,7 +88,7 @@ s3_connection_accept_loop (s3_protocol_s *protocol)
 
             if (error != SUCCESS)
             {
-                shutdown = S3_CONNECTION_SHUTDOWN_CORRUPTION;
+                shutdown = S3_SHUTDOWN_INVALID;
             }
 
             s3_handle_close (&request, &response);
@@ -202,10 +202,10 @@ s3_connection_shutdown (s3_protocol_s protocol, enum s3_shutdown_enum type)
         char *reason;
         switch (type)
         {
-        case S3_CONNECTION_SHUTDOWN_FLOW:
+        case S3_SHUTDOWN_CLOSE:
             reason = PROTOCOL_SHUTDOWN_REASON_FLOW;
             break;
-        case S3_CONNECTION_SHUTDOWN_CORRUPTION:
+        case S3_SHUTDOWN_INVALID:
             reason = PROTOCOL_SHUTDOWN_REASON_CORRUPT;
             break;
         default:
@@ -286,7 +286,7 @@ s3_next_request (s3_protocol_s *protocol)
     }
 
     request->instance = (char *) protocol;
-    request->header_table = data_make_table (request->header_list, attribs, S3_ATTRIBS_COUNT);
+    request->header_table = data_make_table (request->header_list, attribs, attribs_count);
 
     result = s3_request_read_action (request);
 
@@ -297,8 +297,13 @@ s3_next_request (s3_protocol_s *protocol)
         return (result);
     }
 
-    enum s3_attribs_enum *asserts = s3_call_asserts[request->action - S3_ACTION_CREATE];
-    boolean assert = s3_attribs_assert (request->header_table, asserts, S3_ATTRIBS_COUNT);
+    /**
+     * s3_asserts is one dimensional array of enums (int) so to go to 
+     * second index just add the attribs_count to the s3_asserts pointer
+     */
+    enum s3_attribs_enum *params_assert
+      = s3_asserts + attribs_count * (request->action - S3_ACTION_CREATE);
+    boolean assert = s3_attribs_assert (request->header_table, params_assert, attribs_count);
 
     if (assert == FALSE)
     {
@@ -418,6 +423,9 @@ s3_action_postprocess (s3_request_s *request, s3_response_s *response)
     case S3_ACTION_CREATE:
         result = s3_postprocess_create (request, response);
         break;
+    case S3_ACTION_DIR:
+        result = S3_RESPONSE_SUCCESS;
+        break;
     case S3_ACTION_UPDATE:
         result = s3_postprocess_update (request, response);
         break;
@@ -425,7 +433,7 @@ s3_action_postprocess (s3_request_s *request, s3_response_s *response)
         result = s3_postprocess_delete (request, response);
         break;
     case S3_ACTION_REQUEST:
-        return S3_RESPONSE_SUCCESS;
+        result = S3_RESPONSE_SUCCESS;
         break;
     case S3_ACTION_SERVER:
         result = s3_postprocess_serverinfo (request, response);
@@ -463,6 +471,9 @@ s3_action_preprocess (s3_request_s *request)
         break;
     case S3_ACTION_CREATE:
         result = s3_preprocess_create (request);
+        break;
+    case S3_ACTION_DIR:
+        result = S3_RESPONSE_SUCCESS;
         break;
     case S3_ACTION_UPDATE:
         result = s3_preprocess_update (request);

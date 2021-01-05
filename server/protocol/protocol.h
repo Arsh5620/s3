@@ -25,13 +25,12 @@
 #define S3_PROTOCOL_MAGIC_LEN (8)
 #define S3_PROTOCOL_HEADER_MAXLEN (256 << 4)
 #define S3_DATABASE_FILENAME "schema.db"
-#define S3_RESPONSE_FORMAT_STRING "%.*s=\"%.*s\"\r\n"
-#define S3_RESPONSE_FORMAT_LONG "%.*s=\"%ld\"\r\n"
 #define S3_RESPONSE_KEY_NAME "response"
 
 // attribute name keys
 #define S3_ATTRIBNAME_ACTION "action"
 #define S3_ATTRIBNAME_CRC "crc"
+#define S3_ATTRIBNAME_DIRNAME "dirname"
 #define S3_ATTRIBNAME_FILENAME "filename"
 #define S3_ATTRIBNAME_UPDATEAT "updateat"
 #define S3_ATTRIBNAME_UPDATETRIM "trim"
@@ -43,6 +42,7 @@ enum s3_actions_enum
 {
     S3_ACTION_CREATE = 1,
     S3_ACTION_DELETE,
+    S3_ACTION_DIR,
     S3_ACTION_NOTIFICATION,
     S3_ACTION_REQUEST,
     S3_ACTION_SERVER,
@@ -53,8 +53,9 @@ enum s3_actions_enum
 enum s3_attribs_enum
 {
     S3_ATTRIB_ACTION = 1,
-    S3_ATTRIB_FILENAME,
     S3_ATTRIB_CRC,
+    S3_ATTRIB_DIRNAME,
+    S3_ATTRIB_FILENAME,
     S3_ATTRIB_UPDATEAT,
     S3_ATTRIB_UPDATETRIM,
     S3_ATTRIB_USERNAME,
@@ -63,17 +64,15 @@ enum s3_attribs_enum
 
 enum s3_shutdown_enum
 {
-    S3_CONNECTION_SHUTDOWN_FLOW,
-    S3_CONNECTION_SHUTDOWN_CORRUPTION
+    S3_SHUTDOWN_CLOSE,
+    S3_SHUTDOWN_INVALID
 };
 
 enum s3_response_code
 {
-    S3_RESPONSE_SUCCESS,   // Internal, no response to the client
-    S3_RESPONSE_DATA_SEND, // The server has acknowledged the request and is now expecting data
-                            // packets
-    S3_RESPONSE_PACKET_OK, // The packet was received and processed, no
-                            // further action required on server end
+    S3_RESPONSE_SUCCESS,           // Internal, no response to the client
+    S3_RESPONSE_DATA_SEND,         // The server is expecting client to send data
+    S3_RESPONSE_PACKET_OK,         // Server has processed the action
     S3_RESPONSE_PACKET_DATA_MORE,  // Requesting send permission from client
     S3_RESPONSE_PACKET_DATA_READY, // Sending data
 
@@ -117,20 +116,7 @@ typedef struct
     unsigned char magic;
 } s3_header_s;
 
-typedef struct
-{
-    string_s file_name;
-    uint crc32;
-    long update_at;
-    boolean trim; // 0 means false, every other value is true
-} s3_protocol_attribs_s;
-
-#define S3_ACTIONS_COUNT 6
-#define S3_ATTRIBS_COUNT 7
-#define S3_ATTRIBS_STRUCT_COUNT S3_ATTRIBS_COUNT - 1
-#define S3_KEY_FILENAME "file_name"
-
-#define S3_CASE(string_dest, code, string)                                                        \
+#define S3_CASE(string_dest, code, string)                                                         \
     case code:                                                                                     \
     {                                                                                              \
         string_dest = STRING (string);                                                             \
@@ -139,7 +125,9 @@ typedef struct
 
 extern data_keys_s attribs[];
 extern data_keys_s actions[];
-extern enum s3_attribs_enum s3_call_asserts[][S3_ATTRIBS_COUNT];
+extern enum s3_attribs_enum *s3_asserts;
+extern const int attribs_count;
+extern const int actions_count;
 
 typedef struct
 {

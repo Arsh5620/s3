@@ -150,7 +150,7 @@ s3_request_read_action (s3_request_s *request)
         actionval = binary_search (
           actions,
           sizeof (data_keys_s),
-          S3_ACTIONS_COUNT,
+          actions_count,
           pair.value,
           pair.value_length,
           data_string_compare);
