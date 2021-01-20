@@ -45,55 +45,123 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings)
     return (protocol);
 }
 
-static long profiler = 0;
-const long profiler_exit = 1000000;
+void
+s3_epollctl_add_epollin (s3_protocol_s *protocol, int socket_fd)
+{
+    struct epoll_event listener_epoll = {0};
+    listener_epoll.events = EPOLLIN;
+    listener_epoll.data.fd = socket_fd;
+
+    if (epoll_ctl (protocol->epoll_fd, EPOLL_CTL_ADD, socket_fd, &listener_epoll) == -1)
+    {
+        my_print (
+          MESSAGE_OUT_LOGS, LOGGER_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CTL_FAILED, strerror (errno));
+    }
+}
 
 void
-s3_connection_accept_loop (s3_protocol_s *protocol)
+s3_setup_epoll (s3_protocol_s *protocol)
 {
-    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
-
-    while (network_connect_accept_sync (&protocol->connection), TRUE)
+    protocol->epoll_fd = epoll_create1 (NULL_ZERO);
+    if (protocol->epoll_fd == -1)
     {
-        struct sockaddr_in client = protocol->connection.client_socket;
-        char *client_ip = inet_ntoa (client.sin_addr);
-        ushort client_port = ntohs (client.sin_port);
-
         my_print (
           MESSAGE_OUT_LOGS,
-          LOGGER_LEVEL_INFO,
-          PROTOCOL_NETWORK_CLIENT_CONNECT,
-          client_ip,
-          client_port);
+          LOGGER_LEVEL_CATASTROPHIC,
+          PROTOCOL_EPOLL_CREATE_FAILED,
+          strerror (errno));
+    }
 
-        int shutdown = S3_SHUTDOWN_CLOSE;
+    s3_epollctl_add_epollin (protocol, protocol->connection.server);
+    protocol->epoll_events = m_malloc (sizeof (struct epoll_event) * S3_NETWORK_MAX_EPOLL_EVENTS);
+    protocol->epoll_events_count = S3_NETWORK_MAX_EPOLL_EVENTS;
+}
 
-        for (int error = 0; error == SUCCESS;)
+void
+s3_make_connection_async (s3_protocol_s *protocol)
+{
+    int fd_flags = fcntl (protocol->connection.client, F_GETFL, 0);
+    fd_flags |= O_NONBLOCK;
+    fcntl (protocol->connection.client, F_SETFL, fd_flags);
+
+    s3_epollctl_add_epollin (protocol, protocol->connection.client);
+}
+
+void
+s3_connection_accept_loop_async (s3_protocol_s *protocol)
+{
+    s3_setup_epoll (protocol);
+
+    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
+
+    int number_of_tries = 0;
+    while (TRUE)
+    {
+        int number_epoll_events = epoll_wait (
+          protocol->epoll_fd, protocol->epoll_events, protocol->epoll_events_count, -1);
+
+        if (number_epoll_events == -1)
         {
-            if (++profiler >= profiler_exit)
-            {
-                exit (1);
-            }
-
-            s3_response_s response = {0};
-            s3_request_s request = {0};
-            protocol->current_response = &response;
-            protocol->current_request = &request;
-            request.instance = (char *) protocol;
-            response.instance = (char *) protocol;
-            response.file_name = &request.file_name;
-
-            error = s3_next_request (protocol);
-            error = s3_handle_response (&response, error);
-
-            if (error != SUCCESS)
-            {
-                shutdown = S3_SHUTDOWN_INVALID;
-            }
-
-            s3_handle_close (&request, &response);
+            my_print (
+              MESSAGE_OUT_LOGS,
+              number_of_tries < 10 ? LOGGER_LEVEL_ERROR : LOGGER_LEVEL_CATASTROPHIC,
+              PROTOCOL_EPOLL_WAIT_FAILED,
+              strerror (errno));
+            number_of_tries++;
+            continue;
         }
-        s3_connection_shutdown (*protocol, shutdown);
+        else
+        {
+            number_of_tries = 0;
+        }
+
+        for (size_t i = 0; i < number_epoll_events; i++)
+        {
+            struct epoll_event epoll_event_info = protocol->epoll_events[i];
+
+            if (epoll_event_info.data.fd == protocol->connection.server)
+            {
+                network_connect_accept_sync (&protocol->connection);
+
+                s3_make_connection_async (protocol);
+                struct sockaddr_in client = protocol->connection.client_socket;
+                char *client_ip = inet_ntoa (client.sin_addr);
+                ushort client_port = ntohs (client.sin_port);
+
+                my_print (
+                  MESSAGE_OUT_LOGS,
+                  LOGGER_LEVEL_INFO,
+                  PROTOCOL_NETWORK_CLIENT_CONNECT,
+                  client_ip,
+                  client_port);
+            }
+            else
+            {
+                int shutdown = S3_SHUTDOWN_CLOSE;
+
+                for (int error = 0; error == SUCCESS;)
+                {
+                    s3_response_s response = {0};
+                    s3_request_s request = {0};
+                    protocol->current_response = &response;
+                    protocol->current_request = &request;
+                    request.instance = (char *) protocol;
+                    response.instance = (char *) protocol;
+                    response.file_name = &request.file_name;
+
+                    error = s3_next_request (protocol);
+                    error = s3_handle_response (&response, error);
+
+                    if (error != SUCCESS)
+                    {
+                        shutdown = S3_SHUTDOWN_INVALID;
+                    }
+
+                    s3_handle_close (&request, &response);
+                }
+                s3_connection_shutdown (*protocol, shutdown);
+            }
+        }
     }
     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
 }
@@ -298,7 +366,7 @@ s3_next_request (s3_protocol_s *protocol)
     }
 
     /**
-     * s3_asserts is one dimensional array of enums (int) so to go to 
+     * s3_asserts is one dimensional array of enums (int) so to go to
      * second index just add the attribs_count to the s3_asserts pointer
      */
     enum s3_attribs_enum *params_assert
@@ -344,6 +412,7 @@ s3_next_request (s3_protocol_s *protocol)
         }
     }
 
+    boolean send_data = FALSE;
     if (request->data_write_confirm == TRUE)
     {
         if (s3_handle_response (response, S3_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
@@ -351,14 +420,21 @@ s3_next_request (s3_protocol_s *protocol)
             return (S3_RESPONSE_NETWORK_ERROR_WRITE);
         }
 
-        if (s3_response_accept_status (response) == SUCCESS)
+        if (s3_response_accept_status (response) != SUCCESS)
         {
-            result = s3_action_send (request, response);
+            return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+        }
 
-            if (result != S3_RESPONSE_SUCCESS)
-            {
-                return result;
-            }
+        send_data = TRUE;
+    }
+
+    if (send_data == TRUE || request->data_write_confirm == FALSE)
+    {
+        result = s3_action_send (request, response);
+
+        if (result != S3_RESPONSE_SUCCESS)
+        {
+            return result;
         }
     }
 
@@ -473,7 +549,7 @@ s3_action_preprocess (s3_request_s *request)
         result = s3_preprocess_create (request);
         break;
     case S3_ACTION_DIR:
-        result = S3_RESPONSE_SUCCESS;
+        result = s3_preprocess_dirlist (request);
         break;
     case S3_ACTION_UPDATE:
         result = s3_preprocess_update (request);

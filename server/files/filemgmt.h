@@ -28,8 +28,11 @@ typedef struct filemgmt_file_name
 #define FILEMGMT_COLUMN_SIZE "size"
 #define FILEMGMT_COLUMN_HASH "md5"
 
-#define FILEMGMT_QUERY_EXISTS                                                                      \
+#define FILEMGMT_QUERY_SELECT_EQUALS                                                               \
     "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ? LIMIT 1;"
+
+#define FILEMGMT_QUERY_SELECT_LIKE                                                                 \
+    "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " LIKE '?';"
 
 #define FILEMGMT_QUERY_DELETE                                                                      \
     "DELETE FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ?;"
@@ -57,6 +60,12 @@ int
 filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_length);
 int
 filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_stats);
+
+int
+filemgmt_folder_exists (string_s folder_name);
+int
+filemgmt_folder_exists_sqlite3 (string_s folder_name);
+
 int
 filemgmt_file_add (string_s file_name);
 int

@@ -25,7 +25,7 @@ username = "arshdeep"
 password = "SomeSecretKeyWhichIsReallyLong"
 # accept and send are not action types but response action types
 action_types = ["create", "update", "delete",
-                "request", "server"]
+                "request", "server", "dir"]
 extras_update = "updateat=0\ntrim=1\n"
 extras_common = "filename=" + str(file_name) + "\n"
 input_file = "./file"
@@ -56,6 +56,7 @@ while (True):
           "3. Delete the file\n"
           "4. Request the file\n"
           "5. Request server info\n"
+          "6. List directory contents\n"
           "Ctrl + C Exit client\n")
 
     selection = input()  # wait for the client to press enter before sending the packet
@@ -76,6 +77,9 @@ while (True):
         selected_action = action_types[3]
     elif (selection == "5"):
         selected_action = action_types[4]
+    elif selection == "6":
+        selected_action = action_types[5]
+        extra_headers = "dirname=root/"
     else:
         print("Not a valid option\n")
         continue

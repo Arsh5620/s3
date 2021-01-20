@@ -7,11 +7,12 @@ int
 filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length)
 {
     int error;
-    sqlite3_stmt *stmt
-      = database_get_stmt (FILEMGMT_QUERY_EXISTS, sizeof (FILEMGMT_QUERY_EXISTS), &error);
+    sqlite3_stmt *stmt = database_get_stmt (
+      FILEMGMT_QUERY_SELECT_EQUALS, sizeof (FILEMGMT_QUERY_SELECT_EQUALS), &error);
 
     if (error != SUCCESS)
     {
+        sqlite3_finalize (stmt);
         return error;
     }
 
@@ -29,6 +30,7 @@ filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length)
 
     if (error != SUCCESS)
     {
+        sqlite3_finalize (stmt);
         return error;
     }
 
@@ -46,6 +48,7 @@ filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_lengt
 
     if (error != SUCCESS)
     {
+        sqlite3_finalize (stmt);
         return error;
     }
 
@@ -55,6 +58,28 @@ filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_lengt
     sqlite3_bind_null (stmt, 4);
 
     return database_finish_stmt (stmt, SQLITE_DONE, "Could not add file");
+}
+
+int
+filemgmt_folder_exists_sqlite3 (string_s folder_name)
+{
+    int error;
+    sqlite3_stmt *stmt = database_get_stmt (
+      FILEMGMT_QUERY_SELECT_LIKE, sizeof (FILEMGMT_QUERY_SELECT_EQUALS), &error);
+
+    if (error != SUCCESS)
+    {
+        sqlite3_finalize (stmt);
+        return error;
+    }
+
+    char string[folder_name.length + 1];
+    string[folder_name.length] = '%';
+    memcpy (string, folder_name.address, folder_name.length);
+
+    sqlite3_bind_text (stmt, 1, string, folder_name.length = 1, SQLITE_TRANSIENT);
+
+    return database_finish_stmt (stmt, SQLITE_ROW, "Couldn't find the folder name given");
 }
 
 int
@@ -91,6 +116,12 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
     fclose (file);
 
     return (TRUE);
+}
+
+int
+filemgmt_folder_exists (string_s folder_name)
+{
+    return filemgmt_folder_exists_sqlite3(folder_name) == SUCCESS ? TRUE: FALSE;
 }
 
 int

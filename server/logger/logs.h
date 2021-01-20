@@ -29,7 +29,7 @@ enum logger_level
     LOGGER_LEVEL_DEBUG,
     LOGGER_LEVEL_WARN,
     LOGGER_LEVEL_ERROR,
-    LOGGER_LEVEL_CATASTROPHIC // any error where program WILL exit.
+    LOGGER_LEVEL_CATASTROPHIC // The logging subsystem will kill the program
 };
 
 typedef struct

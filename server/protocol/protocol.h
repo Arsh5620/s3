@@ -6,6 +6,8 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/epoll.h>
 #include "./auth.h"
 #include "../networking/network.h"
 #include "../logger/messages.h"
@@ -24,6 +26,7 @@
 #define S3_PROTOCOL_MAGIC 0xD0
 #define S3_PROTOCOL_MAGIC_LEN (8)
 #define S3_PROTOCOL_HEADER_MAXLEN (256 << 4)
+#define S3_NETWORK_MAX_EPOLL_EVENTS 100
 #define S3_DATABASE_FILENAME "schema.db"
 #define S3_RESPONSE_KEY_NAME "response"
 
@@ -86,6 +89,7 @@ enum s3_response_code
     S3_RESPONSE_FILE_EXISTS_ALREADY,
     S3_RESPONSE_FILE_NOT_FOUND,
     S3_RESPONSE_FILE_UPDATE_OUTOFBOUNDS,
+    S3_RESPONSE_FOLDER_NOT_FOUND,
     S3_RESPONSE_NOTIFY_TOOBIG,
     S3_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT,
     S3_RESPONSE_DATA_NOT_ACCEPTED,
@@ -196,6 +200,9 @@ typedef struct
 typedef struct
 {
     char init_complete;
+    int epoll_fd;
+    int epoll_events_count;
+    struct epoll_event *epoll_events;
 
     network_s connection;
     logger_s logs;
@@ -216,9 +223,13 @@ s3_next_request (s3_protocol_s *protocol);
 s3_protocol_s
 s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings);
 void
-s3_connection_accept_loop (s3_protocol_s *protocol);
+s3_connection_accept_loop_async (s3_protocol_s *protocol);
 void
 s3_connection_shutdown (s3_protocol_s protocol, enum s3_shutdown_enum type);
+void
+s3_setup_epoll (s3_protocol_s *protocol);
+void
+s3_epollctl_add_epollin (s3_protocol_s *protocol, int socket_fd);
 
 ulong
 s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request);
@@ -240,6 +251,8 @@ int
 s3_postprocess_request (s3_request_s *request, s3_response_s *response);
 int
 s3_postprocess_serverinfo (s3_request_s *request, s3_response_s *response);
+int
+s3_preprocess_dirlist (s3_request_s *request);
 
 int
 s3_preprocess_notification (s3_request_s *request);

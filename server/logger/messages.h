@@ -26,6 +26,12 @@
 #define PROTOCOL_BACKUP_FOLDER_NOT_CREATED                                                         \
     "the folders to upload backup files could not be created"
 
+#define PROTOCOL_EPOLL_CREATE_FAILED "error trying to create epoll, %s"
+
+#define PROTOCOL_EPOLL_CTL_FAILED "error trying to ctl epoll, %s"
+
+#define PROTOCOL_EPOLL_WAIT_FAILED "error trying to wait for fds on epoll, %s"
+
 #define PROTOCOL_NETWORK_WAIT_CONNECT "entering connection accept loop, waiting for a client..."
 
 #define PROTOCOL_NETWORK_CLIENT_CONNECT                                                            \

@@ -60,6 +60,6 @@ main (int argc, char *argv[])
 
     s3_protocol_s protocol = s3_connection_initialize_sync (NETWORK_PORT, settings);
     if (protocol.init_complete)
-        s3_connection_accept_loop (&protocol);
+        s3_connection_accept_loop_async (&protocol);
     s3_close (protocol);
 }
