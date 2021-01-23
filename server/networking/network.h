@@ -15,10 +15,12 @@
 #define RSA_SERVER_KEY "certificates/CA-key.pem"
 #define RSA_SERVER_CERT "certificates/CA-cert.pem"
 #define SSL_SUCCESS 1
+#define N_READ_SET(x) ({0, x})
 
 enum network_errors_enum
 {
     NETWORK_SUCCESS = 0,
+    NETWORK_ASYNC_WOULDBLOCK = 1,
     NETWORK_ERROR_READ_PARTIAL = 128,
     NETWORK_ERROR_READ_CONNRESET,
     NETWORK_ERROR_READ_ERROR,
@@ -57,18 +59,24 @@ typedef struct network_connection_data
     uint error_code;
 } network_data_s;
 
+typedef struct network_read
+{
+    int32_t read_completed;
+    int32_t total_read;
+    char *current_read_memory;
+} network_read_s;
+
 network_s
 network_connect_init_sync (int port);
 void
 network_connect_accept_sync (network_s *connection);
+void
+network_complete_async_read (network_read_s *read);
+void
+network_init_async_read (network_read_s *read, int requested_size);
 
 network_data_s
-network_read_stream (network_s *connection, ulong size);
-/**
- * size must be a power of 2, so 1, 2, 4, 8
- */
-long
-network_read_primitives (network_s *network, int size, int *error);
+network_read_stream (network_s *connection, network_read_s *read_info);
 void
 network_data_free (network_data_s data);
 

@@ -22,27 +22,21 @@ s3_request_data (s3_protocol_s *protocol, s3_request_s *request)
     }
 }
 
-/*
- * headers for data has 2 byte magic, 0xd0,0xd1 and 6 byte length
- */
 int
 s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request)
 {
-    int error;
-    int magic = network_read_primitives (&protocol->connection, sizeof (int32_t), &error);
-
-    if (magic != 0x41544144) // DATA in ascii
+    long number;
+    int error = s3_network_read_stream_async (protocol, (char *) &number, sizeof (int));
+    if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status == STATUS_ASYNC_MORE)
     {
-        return (FAILED);
+        return error;
     }
 
-    size_t data_length = network_read_primitives (&protocol->connection, sizeof (size_t), &error);
-
-    if (request->header_info.data_length != data_length)
+    if (number != 0x41544144) // DATA in ascii
     {
-        return (FAILED);
+        return (S3_RESPONSE_INVALID_COMMUNICATION);
     }
-    return (SUCCESS);
+    return S3_RESPONSE_SUCCESS;
 }
 
 void
@@ -130,12 +124,10 @@ s3_file_hash_write (char *file_name, file_hash_s hash)
 int
 s3_file_download (s3_request_s *request)
 {
-    file_info_s fileinfo = {0};
     file_hash_s hash = {0};
     hash.hash_compute_length = 20; // Length of SHA1 hash
     hash.hash_function = s3_file_hash_sha1;
 
-    fileinfo.size = request->header_info.data_length;
     char *temp_file = request->file_name.temp_file_name.address;
 
     FILE *temp = fopen (temp_file, FILE_MODE_WRITEBINARY);
@@ -149,8 +141,14 @@ s3_file_download (s3_request_s *request)
     clock_t start_time = clock ();
 
     s3_protocol_s *protocol = (s3_protocol_s *) request->instance;
-    int download_status
-      = file_download (temp, &protocol->connection, fileinfo.size, &hash, s3_file_hash);
+    network_init_async_read (&protocol->current.read_info, request->header_info.data_length);
+    int error = file_download (
+      temp, &protocol->connection, &protocol->current.read_info, &hash, s3_file_hash);
+
+    if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+    {
+        return error;
+    }
 
     s3_file_hash_write (request->file_name.temp_hash_file_name.address, hash);
 
@@ -166,8 +164,7 @@ s3_file_download (s3_request_s *request)
       PROTOCOL_DOWNLOAD_COMPLETE,
       request->file_name.file_name.length,
       request->file_name.file_name.address,
-      fileinfo.size,
-      download_status,
+      request->header_info.data_length,
       time_elapsed);
 
     fclose (temp);

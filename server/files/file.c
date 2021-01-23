@@ -11,9 +11,9 @@
 /**
  * make a directory if not exists, returns FILE_DIR_EXISTS if the directory
  * is either created or already exists, and returns error otherwise.
- * 
+ *
  * don't use this function directly, use **path_mkdir_recursive** instead
- * as this function will only create one directory, and if the parent doesn't 
+ * as this function will only create one directory, and if the parent doesn't
  * exists this function WILL fail
  */
 int
@@ -67,55 +67,45 @@ int
 file_download (
   FILE *file,
   network_s *network,
-  ulong size,
+  network_read_s *data_read,
   file_hash_s *hash,
   void (*hashing_function) (file_hash_s *, network_data_s, boolean))
 {
-    ulong read_required = 0, index = 0;
+    network_data_s data = network_read_stream (network, data_read);
 
-    do
+    if (data.error_code != NETWORK_SUCCESS && data.error_code != NETWORK_ASYNC_WOULDBLOCK)
     {
-        read_required = size - index;
-
-        if (read_required > FILE_BUFFER_LENGTH)
-        {
-            read_required = FILE_BUFFER_LENGTH;
-        }
-
-        if (read_required == 0)
-        {
-            break;
-        }
-
-        network_data_s data = network_read_stream (network, read_required);
-
-        if (data.error_code)
-        {
-            network_data_free (data);
-            return (FILE_NETWORK_ERROR);
-        }
-
-        if (fwrite (data.data_address, sizeof (char), data.data_length, file) != data.data_length)
-        {
-            return (FILE_WRITE_ERROR);
-        }
-
-        if (hashing_function != NULL)
-        {
-            hashing_function (hash, data, FALSE);
-        }
-
         network_data_free (data);
-        index += data.data_length;
-    } while (index < size);
+        return (FILE_NETWORK_ERROR);
+    }
+
+    if (fwrite (data.data_address, sizeof (char), data.data_length, file) != data.data_length)
+    {
+        return (FILE_WRITE_ERROR);
+    }
 
     if (hashing_function != NULL)
+    {
+        hashing_function (hash, data, FALSE);
+    }
+
+    network_data_free (data);
+
+    if (data_read->read_completed == data_read->total_read && hashing_function != NULL)
     {
         hashing_function (hash, (network_data_s){0}, TRUE);
     }
 
     fflush (file);
-    return (FILE_SUCCESS);
+
+    if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
+    {
+        return FILE_NETWORK_ASYNC_WOULBLOCK;
+    }
+    else
+    {
+        return (FILE_SUCCESS);
+    }
 }
 
 struct stat

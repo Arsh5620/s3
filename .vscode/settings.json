@@ -76,7 +76,8 @@
         "deque": "c",
         "forward_list": "c",
         "list": "c",
-        "iterator": "c"
+        "iterator": "c",
+        "bitset": "c"
     },
 	"python.pythonPath": "/usr/bin/python2",
 	"python.linting.pylintEnabled": true,

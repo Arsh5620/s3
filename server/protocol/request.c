@@ -1,16 +1,51 @@
 #include "protocol.h"
 #include "../ssbs/deserializer.h"
 
-ulong
-s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request)
+int
+s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size)
 {
-    int error;
-    long long magic = network_read_primitives (&protocol.connection, sizeof (long long), &error);
+    network_init_async_read (&protocol->current.read_info, size);
+    network_data_s data = network_read_stream (&protocol->connection, &protocol->current.read_info);
 
-    if (error != SUCCESS)
+    if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
+    {
+        protocol->current.read_status = STATUS_ASYNC_MORE;
+        return S3_RESPONSE_SUCCESS;
+    }
+    else if (data.error_code != SUCCESS)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
-        return (S3_RESPONSE_NETWORK_ERROR_READ);
+        return S3_RESPONSE_NETWORK_ERROR_READ;
+    }
+
+    if (memory != NULL)
+    {
+        memcpy ((char *) memory, protocol->current.read_info.current_read_memory, size);
+        s3_network_data_free (protocol);
+        network_complete_async_read (&protocol->current.read_info);
+    }
+    protocol->current.read_status = STATUS_ASYNC_COMPLETED;
+    return S3_RESPONSE_SUCCESS;
+}
+
+void
+s3_network_data_free (s3_protocol_s *protocol)
+{
+    if (protocol->current.read_info.current_read_memory)
+    {
+        m_free (protocol->current.read_info.current_read_memory);
+        protocol->current.read_info.current_read_memory = NULL;
+    }
+}
+
+int
+s3_request_read_magic (s3_protocol_s *protocol, s3_request_s *request)
+{
+    long magic = 0;
+    int error = s3_network_read_stream_async (protocol, (char *) &magic, sizeof (long));
+    if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+    {
+        return error;
     }
 
     request->header_info = s3_header_parse8 (magic);
@@ -22,34 +57,44 @@ s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request)
           LOGGER_LEVEL_ERROR,
           PROTOCOL_ABORTED_CORRUPTION,
           request->header_info.magic);
-        return (S3_RESPONSE_CORRUPTED_PACKET);
+        return S3_RESPONSE_CORRUPTED_PACKET;
     }
 
+    return S3_RESPONSE_SUCCESS;
+}
+
+int
+s3_request_read_headers (s3_protocol_s *protocol, s3_request_s *request)
+{
     /**
      * headers is needed even after we have deserialized the binary information
      * because the deserializer will only create a struct with pointers to the original data
      */
-    network_data_s headers
-      = network_read_stream (&protocol.connection, request->header_info.header_length);
-    request->header_raw = headers;
+    int error = s3_network_read_stream_async (protocol, NULL, request->header_info.header_length);
 
-    if (headers.error_code)
+    if (error != S3_RESPONSE_SUCCESS)
     {
         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
-        return (S3_RESPONSE_NETWORK_ERROR_READ);
+        return error;
     }
 
-    request->header_list = s3_deserialize_headers (headers, &error);
+    if (protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+    {
+        return error;
+    }
+    request->header_raw = protocol->current.read_info.current_read_memory;
+    network_complete_async_read (&protocol->current.read_info);
+
+    request->header_list
+      = s3_deserialize_headers (request->header_raw, request->header_info.header_length, &error);
 
     if (error != SUCCESS)
     {
         return error;
     }
-    else
-    {
-        s3_print_headers (request->header_list);
-        return (S3_RESPONSE_SUCCESS);
-    }
+
+    s3_print_headers (request->header_list);
+    return S3_RESPONSE_SUCCESS;
 }
 
 void
@@ -73,9 +118,9 @@ s3_print_headers (my_list_s list)
 }
 
 my_list_s
-s3_deserialize_headers (network_data_s headers, int *error)
+s3_deserialize_headers (char *address, int length, int *error)
 {
-    deserializer_t deserializer = deserializer_init (headers.data_address, headers.data_length);
+    deserializer_t deserializer = deserializer_init (address, length);
     my_list_s binary_list = my_list_new (16, sizeof (deserializer_value_t));
     my_list_s kvpairs_list = my_list_new (16, sizeof (key_value_pair_s));
 

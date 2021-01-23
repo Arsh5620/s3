@@ -101,6 +101,7 @@ enum s3_response_code
     S3_RESPONSE_ERRORS = 128,
     S3_RESPONSE_CORRUPTED_PACKET,
     S3_RESPONSE_CORRUPTED_DATA_HEADERS,
+    S3_RESPONSE_INVALID_COMMUNICATION,
     S3_RESPONSE_SETUP_ENVIRONMENT_FAILED,
     S3_RESPONSE_SERVER_INTERNAL_ERROR,
     S3_RESPONSE_SERVER_DIR_ERROR,
@@ -112,13 +113,6 @@ enum s3_response_code
     S3_RESPONSE_CANNOT_CREATE_TEMP_FILE,
     S3_RESPONSE_ERROR_WRITING_HEADERS
 };
-
-typedef struct
-{
-    size_t data_length;
-    unsigned short header_length;
-    unsigned char magic;
-} s3_header_s;
 
 #define S3_CASE(string_dest, code, string)                                                         \
     case code:                                                                                     \
@@ -132,6 +126,31 @@ extern data_keys_s actions[];
 extern enum s3_attribs_enum *s3_asserts;
 extern const int attribs_count;
 extern const int actions_count;
+
+enum packet_status
+{
+    STATUS_CONNECTION_ACCEPTED,
+    STATUS_HEADER_MAGIC_READ,
+    STATUS_HEADER_SERIALIZED_READ,
+    STATUS_REQUEST_PREPROCESS,
+    STATUS_REQUEST_DOWNLOADING,
+    STATUS_REQUEST_UPLOADING,
+    STATUS_REQUEST_POSTPROCESS,
+    STATUS_RESPONSE_NOW
+};
+
+enum async_operation_status
+{
+    STATUS_ASYNC_MORE,
+    STATUS_ASYNC_COMPLETED
+};
+
+typedef struct
+{
+    size_t data_length;
+    unsigned short header_length;
+    unsigned char magic;
+} s3_header_s;
 
 typedef struct
 {
@@ -156,7 +175,7 @@ typedef struct
      * header_list is the same key value pairs in a hash table for quick access
      */
     my_list_s header_list;
-    network_data_s header_raw;
+    char *header_raw;
     s3_header_s header_info;
     hash_table_s header_table;
 
@@ -199,6 +218,15 @@ typedef struct
 
 typedef struct
 {
+    network_read_s read_info;
+    enum packet_status program_status;
+    enum async_operation_status read_status;
+    s3_request_s *request;
+    s3_response_s *response;
+} s3_protocol_state_s;
+
+typedef struct
+{
     char init_complete;
     int epoll_fd;
     int epoll_events_count;
@@ -207,8 +235,7 @@ typedef struct
     network_s connection;
     logger_s logs;
 
-    s3_request_s *current_request;
-    s3_response_s *current_response;
+    s3_protocol_state_s current;
 } s3_protocol_s;
 
 void
@@ -231,10 +258,17 @@ s3_setup_epoll (s3_protocol_s *protocol);
 void
 s3_epollctl_add_epollin (s3_protocol_s *protocol, int socket_fd);
 
-ulong
-s3_request_read_headers (s3_protocol_s protocol, s3_request_s *request);
+int
+s3_request_read_magic (s3_protocol_s *protocol, s3_request_s *request);
+int
+s3_request_read_headers (s3_protocol_s *protocol, s3_request_s *request);
 int
 s3_request_read_action (s3_request_s *request);
+
+void
+s3_network_data_free (s3_protocol_s *protocol);
+int
+s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size);
 
 long
 s3_action_request_writer (s3_response_s *in);
@@ -284,9 +318,11 @@ s3_header_hash (my_list_s list);
 s3_header_s
 s3_header_parse8 (size_t magic);
 my_list_s
-s3_deserialize_headers (network_data_s headers, int *error);
+s3_deserialize_headers (char *address, int length, int *error);
 void
 s3_print_headers (my_list_s list);
+int
+s3_request_read_magic (s3_protocol_s *protocol, s3_request_s *request);
 
 int
 s3_action_preprocess (s3_request_s *request);

@@ -166,16 +166,22 @@ s3_response_make_magic (s3_response_s *response)
 int
 s3_response_accept_status (s3_response_s *response)
 {
-    network_s *connection = &((s3_protocol_s *) response->instance)->connection;
+    s3_protocol_s *protocol = ((s3_protocol_s *) response->instance);
+    network_s *connection = &protocol->connection;
 
     if (connection)
     {
-        long long data_read = network_read_primitives (connection, sizeof (long long), NULL);
-
-        if (data_read == 0x0000545045434341) // ACCEPT\0\0 in string
+        long magic;
+        int error = s3_network_read_stream_async (protocol, (char *) &magic, sizeof (long));
+        if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status == STATUS_ASYNC_COMPLETED)
         {
-            return (SUCCESS);
+            return error;
+        }
+
+        if (magic != 0x0000545045434341) // ACCEPT\0\0 in string
+        {
+            return (S3_RESPONSE_INVALID_COMMUNICATION);
         }
     }
-    return (FAILED);
+    return S3_RESPONSE_SUCCESS;
 }

@@ -10,14 +10,12 @@ struct argp_option argument_options[] = {
    'd',
    NULL_ZERO,
    NULL_ZERO,
-   "This option takes no value. If the argument is present then the program will not print debug "
-   "logs"},
+   "** do not ** print debug information in logs"},
   {"print_stack_logs",
    's',
    NULL_ZERO,
    NULL_ZERO,
-   "This option takes no value. If the argument is present then the program will not print stack "
-   "frame information to the logs"},
+   "** do ** print stack frame information to the logs"},
   {0},
 };
 
@@ -31,7 +29,7 @@ argument_parser (int key, char *arg, struct argp_state *state)
     case 'd':
         settings->print_debug_logs = FALSE;
         break;
-    case 'l':
+    case 's':
         settings->print_stack_frames = TRUE;
         break;
     case ARGP_KEY_ARG:

@@ -18,6 +18,7 @@ enum file_errors_enum
     FILE_ERROR_OPEN,
     FILE_ERROR_SEEK,
     FILE_NETWORK_ERROR,
+    FILE_NETWORK_ASYNC_WOULBLOCK,
     FILE_WRITE_ERROR,
     FILE_READ_ERROR
 };
@@ -29,13 +30,6 @@ enum file_errors_enum
 #define FILE_NAME_LENGTH (256)
 #define FILE_BUFFER_LENGTH (MB (1))
 #define FILE_SHA1_SIZE (160 / 8)
-
-typedef struct file_info
-{
-    size_t index;
-    size_t size;
-    string_s name;
-} file_info_s;
 
 typedef struct file_hash
 {
@@ -98,9 +92,9 @@ int
 file_download (
   FILE *file,
   network_s *network,
-  ulong size,
+  network_read_s *data_read,
   file_hash_s *hash,
-  void (*sha1_hash) (file_hash_s *, network_data_s, boolean));
+  void (*hashing_function) (file_hash_s *, network_data_s, boolean));
 string_s
 file_path_concat (string_s path1, string_s path2);
 

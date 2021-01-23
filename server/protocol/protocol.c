@@ -138,28 +138,35 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
             else
             {
                 int shutdown = S3_SHUTDOWN_CLOSE;
+                int error = 0;
 
-                for (int error = 0; error == SUCCESS;)
+                if (protocol->current.request == NULL)
                 {
-                    s3_response_s response = {0};
-                    s3_request_s request = {0};
-                    protocol->current_response = &response;
-                    protocol->current_request = &request;
-                    request.instance = (char *) protocol;
-                    response.instance = (char *) protocol;
-                    response.file_name = &request.file_name;
-
-                    error = s3_next_request (protocol);
-                    error = s3_handle_response (&response, error);
-
-                    if (error != SUCCESS)
-                    {
-                        shutdown = S3_SHUTDOWN_INVALID;
-                    }
-
-                    s3_handle_close (&request, &response);
+                    protocol->current.request = m_calloc (sizeof (s3_request_s));
+                    protocol->current.request->instance = (char *) protocol;
                 }
-                s3_connection_shutdown (*protocol, shutdown);
+
+                if (protocol->current.response == NULL)
+                {
+                    protocol->current.response = m_calloc (sizeof (s3_response_s));
+                    protocol->current.response->instance = (char *) protocol;
+                    protocol->current.response->file_name = &protocol->current.request->file_name;
+                }
+
+                error = s3_next_request (protocol);
+                if (
+                  error == S3_RESPONSE_SUCCESS
+                  && protocol->current.program_status == STATUS_RESPONSE_NOW)
+                {
+                    error = s3_handle_response (protocol->current.response, error);
+                }
+
+                if (error != S3_RESPONSE_SUCCESS)
+                {
+                    shutdown = S3_SHUTDOWN_INVALID;
+                    s3_handle_close (protocol->current.request, protocol->current.response);
+                    s3_connection_shutdown (*protocol, shutdown);
+                }
             }
         }
     }
@@ -169,7 +176,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
 void
 s3_handle_close (s3_request_s *request, s3_response_s *response)
 {
-    m_free (request->header_raw.data_address);
+    m_free (request->header_raw);
     my_list_free (request->header_list);
     my_list_free (response->header_list);
     hash_table_free (request->header_table);
@@ -344,114 +351,160 @@ s3_setup_environment (s3_request_s *request)
 ulong
 s3_next_request (s3_protocol_s *protocol)
 {
-    s3_request_s *request = protocol->current_request;
-    s3_response_s *response = protocol->current_response;
+    s3_request_s *request = protocol->current.request;
+    s3_response_s *response = protocol->current.response;
+    int error = 0;
 
-    int result = s3_request_read_headers (*protocol, request);
-    if (result != S3_RESPONSE_SUCCESS)
+    switch (protocol->current.program_status)
     {
-        return (result);
+    case STATUS_CONNECTION_ACCEPTED:
+    case STATUS_HEADER_MAGIC_READ:
+    {
+        error = s3_request_read_magic (protocol, request);
+        if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+        {
+            return error;
+        }
+        protocol->current.program_status = STATUS_HEADER_SERIALIZED_READ;
+        return S3_RESPONSE_SUCCESS;
     }
 
-    request->instance = (char *) protocol;
-    request->header_table = data_make_table (request->header_list, attribs, attribs_count);
-
-    result = s3_request_read_action (request);
-
-    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
-
-    if (result != S3_RESPONSE_SUCCESS)
+    case STATUS_HEADER_SERIALIZED_READ:
     {
-        return (result);
+        int error = s3_request_read_headers (protocol, request);
+        if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+        {
+            return error;
+        }
+
+        request->header_table = data_make_table (request->header_list, attribs, attribs_count);
+
+        error = s3_request_read_action (request);
+
+        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
+
+        if (error != S3_RESPONSE_SUCCESS)
+        {
+            return (error);
+        }
+
+        /**
+         * s3_asserts is one dimensional array of enums (int) so to go to
+         * second index just add the attribs_count to the s3_asserts pointer
+         */
+        enum s3_attribs_enum *params_assert
+          = s3_asserts + attribs_count * (request->action - S3_ACTION_CREATE);
+        boolean assert = s3_attribs_assert (request->header_table, params_assert, attribs_count);
+
+        if (assert == FALSE)
+        {
+            return (S3_RESPONSE_MISSING_ATTRIBS);
+        }
+
+        error = s3_auth_transaction (request);
+
+        if (error != S3_RESPONSE_SUCCESS)
+        {
+            return (error);
+        }
+
+        error = s3_setup_environment (request);
+        if (error != SUCCESS)
+        {
+            return (error);
+        }
+        protocol->current.program_status = STATUS_REQUEST_PREPROCESS;
     }
 
-    /**
-     * s3_asserts is one dimensional array of enums (int) so to go to
-     * second index just add the attribs_count to the s3_asserts pointer
-     */
-    enum s3_attribs_enum *params_assert
-      = s3_asserts + attribs_count * (request->action - S3_ACTION_CREATE);
-    boolean assert = s3_attribs_assert (request->header_table, params_assert, attribs_count);
-
-    if (assert == FALSE)
+    case STATUS_REQUEST_PREPROCESS:
     {
-        return (S3_RESPONSE_MISSING_ATTRIBS);
+        // Generally these actions are expensive
+        // But they don't require any data from the client
+        error = s3_action_preprocess (request);
+
+        if (error != S3_RESPONSE_SUCCESS)
+        {
+            return (error);
+        }
+
+        if (request->header_info.data_length)
+        {
+            if (s3_handle_response (response, S3_RESPONSE_DATA_SEND) != SUCCESS)
+            {
+                return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+            }
+        }
+
+        protocol->current.program_status = STATUS_REQUEST_DOWNLOADING;
     }
 
-    result = s3_auth_transaction (request);
-
-    if (result != S3_RESPONSE_SUCCESS)
+    case STATUS_REQUEST_DOWNLOADING:
     {
-        return (result);
+        if (request->header_info.data_length)
+        {
+            error = s3_request_data (protocol, request);
+            if (
+              error != S3_RESPONSE_SUCCESS
+              || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+            {
+                return (error);
+            }
+        }
+        protocol->current.program_status = STATUS_REQUEST_UPLOADING;
     }
 
-    result = s3_setup_environment (request);
-    if (result != SUCCESS)
+    case STATUS_REQUEST_UPLOADING:
     {
-        return (result);
+        boolean send_data = FALSE;
+        if (request->data_write_confirm == TRUE)
+        {
+            if (s3_handle_response (response, S3_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
+            {
+                return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+            }
+
+            error = s3_response_accept_status (response);
+            if (error != SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+            {
+                return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+            }
+
+            send_data = TRUE;
+        }
+
+        if (send_data == TRUE || request->data_write_confirm == FALSE)
+        {
+            error = s3_action_send (request, response);
+
+            if (error != S3_RESPONSE_SUCCESS)
+            {
+                return error;
+            }
+        }
+        protocol->current.program_status = STATUS_REQUEST_POSTPROCESS;
     }
 
-    result = s3_action_preprocess (request);
-
-    if (result != S3_RESPONSE_SUCCESS)
+    case STATUS_REQUEST_POSTPROCESS:
     {
-        return (result);
-    }
+        // Again no network IO just some heavy lifting for other IO
+        error = s3_action_postprocess (request, response);
 
-    if (request->header_info.data_length)
-    {
-        if (s3_handle_response (response, S3_RESPONSE_DATA_SEND) != SUCCESS)
+        if (error != S3_RESPONSE_SUCCESS)
+        {
+            return (error);
+        }
+
+        if (
+          response->response_code != S3_RESPONSE_PACKET_DATA_READY
+          && s3_handle_response (response, S3_RESPONSE_PACKET_OK) != SUCCESS)
         {
             return (S3_RESPONSE_NETWORK_ERROR_WRITE);
         }
-
-        result = s3_request_data (protocol, request);
-        if (result != S3_RESPONSE_SUCCESS)
-        {
-            return (result);
-        }
+        protocol->current.program_status = STATUS_RESPONSE_NOW;
     }
-
-    boolean send_data = FALSE;
-    if (request->data_write_confirm == TRUE)
-    {
-        if (s3_handle_response (response, S3_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
-        {
-            return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-        }
-
-        if (s3_response_accept_status (response) != SUCCESS)
-        {
-            return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-        }
-
-        send_data = TRUE;
+    case STATUS_RESPONSE_NOW:
+        break;
     }
-
-    if (send_data == TRUE || request->data_write_confirm == FALSE)
-    {
-        result = s3_action_send (request, response);
-
-        if (result != S3_RESPONSE_SUCCESS)
-        {
-            return result;
-        }
-    }
-
-    result = s3_action_postprocess (request, response);
-
-    if (result != S3_RESPONSE_SUCCESS)
-    {
-        return (result);
-    }
-
-    if (
-      response->response_code != S3_RESPONSE_PACKET_DATA_READY
-      && s3_handle_response (response, S3_RESPONSE_PACKET_OK) != SUCCESS)
-    {
-        return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-    }
-
     return (S3_RESPONSE_SUCCESS);
 }
 

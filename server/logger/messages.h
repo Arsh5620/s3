@@ -23,8 +23,7 @@
 
 #define PROTOCOL_MYSQL_FAILED_CONNECT "failed to connect to mysql server, program will now exit"
 
-#define PROTOCOL_BACKUP_FOLDER_NOT_CREATED                                                         \
-    "the folders to upload backup files could not be created"
+#define PROTOCOL_BACKUP_FOLDER_NOT_CREATED "the folders to upload backup files could not be created"
 
 #define PROTOCOL_EPOLL_CREATE_FAILED "error trying to create epoll, %s"
 
@@ -46,7 +45,7 @@
 
 #define PROTOCOL_DOWNLOAD_COMPLETE                                                                 \
     "downloaded file name \"%.*s\", (%d) bytes, "                                                  \
-    "[status: %d, time: %ld ms]"
+    "[time: %ld ms]"
 
 #define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS "could not open directory \"%s\", permission denied"
 
@@ -75,6 +74,9 @@
 #define NETWORK_ASSERT_MESSAGE "network function \"%s\" error: %s, errno: %d"
 
 #define NETWORK_READ_ERROR "network returned an error while trying to perform a read operation"
+
+#define NETWORK_INVALID_READ_ARGS                                                                  \
+    "invalid arguments to network_read_stream, read_Info cannot be null"
 
 #define NETWORK_ASSERT_SSL_MESSAGE "tls ssl function \"%s\" failed errno: %d, more information:\n%s"
 

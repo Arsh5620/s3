@@ -187,17 +187,31 @@ network_connect_accept_sync (network_s *connection)
  * when no longer in use
  */
 network_data_s
-network_read_stream (network_s *connection, ulong size)
+network_read_stream (network_s *connection, network_read_s *read_info)
 {
+    if (read_info == NULL)
+    {
+        my_print (MESSAGE_OUT_BOTH, LOGGER_LEVEL_CATASTROPHIC, NETWORK_INVALID_READ_ARGS);
+    }
+
     network_data_s data = {0};
+    int size = read_info->total_read;
+    int *offset = &read_info->read_completed;
+    char **dest_memory = &read_info->current_read_memory;
     if (size > NETWORK_READ_BUFFER)
     {
         size = NETWORK_READ_BUFFER;
         data.error_code = NETWORK_REQUEST_TOO_BIG;
     }
 
-    char *memory = m_malloc (size);
-    size_t data_read = 0;
+    char *memory = *dest_memory == NULL ? m_malloc (size) : *dest_memory;
+    if (*dest_memory == NULL)
+    {
+        *offset = 0;
+        *dest_memory = memory;
+    }
+
+    size_t data_read = *offset;
     for (; data_read < size;)
     {
 #ifndef DEBUG
@@ -224,7 +238,12 @@ network_read_stream (network_s *connection, ulong size)
             case ECONNRESET:
                 data.error_code = NETWORK_ERROR_READ_CONNRESET;
                 break;
-
+            case EAGAIN:
+#if EWOULDBLOCK != EAGAIN
+            case EWOULDBLOCK:
+#endif
+                data.error_code = NETWORK_ASYNC_WOULDBLOCK;
+                break;
             default:
                 data.error_code = NETWORK_ERROR_READ_ERROR;
                 break;
@@ -292,21 +311,25 @@ network_data_free (network_data_s data)
     }
 }
 
-long
-network_read_primitives (network_s *network, int size, int *error)
+/**
+ * Check if the network read structure is inited (size == 0)
+ * and initalize it with given size
+ */
+void
+network_init_async_read (network_read_s *read, int requested_size)
 {
-    network_data_s data = network_read_stream (network, size);
-    long return_value = 0;
-
-    if (data.error_code == NETWORK_SUCCESS)
+    if (read->total_read == 0)
     {
-        memcpy (&return_value, data.data_address, data.data_length);
+        read->read_completed = 0;
+        read->total_read = requested_size;
+        read->current_read_memory = NULL;
     }
+}
 
-    if (error != NULL)
-    {
-        *error = data.error_code;
-    }
-    network_data_free (data);
-    return return_value;
+void
+network_complete_async_read (network_read_s *read)
+{
+    read->total_read = 0;
+    read->current_read_memory = 0;
+    read->read_completed = 0;
 }
