@@ -6,11 +6,7 @@
 #include "./protocol/protocol.h"
 
 struct argp_option argument_options[] = {
-  {"disable_debug_logs",
-   'd',
-   NULL_ZERO,
-   NULL_ZERO,
-   "** do not ** print debug information in logs"},
+  {"disable_debug_logs", 'd', NULL_ZERO, NULL_ZERO, "** do not ** print debug information in logs"},
   {"print_stack_logs",
    's',
    NULL_ZERO,

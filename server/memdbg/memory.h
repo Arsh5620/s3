@@ -62,8 +62,8 @@ __calloc (size_t size, char *file_name, long line_no);
 void *
 __realloc (void *address, long size, char *file_name, long line_no);
 
-#define m_calloc(size) __calloc(size, MEMORY_FILE_LINE)
-#define m_malloc(size) __malloc(size, MEMORY_FILE_LINE)
-#define m_realloc(pointer, new_size) __realloc(pointer, new_size, MEMORY_FILE_LINE)
-#define m_free(pointer) __free(pointer, MEMORY_FILE_LINE)
+#define m_calloc(size) __calloc (size, MEMORY_FILE_LINE)
+#define m_malloc(size) __malloc (size, MEMORY_FILE_LINE)
+#define m_realloc(pointer, new_size) __realloc (pointer, new_size, MEMORY_FILE_LINE)
+#define m_free(pointer) __free (pointer, MEMORY_FILE_LINE)
 #endif

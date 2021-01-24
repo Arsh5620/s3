@@ -25,16 +25,16 @@ int
 s3_auth_query (s3_request_s *request)
 {
     int error;
-    string_s username = data_get_string_s (
-      request->header_list, request->header_table, S3_ATTRIB_USERNAME, &error);
+    string_s username
+      = data_get_string_s (request->header_list, request->header_table, S3_ATTRIB_USERNAME, &error);
 
     if (error != SUCCESS)
     {
         return (S3_RESPONSE_SERVER_ERROR_NOAUTH);
     }
 
-    string_s password = data_get_string_s (
-      request->header_list, request->header_table, S3_ATTRIB_PASSWORD, &error);
+    string_s password
+      = data_get_string_s (request->header_list, request->header_table, S3_ATTRIB_PASSWORD, &error);
 
     if (error != SUCCESS)
     {

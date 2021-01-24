@@ -121,7 +121,7 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
 int
 filemgmt_folder_exists (string_s folder_name)
 {
-    return filemgmt_folder_exists_sqlite3(folder_name) == SUCCESS ? TRUE: FALSE;
+    return filemgmt_folder_exists_sqlite3 (folder_name) == SUCCESS ? TRUE : FALSE;
 }
 
 int

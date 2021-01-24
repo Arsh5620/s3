@@ -15,6 +15,6 @@ s3_preprocess_dirlist (s3_request_s *request)
     {
         return (S3_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT);
     }
-    
+
     return (SUCCESS);
 }

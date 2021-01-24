@@ -27,8 +27,7 @@ s3_preprocess_update (s3_request_s *request)
     }
 
     update_attribs->trim
-      = (data_get_kvpair (request->header_list, request->header_table, S3_ATTRIB_UPDATETRIM, &error)
-          .value_length != FALSE);
+      = (data_get_kvpair (request->header_list, request->header_table, S3_ATTRIB_UPDATETRIM, &error).value_length != FALSE);
 
     if (error != SUCCESS)
     {
