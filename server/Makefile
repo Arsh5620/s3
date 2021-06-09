@@ -1,7 +1,7 @@
 # __MAKEFILE__
 
 CC=gcc # C language compiler
-COMMONFLAGS=-Wall -std=gnu99 -I/usr/include/mysql -I/usr/include/mysql/mysql
+COMMONFLAGS=-Wall -std=gnu99 -I/usr/include/mysql -I/usr/include/mysql/mysql -I.
 DEBUGFLAG=-DDEBUG
 PROFILEFLAG=-DPROFILE 
 ifeq ($(RELEASE), 1)
@@ -35,4 +35,5 @@ clean-logs:
 	@cd ./temp/ && rm * -I || echo "No temp files to clear";
 
 update-revision-build:
-	awk -i inplace 'NR==1{print $$1 " " $$2 " " $$3 + 1}' ./protocol/micro
+	@echo "updating build version number"
+	@variable=`cat ./protocol/micro.inc` && printf "#define __VERSION_MICRO__ "$$(printf $$(echo $$variable | cut -f 3 -d ' ' | head -n 1)"+1\n" | tee ~/testfile | bc)"\n#define __VERSION_GITHASH__ \""$$(git rev-parse --short=10 HEAD)"\"" > ./protocol/micro.inc

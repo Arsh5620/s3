@@ -3,15 +3,12 @@
 #include <string.h>
 #include <argp.h>
 #include <signal.h>
-#include "./protocol/protocol.h"
+#include <protocol/protocol.h>
+#include <protocol/build.h>
 
 struct argp_option argument_options[] = {
-  {"disable_debug_logs", 'd', NULL_ZERO, NULL_ZERO, "** do not ** print debug information in logs"},
-  {"print_stack_logs",
-   's',
-   NULL_ZERO,
-   NULL_ZERO,
-   "** do ** print stack frame information to the logs"},
+  {"disable_debug_logs", 'd', NULL_ZERO, NULL_ZERO, "DO NOT print debug information in logs"},
+  {"print_stack_logs", 's', NULL_ZERO, NULL_ZERO, "print stack frame information to the logs"},
   {0},
 };
 
@@ -44,9 +41,20 @@ struct argp argp = {
   NULL,
   NULL};
 
+void
+print_banner ()
+{
+    printf ("=====================================\n");
+    printf ("s3 server version %s\n", __SERVER_VERSION__);
+    printf ("%s\n", __SERVER_INFO__);
+    printf ("=====================================\n");
+}
+
 int
 main (int argc, char *argv[])
 {
+    print_banner ();
+
     s3_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = FALSE};
     argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
 
