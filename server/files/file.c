@@ -68,44 +68,44 @@ file_download (
   FILE *file,
   network_s *network,
   network_read_s *data_read,
-  file_hash_s *hash,
-  void (*hashing_function) (file_hash_s *, network_data_s, boolean))
+  file_hash_s *hash)
 {
-    network_data_s data = network_read_stream (network, data_read);
+    // network_data_s data = network_read_stream (network, data_read);
 
-    if (data.error_code != NETWORK_SUCCESS && data.error_code != NETWORK_ASYNC_WOULDBLOCK)
-    {
-        network_data_free (data);
-        return (FILE_NETWORK_ERROR);
-    }
+    // if (data.error_code != NETWORK_SUCCESS && data.error_code != NETWORK_ASYNC_WOULDBLOCK)
+    // {
+    //     network_data_free (data);
+    //     return (FILE_NETWORK_ERROR);
+    // }
 
-    if (fwrite (data.data_address, sizeof (char), data.data_length, file) != data.data_length)
-    {
-        return (FILE_WRITE_ERROR);
-    }
+    // if (fwrite (data.data_address, sizeof (char), data.data_length, file) != data.data_length)
+    // {
+    //     return (FILE_WRITE_ERROR);
+    // }
 
-    if (hashing_function != NULL)
-    {
-        hashing_function (hash, data, FALSE);
-    }
+    // if (hashing_function != NULL)
+    // {
+    //     hashing_function (hash, data, FALSE);
+    // }
 
-    network_data_free (data);
+    // network_data_free (data);
 
-    if (data_read->read_completed == data_read->total_read && hashing_function != NULL)
-    {
-        hashing_function (hash, (network_data_s){0}, TRUE);
-    }
+    // if (data_read->read_completed == data_read->total_read && hashing_function != NULL)
+    // {
+    //     hashing_function (hash, (network_data_s){0}, TRUE);
+    // }
 
-    fflush (file);
+    // fflush (file);
 
-    if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
-    {
-        return FILE_NETWORK_ASYNC_WOULBLOCK;
-    }
-    else
-    {
-        return (FILE_SUCCESS);
-    }
+    // if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
+    // {
+    //     return FILE_NETWORK_ASYNC_WOULBLOCK;
+    // }
+    // else
+    // {
+    //     return (FILE_SUCCESS);
+    // }
+    return 0;
 }
 
 struct stat
@@ -169,8 +169,7 @@ string_s
 file_path_concat (string_s path1, string_s path2)
 {
     long length;
-    char *path = string_sprintf (
-      "%.*s/%.*s", &length, path1.length, path1.address, path2.length, path2.address);
+    char *path = string_sprintf ("%.*s/%.*s", &length, path1.length, path1.address, path2.length, path2.address);
 
     string_s path_s;
     path_s.address = path;

@@ -6,8 +6,8 @@
 #include "micro.inc"
 #define __BUILT_BY__ "Arsh"
 
-#define __SERVER_VERSION__                                                                         \
-    __STRINGIFY (__VERSION_MAJOR__)                                                                \
+#define __SERVER_VERSION__                                                                                                       \
+    __STRINGIFY (__VERSION_MAJOR__)                                                                                              \
     "." __STRINGIFY (__VERSION_MINOR__) "." __STRINGIFY (__VERSION_MICRO__)
 
 #define __SERVER_INFO__ "compiled by " __BUILT_BY__ " on [" __DATE__ ", " __TIME__ "] from " __VERSION_GITHASH__

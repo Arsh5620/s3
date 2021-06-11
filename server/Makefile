@@ -36,4 +36,5 @@ clean-logs:
 
 update-revision-build:
 	@echo "updating build version number"
+	@# Read file into variable, cut the 3 column of the first row and add 1 to it. Do a git rev-parse and get the HEAD id and save both of them to the file
 	@variable=`cat ./protocol/micro.inc` && printf "#define __VERSION_MICRO__ "$$(printf $$(echo $$variable | cut -f 3 -d ' ' | head -n 1)"+1\n" | tee ~/testfile | bc)"\n#define __VERSION_GITHASH__ \""$$(git rev-parse --short=10 HEAD)"\"" > ./protocol/micro.inc

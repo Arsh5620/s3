@@ -7,11 +7,7 @@ sqlite3 *sqlite_connection;
 void
 database_print_sqlite_error (char *error_message)
 {
-    my_print (
-      MESSAGE_OUT_BOTH,
-      LOGGER_LEVEL_CATASTROPHIC,
-      error_message,
-      sqlite3_errmsg (sqlite_connection));
+    my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, error_message, sqlite3_errmsg (sqlite_connection));
 }
 
 int
@@ -25,7 +21,7 @@ database_init (const char *database_filename)
         return FAILED;
     }
 
-    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DATABASE_FILE_FOUND, database_filename);
+    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, DATABASE_FILE_FOUND, database_filename);
     return SUCCESS;
 }
 
@@ -43,12 +39,13 @@ database_make_schema (int number_tables, ...)
         int query_length = va_arg (vargs, int);
         int error = sqlite3_prepare_v2 (sqlite_connection, query, query_length, &stmt, NULL);
 
-        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DATABASE_SCHEMA_CHECK, query);
+        my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, DATABASE_SCHEMA_CHECK, query);
 
         if (error != SQLITE_OK)
         {
             database_print_sqlite_error ("Sqlite prepare failed, error message : %s");
             sqlite3_close (sqlite_connection);
+            va_end (vargs);
             return FAILED;
         }
 
@@ -58,11 +55,14 @@ database_make_schema (int number_tables, ...)
         {
             database_print_sqlite_error ("Sqlite step failed, error message : %s");
             sqlite3_finalize (stmt);
+            va_end (vargs);
             return FAILED;
         }
 
         sqlite3_finalize (stmt);
     }
+
+    va_end (vargs);
     return SUCCESS;
 }
 
@@ -75,10 +75,7 @@ database_get_stmt (const char *query, int query_length, int *error_out)
     if (error != SQLITE_OK)
     {
         my_print (
-          MESSAGE_OUT_LOGS,
-          LOGGER_LEVEL_ERROR,
-          "Sqlite failed preparing query transaction: %s",
-          sqlite3_errmsg (sqlite_connection));
+          LOG_OUT_LOGS, LOG_LEVEL_ERROR, "Sqlite failed preparing query transaction: %s", sqlite3_errmsg (sqlite_connection));
         sqlite3_finalize (stmt);
         if (error_out != NULL)
         {
@@ -100,7 +97,7 @@ database_finish_stmt (sqlite3_stmt *stmt, int response_type, char *error_message
     int error = sqlite3_step (stmt);
     if (error != response_type)
     {
-        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, error_message);
+        my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, error_message);
         sqlite3_finalize (stmt);
         return FAILED;
     }

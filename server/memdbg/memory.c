@@ -24,18 +24,13 @@ memory_track_add (void *address, long size, char *file_name, long line_no)
 
     malloc_node_s track_node = {.address = address, .last_update = MEMORY_ALLOC_MALLOC};
 
-    malloc_update_s node
-      = {.type = MEMORY_ALLOC_MALLOC, .file_name = file_name, .line_no = line_no, .size = size};
+    malloc_update_s node = {.type = MEMORY_ALLOC_MALLOC, .file_name = file_name, .line_no = line_no, .size = size};
 
     linked_list_push (&track_node.updates, (char *) &node, sizeof (node));
     long index = my_list_push (&allocations.list, (char *) &track_node);
 
-    hash_table_bucket_s hash_entry = {
-      .key.address = (void *) address,
-      .value.number = index,
-      .key_len = 0,
-      .value_len = 0,
-      .is_occupied = 0};
+    hash_table_bucket_s hash_entry
+      = {.key.address = (void *) address, .value.number = index, .key_len = 0, .value_len = 0, .is_occupied = 0};
 
     hash_table_add (&allocations.hash, hash_entry);
     memory_log_handle (MEMORY_ALLOC_MALLOC, &track_node, &node);
@@ -47,8 +42,7 @@ memory_track_add (void *address, long size, char *file_name, long line_no)
  * same dest address.
  */
 void
-memory_track_update (
-  void *address, void *new_addr, long size, char *file_name, long line_no, malloc_enum type)
+memory_track_update (void *address, void *new_addr, long size, char *file_name, long line_no, malloc_enum type)
 {
     hash_input_u key = {.address = (void *) address};
     hash_table_bucket_s entry = hash_table_get (allocations.hash, key, 0);
@@ -57,8 +51,8 @@ memory_track_update (
     {
         char *errorm = MEMORY_ALLOCATION_NOENTRY;
         my_print (
-          MESSAGE_OUT_LOGS,
-          LOGGER_LEVEL_DEBUG,
+          LOG_OUT_LOGS,
+          LOG_LEVEL_DEBUG,
           MEMORY_ALLOCATION_ERROR,
           address,
           new_addr,
@@ -70,8 +64,7 @@ memory_track_update (
         return;
     }
 
-    malloc_node_s *allocation
-      = (malloc_node_s *) my_list_get (allocations.list, entry.value.number);
+    malloc_node_s *allocation = (malloc_node_s *) my_list_get (allocations.list, entry.value.number);
 
     if (type == MEMORY_ALLOC_FREE && size == 0)
     {
@@ -108,8 +101,7 @@ memory_track_update (
 long
 memory_get_allocation_size (malloc_node_s *node)
 {
-    malloc_update_s *update
-      = (malloc_update_s *) ((linked_list_node_s *) (node->updates.last))->data;
+    malloc_update_s *update = (malloc_update_s *) ((linked_list_node_s *) (node->updates.last))->data;
     return (update->size);
 }
 

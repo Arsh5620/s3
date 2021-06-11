@@ -22,11 +22,8 @@ path_lex (string_s path, boolean *is_absolute)
         char *new_index_p = strchr (index_p, '/');
 
         long diff = new_index_p - index_p;
-        file_path_node_s dir = {
-          .is_file = FALSE,
-          .buffer = path.address,
-          .index = (ulong) (index_p - path.address),
-          .length = diff};
+        file_path_node_s dir
+          = {.is_file = FALSE, .buffer = path.address, .index = (ulong) (index_p - path.address), .length = diff};
 
         if (new_index_p == NULL)
         {

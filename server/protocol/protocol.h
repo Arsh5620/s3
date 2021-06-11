@@ -114,11 +114,11 @@ enum s3_response_code
     S3_RESPONSE_ERROR_WRITING_HEADERS
 };
 
-#define S3_CASE(string_dest, code, string)                                                         \
-    case code:                                                                                     \
-    {                                                                                              \
-        string_dest = STRING (string);                                                             \
-    }                                                                                              \
+#define S3_CASE(string_dest, code, string)                                                                                       \
+    case code:                                                                                                                   \
+    {                                                                                                                            \
+        string_dest = STRING (string);                                                                                           \
+    }                                                                                                                            \
     break;
 
 extern data_keys_s attribs[];
@@ -227,15 +227,29 @@ typedef struct
 
 typedef struct
 {
-    char init_complete;
+    network_s connection;
+    s3_protocol_state_s current;
+} s3_client_s;
+
+typedef struct
+{
     int epoll_fd;
     int epoll_events_count;
     struct epoll_event *epoll_events;
 
-    network_s connection;
-    logger_s logs;
+    int server;
+    struct sockaddr_in server_socket;
 
-    s3_protocol_state_s current;
+// These variables are only required when using SSL, so they are not included in debug builds
+#ifndef DEBUG
+    SSL_CTX *ssl_context;
+
+    SSL_METHOD *ssl_method;
+    X509 *ssl_certificate;
+#endif
+
+    logs_s logs;
+    hash_table_s client_table;
 } s3_protocol_s;
 
 void
@@ -248,7 +262,7 @@ s3_handle_close (s3_request_s *request, s3_response_s *response);
 ulong
 s3_next_request (s3_protocol_s *protocol);
 s3_protocol_s
-s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings);
+s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, boolean *success);
 void
 s3_connection_accept_loop_async (s3_protocol_s *protocol);
 void
@@ -256,7 +270,7 @@ s3_connection_shutdown (s3_protocol_s protocol, enum s3_shutdown_enum type);
 void
 s3_setup_epoll (s3_protocol_s *protocol);
 void
-s3_epollctl_add_epollin (s3_protocol_s *protocol, int socket_fd);
+s3_epollctl_add_epollin (int epoll_fd, int socket_fd);
 
 int
 s3_request_read_magic (s3_protocol_s *protocol, s3_request_s *request);

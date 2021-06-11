@@ -12,7 +12,7 @@
 #include "../files/path.h"
 
 // In c static means that the variables are only available in the same translation unit
-static logger_s logs = {0};
+static logs_s logs = {0};
 static s3_log_settings_s log_settings;
 
 // logs_gettime_s will allocate 64 bytes and format the current
@@ -72,7 +72,7 @@ logs_gettime_s (char *format, char ns, long *len)
 }
 
 int
-logs_open_file (logger_s *log)
+logs_open_file (logs_s *log)
 {
     long length = 0;
     char *dateformat = logs_gettime_s (LOG_DATE_FORMAT, FALSE, &length);
@@ -90,7 +90,7 @@ logs_open_file (logger_s *log)
     return (SUCCESS);
 }
 
-logger_s
+logs_s
 logs_open (s3_log_settings_s settings)
 {
     log_settings = settings;
@@ -99,7 +99,7 @@ logs_open (s3_log_settings_s settings)
         return logs;
     }
 
-    logger_s log = {0};
+    logs_s log = {0};
     int result = path_mkdir_recursive (LOG_DIR_NAME);
     if (result != SUCCESS)
     {
@@ -119,19 +119,18 @@ logs_open (s3_log_settings_s settings)
     return (log);
 }
 
-char *log_levels[]
-  = {" [INFO] -> ", " [DEBUG] -> ", " [WARN] -> ", " [ERROR] -> ", " [CATASTROPHIC] -> "};
+char *log_levels[] = {" [INFO] -> ", " [DEBUG] -> ", " [WARN] -> ", " [ERROR] -> ", " [CATASTROPHIC] -> "};
 
 // this function returns TRUE for no error, and FALSE if an error occur
 boolean
-logs_write (enum logger_level level, char *string, va_list args)
+logs_write (enum logs_level level, char *string, va_list args)
 {
-    if (log_settings.print_debug_logs == FALSE && level == LOGGER_LEVEL_DEBUG)
+    if (log_settings.print_debug_logs == FALSE && level == LOG_LEVEL_DEBUG)
     {
         return TRUE;
     }
 
-    if (logs.init == FALSE && level >= LOGGER_LEVEL_WARN)
+    if (logs.init == FALSE && level >= LOG_LEVEL_WARN)
     {
         vprintf (string, args); // prints to the console output
         puts ("<---->");        // adds a new line
@@ -145,7 +144,7 @@ logs_write (enum logger_level level, char *string, va_list args)
     free (date);
 
     char *log_level;
-    if (level >= LOGGER_LEVEL_INFO && level <= LOGGER_LEVEL_CATASTROPHIC)
+    if (level >= LOG_LEVEL_INFO && level <= LOG_LEVEL_CATASTROPHIC)
     {
         log_level = log_levels[level];
     }

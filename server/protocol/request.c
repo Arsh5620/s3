@@ -4,61 +4,57 @@
 int
 s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size)
 {
-    network_init_async_read (&protocol->current.read_info, size);
-    network_data_s data = network_read_stream (&protocol->connection, &protocol->current.read_info);
+    // network_init_async_read (&protocol->current.read_info, size);
+    // network_data_s data = network_read_stream (&protocol->connection, &protocol->current.read_info);
 
-    if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
-    {
-        protocol->current.read_status = STATUS_ASYNC_MORE;
-        return S3_RESPONSE_SUCCESS;
-    }
-    else if (data.error_code != SUCCESS)
-    {
-        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
-        return S3_RESPONSE_NETWORK_ERROR_READ;
-    }
+    // if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
+    // {
+    //     protocol->current.read_status = STATUS_ASYNC_MORE;
+    //     return S3_RESPONSE_SUCCESS;
+    // }
+    // else if (data.error_code != SUCCESS)
+    // {
+    //     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
+    //     return S3_RESPONSE_NETWORK_ERROR_READ;
+    // }
 
-    if (memory != NULL)
-    {
-        memcpy ((char *) memory, protocol->current.read_info.current_read_memory, size);
-        s3_network_data_free (protocol);
-        network_complete_async_read (&protocol->current.read_info);
-    }
-    protocol->current.read_status = STATUS_ASYNC_COMPLETED;
+    // if (memory != NULL)
+    // {
+    //     memcpy ((char *) memory, protocol->current.read_info.current_read_memory, size);
+    //     s3_network_data_free (protocol);
+    //     network_complete_async_read (&protocol->current.read_info);
+    // }
+    // protocol->current.read_status = STATUS_ASYNC_COMPLETED;
     return S3_RESPONSE_SUCCESS;
 }
 
 void
 s3_network_data_free (s3_protocol_s *protocol)
 {
-    if (protocol->current.read_info.current_read_memory)
-    {
-        m_free (protocol->current.read_info.current_read_memory);
-        protocol->current.read_info.current_read_memory = NULL;
-    }
+    // if (protocol->current.read_info.current_read_memory)
+    // {
+    //     m_free (protocol->current.read_info.current_read_memory);
+    //     protocol->current.read_info.current_read_memory = NULL;
+    // }
 }
 
 int
 s3_request_read_magic (s3_protocol_s *protocol, s3_request_s *request)
 {
-    long magic = 0;
-    int error = s3_network_read_stream_async (protocol, (char *) &magic, sizeof (long));
-    if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
-    {
-        return error;
-    }
+    // long magic = 0;
+    // int error = s3_network_read_stream_async (protocol, (char *) &magic, sizeof (long));
+    // if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+    // {
+    //     return error;
+    // }
 
-    request->header_info = s3_header_parse8 (magic);
+    // request->header_info = s3_header_parse8 (magic);
 
-    if (request->header_info.magic != S3_PROTOCOL_MAGIC)
-    {
-        my_print (
-          MESSAGE_OUT_LOGS,
-          LOGGER_LEVEL_ERROR,
-          PROTOCOL_ABORTED_CORRUPTION,
-          request->header_info.magic);
-        return S3_RESPONSE_CORRUPTED_PACKET;
-    }
+    // if (request->header_info.magic != S3_PROTOCOL_MAGIC)
+    // {
+    //     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_ABORTED_CORRUPTION, request->header_info.magic);
+    //     return S3_RESPONSE_CORRUPTED_PACKET;
+    // }
 
     return S3_RESPONSE_SUCCESS;
 }
@@ -70,51 +66,50 @@ s3_request_read_headers (s3_protocol_s *protocol, s3_request_s *request)
      * headers is needed even after we have deserialized the binary information
      * because the deserializer will only create a struct with pointers to the original data
      */
-    int error = s3_network_read_stream_async (protocol, NULL, request->header_info.header_length);
+    // int error = s3_network_read_stream_async (protocol, NULL, request->header_info.header_length);
 
-    if (error != S3_RESPONSE_SUCCESS)
-    {
-        my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
-        return error;
-    }
+    // if (error != S3_RESPONSE_SUCCESS)
+    // {
+    //     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_READ_HEADERS_FAILED);
+    //     return error;
+    // }
 
-    if (protocol->current.read_status != STATUS_ASYNC_COMPLETED)
-    {
-        return error;
-    }
-    request->header_raw = protocol->current.read_info.current_read_memory;
-    network_complete_async_read (&protocol->current.read_info);
+    // if (protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+    // {
+    //     return error;
+    // }
+    // request->header_raw = protocol->current.read_info.current_read_memory;
+    // network_complete_async_read (&protocol->current.read_info);
 
-    request->header_list
-      = s3_deserialize_headers (request->header_raw, request->header_info.header_length, &error);
+    // request->header_list = s3_deserialize_headers (request->header_raw, request->header_info.header_length, &error);
 
-    if (error != SUCCESS)
-    {
-        return error;
-    }
+    // if (error != SUCCESS)
+    // {
+    //     return error;
+    // }
 
-    s3_print_headers (request->header_list);
+    // s3_print_headers (request->header_list);
     return S3_RESPONSE_SUCCESS;
 }
 
 void
 s3_print_headers (my_list_s list)
 {
-    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
+    // my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
 
-    for (size_t i = 0; i < list.count; i++)
-    {
-        key_value_pair_s *pair = (key_value_pair_s *) my_list_get (list, i);
+    // for (size_t i = 0; i < list.count; i++)
+    // {
+    //     key_value_pair_s *pair = (key_value_pair_s *) my_list_get (list, i);
 
-        my_print (
-          MESSAGE_OUT_LOGS,
-          LOGGER_LEVEL_DEBUG,
-          DESERIALIZER_PRINT_HEADERS_ROW_STRING,
-          pair->key_length,
-          pair->key,
-          pair->value_length,
-          pair->value);
-    }
+    //     my_print (
+    //       MESSAGE_OUT_LOGS,
+    //       LOGGER_LEVEL_DEBUG,
+    //       DESERIALIZER_PRINT_HEADERS_ROW_STRING,
+    //       pair->key_length,
+    //       pair->key,
+    //       pair->value_length,
+    //       pair->value);
+    // }
 }
 
 my_list_s
@@ -146,30 +141,26 @@ s3_deserialize_headers (char *address, int length, int *error)
 int
 s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list)
 {
-    for (int i = 0; i < source_list.count; ++i)
-    {
-        deserializer_value_t result = *(deserializer_value_t *) my_list_get (source_list, i);
-        if (result.key == 0 || result.key_size == 0)
-        {
-            my_print (
-              MESSAGE_OUT_LOGS,
-              LOGGER_LEVEL_WARN,
-              "Binary deserializer: Ignored empty key, %s:%s",
-              result.key,
-              result.value_2);
-            return FAILED;
-        }
+    // for (int i = 0; i < source_list.count; ++i)
+    // {
+    //     deserializer_value_t result = *(deserializer_value_t *) my_list_get (source_list, i);
+    //     if (result.key == 0 || result.key_size == 0)
+    //     {
+    //         my_print (
+    //           MESSAGE_OUT_LOGS, LOGGER_LEVEL_WARN, "Binary deserializer: Ignored empty key, %s:%s", result.key, result.value_2);
+    //         return FAILED;
+    //     }
 
-        key_value_pair_s pair = {
-          .is_valid = TRUE,
-          .key = result.key,
-          .key_length = result.key_size,
-          .value = result.value_2,
-          .value_length = result.value_1,
-        };
+    //     key_value_pair_s pair = {
+    //       .is_valid = TRUE,
+    //       .key = result.key,
+    //       .key_length = result.key_size,
+    //       .value = result.value_2,
+    //       .value_length = result.value_1,
+    //     };
 
-        my_list_push (dest_list, (char *) &pair);
-    }
+    //     my_list_push (dest_list, (char *) &pair);
+    // }
     return SUCCESS;
 }
 
@@ -192,13 +183,8 @@ s3_request_read_action (s3_request_s *request)
     if (action.strlen == pair.key_length && memcmp (pair.key, action.string, action.strlen) == 0)
     {
         // now here to check the action that the client is requesting.
-        actionval = binary_search (
-          actions,
-          sizeof (data_keys_s),
-          actions_count,
-          pair.value,
-          pair.value_length,
-          data_string_compare);
+        actionval
+          = binary_search (actions, sizeof (data_keys_s), actions_count, pair.value, pair.value_length, data_string_compare);
     }
 
     if (actionval == S3_ACTION_INVALID)

@@ -148,8 +148,7 @@ hash_table_expand (hash_table_s *table)
  * this function will check if we should continue looking into next bucket
  * when performing linear search
  */
-char inline hash_compare (
-  hash_table_bucket_s bucket, hash_input_u key, size_t key_len, char is_string)
+char inline hash_compare (hash_table_bucket_s bucket, hash_input_u key, size_t key_len, char is_string)
 {
     if (is_string == 0)
     {

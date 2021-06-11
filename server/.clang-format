@@ -46,7 +46,7 @@ BraceWrapping:
 BreakBeforeBinaryOperators: All
 BreakBeforeBraces: Allman
 BreakBeforeTernaryOperators: true
-ColumnLimit: 100
+ColumnLimit: 130
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 2
 IndentWidth: 4

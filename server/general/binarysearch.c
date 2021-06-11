@@ -7,12 +7,7 @@
  */
 size_t
 binary_search (
-  void *memory,
-  size_t block_length,
-  size_t count,
-  char *element,
-  size_t length,
-  size_t (*compare) (void *, char *, size_t))
+  void *memory, size_t block_length, size_t count, char *element, size_t length, size_t (*compare) (void *, char *, size_t))
 {
     size_t min = 0;
     size_t max = count;

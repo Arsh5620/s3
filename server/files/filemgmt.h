@@ -16,9 +16,7 @@ typedef struct filemgmt_file_name
 {
     string_s file_name;           // The name of the file as per the client
     string_s real_file_name;      // The name of the file as the per the server
-    string_s real_hash_file_name; // The name of the hash file as per the server
     string_s temp_file_name;      // Temporary file name used during file download
-    string_s temp_hash_file_name; // Temporary hash file name used during download
 } filemgmt_file_name_s;
 
 #define FILEMGMT_TABLE_NAME "metadata"
@@ -28,25 +26,21 @@ typedef struct filemgmt_file_name
 #define FILEMGMT_COLUMN_SIZE "size"
 #define FILEMGMT_COLUMN_HASH "md5"
 
-#define FILEMGMT_QUERY_SELECT_EQUALS                                                               \
+#define FILEMGMT_QUERY_SELECT_EQUALS                                                                                             \
     "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ? LIMIT 1;"
 
-#define FILEMGMT_QUERY_SELECT_LIKE                                                                 \
-    "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " LIKE '?';"
+#define FILEMGMT_QUERY_SELECT_LIKE "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " LIKE '?';"
 
-#define FILEMGMT_QUERY_DELETE                                                                      \
-    "DELETE FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ?;"
+#define FILEMGMT_QUERY_DELETE "DELETE FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ?;"
 
 #define FILEMGMT_QUERY_INSERT "INSERT INTO " FILEMGMT_TABLE_NAME " VALUES (?, ?, ?, ?);"
 
-#define FILEMGMT_TABLE_CREATE                                                                      \
-    "CREATE TABLE IF NOT EXISTS " FILEMGMT_TABLE_NAME " (" FILEMGMT_COLUMN_FILENAME                \
-    " TEXT, " FILEMGMT_COLUMN_DATE " INTEGER, " FILEMGMT_COLUMN_SIZE                               \
-    " INTEGER, " FILEMGMT_COLUMN_HASH " BLOB);"
+#define FILEMGMT_TABLE_CREATE                                                                                                    \
+    "CREATE TABLE IF NOT EXISTS " FILEMGMT_TABLE_NAME " (" FILEMGMT_COLUMN_FILENAME " TEXT, " FILEMGMT_COLUMN_DATE               \
+    " INTEGER, " FILEMGMT_COLUMN_SIZE " INTEGER, " FILEMGMT_COLUMN_HASH " BLOB);"
 
 #define FILEMGMT_ROOT_FOLDER_NAME "backup/"
 #define FILEMGMT_FOLDER_NAME FILEMGMT_ROOT_FOLDER_NAME "files/"
-#define FILEMGMT_FOLDER_META_NAME FILEMGMT_ROOT_FOLDER_NAME "hashes/"
 
 #define FILEMGMT_TEMP_DIR "temp/"
 #define FILEMGMT_TEMP_FORMAT "%s/file(%ld).tmp"

@@ -84,15 +84,13 @@ data_make_table (my_list_s list, data_keys_s *data, ulong length)
     {
         key_value_pair_s pair = *(key_value_pair_s *) my_list_get (list, i);
 
-        int index = binary_search (
-          data, sizeof (data_keys_s), length, pair.key, pair.key_length, data_string_compare);
+        int index = binary_search (data, sizeof (data_keys_s), length, pair.key, pair.key_length, data_string_compare);
 
         if (index != BINARYSEARCH_NORESULT)
         {
             data_keys_s attr = data[index];
 
-            hash_table_bucket_s bucket
-              = hash_table_get (table, (hash_input_u){.number = attr.attrib_code}, 0);
+            hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.number = attr.attrib_code}, 0);
 
             if (bucket.is_occupied && bucket.key.number == attr.attrib_code)
             {

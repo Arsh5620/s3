@@ -16,7 +16,7 @@
 
 #define NETWORK_QUEQUE 8
 #define NETWORK_PORT 4096
-#define APPLICATION_NAME "S3"
+#define APPLICATION_NAME "s3"
 enum exit_codes_enum
 {
     SERVER_ERROR_TOLOGS = 1,
@@ -34,16 +34,18 @@ enum exit_codes_enum
     SERVER_TLS_SSL_ACCEPT_FAILED
 };
 
-#define ASSERT(x)                                                                                  \
-    if ((x) != SUCCESS)                                                                            \
-    {                                                                                              \
-        return (FAILED);                                                                           \
+#define ASSERT(x)                                                                                                                \
+    if ((x) != SUCCESS)                                                                                                          \
+    {                                                                                                                            \
+        return (FAILED);                                                                                                         \
     }
-#define m_free_null_check(x)                                                                       \
-    if ((x) != NULL)                                                                               \
-    {                                                                                              \
-        m_free (x);                                                                                \
+#define m_free_null_check(x)                                                                                                     \
+    if ((x) != NULL)                                                                                                             \
+    {                                                                                                                            \
+        m_free (x);                                                                                                              \
     }
+
+#define max(x, y) x > y ? x : y
 
 typedef char boolean;
 typedef unsigned char uchar;

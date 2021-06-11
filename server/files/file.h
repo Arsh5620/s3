@@ -93,8 +93,7 @@ file_download (
   FILE *file,
   network_s *network,
   network_read_s *data_read,
-  file_hash_s *hash,
-  void (*hashing_function) (file_hash_s *, network_data_s, boolean));
+  file_hash_s *hash);
 string_s
 file_path_concat (string_s path1, string_s path2);
 

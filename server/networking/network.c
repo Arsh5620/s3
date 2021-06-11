@@ -22,13 +22,7 @@ assert (int c1, char *fn, int err)
 {
     if (c1 == GENERAL_ERROR)
     {
-        my_print (
-          MESSAGE_OUT_BOTH,
-          LOGGER_LEVEL_CATASTROPHIC,
-          NETWORK_ASSERT_MESSAGE,
-          fn,
-          strerror (errno),
-          errno);
+        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_MESSAGE, fn, strerror (errno), errno);
     }
 }
 
@@ -41,30 +35,33 @@ assert_ssl (int c1, int c2, char *fn, int err)
         char *buffer = m_calloc (buff_len);
         ERR_error_string_n (ERR_get_error (), buffer, buff_len);
 
-        my_print (
-          MESSAGE_OUT_BOTH,
-          LOGGER_LEVEL_CATASTROPHIC,
-          NETWORK_ASSERT_SSL_MESSAGE,
-          fn,
-          errno,
-          buffer);
+        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_SSL_MESSAGE, fn, errno, buffer);
         free (buffer); // unreachable code
     }
 }
 
 /*
- * this function will initialize a new socket, bind it, and then
+ * This function will initialize a new socket, bind it, and then
  * setup listening on the port, it will not accept a connection.
  */
-network_s
-network_connect_init_sync (int port)
+void
+network_connect_init_sync (
+  int port,
+  int *server,
+  struct sockaddr_in *server_socket
+#ifndef DEBUG
+  ,
+  SSL_CTX **ssl_context,
+  SSL_METHOD **ssl_method
+#endif
+)
 {
     network_s connection = {0};
     int result = 0;
 
     my_print (
-      MESSAGE_OUT_LOGS,
-      LOGGER_LEVEL_DEBUG,
+      LOG_OUT_LOGS,
+      LOG_LEVEL_DEBUG,
       NETWORK_MODE_INFORMATION,
 #ifdef DEBUG
       "Plain"
@@ -82,64 +79,52 @@ network_connect_init_sync (int port)
     result = SSL_load_error_strings ();
     assert_ssl (result, NULL_ZERO, "SSL_load_error_strings", SERVER_TLS_LIB_INIT_FAILED);
 
-    connection.ssl_method = (SSL_METHOD *) TLS_server_method ();
-    connection.ssl_context = SSL_CTX_new (connection.ssl_method);
+    *ssl_method = (SSL_METHOD *) TLS_server_method ();
+    *ssl_context = SSL_CTX_new (*ssl_method);
 
     assert_ssl (result, NULL_ZERO, "SSL_library_init", SERVER_TLS_LIB_INIT_FAILED);
 
-    if (
-      SSL_CTX_use_certificate_file (connection.ssl_context, RSA_SERVER_CERT, SSL_FILETYPE_PEM)
-      != SSL_SUCCESS)
+    if (SSL_CTX_use_certificate_file (*ssl_context, RSA_SERVER_CERT, SSL_FILETYPE_PEM) != SSL_SUCCESS)
     {
-        assert_ssl (
-          NULL_ZERO, NULL_ZERO, "SSL_CTX_use_certificate_file", SERVER_TLS_LOAD_CERT_FAILED);
+        assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_certificate_file", SERVER_TLS_LOAD_CERT_FAILED);
     }
 
-    if (
-      SSL_CTX_use_PrivateKey_file (connection.ssl_context, RSA_SERVER_KEY, SSL_FILETYPE_PEM)
-      != SSL_SUCCESS)
+    if (SSL_CTX_use_PrivateKey_file (*ssl_context, RSA_SERVER_KEY, SSL_FILETYPE_PEM) != SSL_SUCCESS)
     {
-        assert_ssl (
-          NULL_ZERO, NULL_ZERO, "SSL_CTX_use_PrivateKey_file", SERVER_TLS_LOAD_KEY_FAILED);
+        assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_PrivateKey_file", SERVER_TLS_LOAD_KEY_FAILED);
     }
 
-    if (SSL_CTX_check_private_key (connection.ssl_context) != SSL_SUCCESS)
+    if (SSL_CTX_check_private_key (*ssl_context) != SSL_SUCCESS)
     {
-        assert_ssl (
-          NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key", SERVER_TLS_CERT_KEY_CHK_FAILED);
+        assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key", SERVER_TLS_CERT_KEY_CHK_FAILED);
     }
 
-    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
+    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
 #endif
 
-    connection.server = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    assert (connection.server, "socket", SERVER_SOCK_INIT_FAILED);
+    *server = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    assert (*server, "socket", SERVER_SOCK_INIT_FAILED);
 
-    connection.server_socket.sin_addr.s_addr = INADDR_ANY;
-    connection.server_socket.sin_family = AF_INET;
-    connection.server_socket.sin_port = htons (port);
+    server_socket->sin_addr.s_addr = INADDR_ANY;
+    server_socket->sin_family = AF_INET;
+    server_socket->sin_port = htons (port);
 
 #ifndef RELEASE_BUILD
     int enable = 1;
-    result = setsockopt (connection.server, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof (int));
+    result = setsockopt (*server, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof (int));
     assert (result, "setsockopt", SERVER_SET_SOCKOPT_FAILED);
 
-    result
-      = setsockopt (connection.server, IPPROTO_TCP, TCP_NODELAY, (char *) &enable, sizeof (int));
+    result = setsockopt (*server, IPPROTO_TCP, TCP_NODELAY, (char *) &enable, sizeof (int));
     assert (result, "setsockopt", SERVER_SET_SOCKOPT_FAILED);
 #endif
 
-    result = bind (
-      connection.server,
-      (struct sockaddr *) &connection.server_socket,
-      sizeof (struct sockaddr_in));
+    result = bind (*server, (const struct sockaddr *) server_socket, sizeof (struct sockaddr_in));
     assert (result, "bind", SERVER_BIND_FAILED);
 
-    result = listen (connection.server, NETWORK_QUEQUE);
+    result = listen (*server, NETWORK_QUEQUE);
     assert (result, "listen", SERVER_LISTEN_FAILED);
 
-    my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
-    return connection;
+    my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
 }
 
 /*
@@ -147,16 +132,22 @@ network_connect_init_sync (int port)
  * this function is sync and will block until a client connects.
  */
 void
-network_connect_accept_sync (network_s *connection)
+network_connect_accept_sync (
+  network_s *connection,
+  int server
+#ifndef DEBUG
+  ,
+  SSL_CTX *ssl_context
+#endif
+)
 {
     socklen_t len = sizeof (struct sockaddr_in);
-    connection->client
-      = accept (connection->server, (struct sockaddr *) &connection->client_socket, &len);
+    connection->client = accept (server, (struct sockaddr *) &connection->client_socket, &len);
     assert (connection->client, "accept", SERVER_ACCEPT_FAILED);
 
 #ifndef DEBUG
 
-    connection->ssl_tls = SSL_new (connection->ssl_context);
+    connection->ssl_tls = SSL_new (ssl_context);
     if (connection->ssl_tls == NULL)
     {
         assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_new", SERVER_TLS_SSL_NEW_FAILED);
@@ -171,63 +162,67 @@ network_connect_accept_sync (network_s *connection)
         assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_accept", SERVER_TLS_SSL_ACCEPT_FAILED);
     }
 
-    my_print (
-      MESSAGE_OUT_LOGS,
-      LOGGER_LEVEL_INFO,
-      NETWORK_ASSERT_SSL_LEVEL_MESSAGE,
-      SSL_get_cipher (connection->ssl_tls));
+    my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_ASSERT_SSL_LEVEL_MESSAGE, SSL_get_cipher (connection->ssl_tls));
 
 #endif
 }
 
 /*
- * @returns netconn_data_s which will have all data information.
- * this function will automatically perform memory allocation,
- * and you will have to call network_data_free after release memory
- * when no longer in use
+ * This function will perform memory allocation, and you will have to call
+ * network_data_free when you are ready to release the memory
  */
-network_data_s
-network_read_stream (network_s *connection, network_read_s *read_info)
+void
+network_read_stream (network_s *connection, network_read_s *read_info, FILE *temp_file)
 {
     if (read_info == NULL)
     {
-        my_print (MESSAGE_OUT_BOTH, LOGGER_LEVEL_CATASTROPHIC, NETWORK_INVALID_READ_ARGS);
+        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_INVALID_READ_ARGS);
+        return;
     }
 
-    network_data_s data = {0};
-    int size = read_info->total_read;
-    int *offset = &read_info->read_completed;
-    char **dest_memory = &read_info->current_read_memory;
-    if (size > NETWORK_READ_BUFFER)
+    if (read_info->length > NETWORK_READ_BUFFER && temp_file == NULL)
     {
-        size = NETWORK_READ_BUFFER;
-        data.error_code = NETWORK_REQUEST_TOO_BIG;
+        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_READ_REQUEST_TOO_BIG);
+        return;
     }
 
-    char *memory = *dest_memory == NULL ? m_malloc (size) : *dest_memory;
-    if (*dest_memory == NULL)
+    ulong buffer_index = 0;
+    if (temp_file != NULL)
     {
-        *offset = 0;
-        *dest_memory = memory;
+        if (read_info->address != NULL)
+        {
+            my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_READ_NOALLOCATE);
+            return;
+        }
+        else
+        {
+            buffer_index = read_info->index;
+        }
     }
 
-    size_t data_read = *offset;
-    for (; data_read < size;)
+    char *memory = read_info->address == NULL ? m_malloc (max (NETWORK_READ_BUFFER, read_info->length - read_info->index))
+                                              : read_info->address;
+
+    for (; read_info->index < read_info->length;)
     {
+        int read_amount = read_info->length - read_info->index;
+        char *buffer_offset = memory + read_info->index - buffer_index;
+
 #ifndef DEBUG
-        ulong length = SSL_read (connection->ssl_tls, memory + data_read, (size - data_read));
+        ulong length = SSL_read (connection->ssl_tls, buffer_offset, read_amount);
 #else
-        ulong length = read (connection->client, memory + data_read, (size - data_read));
+        ulong length = read (connection->client, buffer_offset, read_amount);
 #endif
+
         if (length == 0)
         {
-            if (data_read != size)
+            if (read_info->index != read_info->length)
             {
-                data.error_code = NETWORK_ERROR_READ_PARTIAL;
+                read_info->error_code = NETWORK_ERROR_EOFUNEXPECTED;
             }
             else
             {
-                data.error_code = NETWORK_SUCCESS;
+                read_info->error_code = NETWORK_SUCCESS;
             }
             break;
         }
@@ -236,29 +231,30 @@ network_read_stream (network_s *connection, network_read_s *read_info)
             switch (errno)
             {
             case ECONNRESET:
-                data.error_code = NETWORK_ERROR_READ_CONNRESET;
+                read_info->error_code = NETWORK_ERROR_CONNRESET;
                 break;
             case EAGAIN:
 #if EWOULDBLOCK != EAGAIN
             case EWOULDBLOCK:
 #endif
-                data.error_code = NETWORK_ASYNC_WOULDBLOCK;
+                read_info->error_code = NETWORK_ASYNC_WOULDBLOCK;
                 break;
             default:
-                data.error_code = NETWORK_ERROR_READ_ERROR;
+                read_info->error_code = NETWORK_ERROR_READ_ERROR;
                 break;
             }
             break;
         }
         else
         {
-            data_read += length;
+            read_info->index += length;
         }
     }
 
-    data.data_address = memory;
-    data.data_length = data_read;
-    return (data);
+    if (read_info->address == NULL)
+    {
+        m_free (memory);
+    }
 }
 
 int
@@ -268,8 +264,7 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
     for (ulong length = 0; bytes_written < buffer_length;)
     {
 #ifndef DEBUG
-        length
-          = SSL_write (network->ssl_tls, buffer + bytes_written, buffer_length - bytes_written);
+        length = SSL_write (network->ssl_tls, buffer + bytes_written, buffer_length - bytes_written);
 #else
         length = write (network->client, buffer + bytes_written, buffer_length - bytes_written);
 #endif
@@ -285,7 +280,7 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
         {
         case ECONNRESET:
         {
-            return (NETWORK_ERROR_READ_CONNRESET);
+            return (NETWORK_ERROR_CONNRESET);
         }
         break;
 
@@ -300,36 +295,21 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
 }
 
 /*
- * releases memory (if-any) allocated by network_data_readxbytes
+ * releases memory (if-any) allocated by network read functions
  */
 void
-network_data_free (network_data_s data)
+network_read_free (network_read_s read)
 {
-    if (data.data_address)
+    if (read.address)
     {
-        m_free (data.data_address);
+        m_free (read.address);
     }
 }
 
-/**
- * Check if the network read structure is inited (size == 0)
- * and initalize it with given size
- */
-void
-network_init_async_read (network_read_s *read, int requested_size)
+network_read_s
+network_read_with_size (int size)
 {
-    if (read->total_read == 0)
-    {
-        read->read_completed = 0;
-        read->total_read = requested_size;
-        read->current_read_memory = NULL;
-    }
-}
-
-void
-network_complete_async_read (network_read_s *read)
-{
-    read->total_read = 0;
-    read->current_read_memory = 0;
-    read->read_completed = 0;
+    network_read_s read = {0};
+    read.length = size;
+    return read;
 }

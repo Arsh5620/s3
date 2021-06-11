@@ -16,20 +16,20 @@
 #define LOG_MAX_SPRINTFBUFFER 2048
 #define LOG_MAX_TIMESTRINGL 64
 
-typedef struct logger
+typedef struct logs
 {
     FILE *file_p;
     char *filename;
     boolean init;
-} logger_s;
+} logs_s;
 
-enum logger_level
+enum logs_level
 {
-    LOGGER_LEVEL_INFO = 0,
-    LOGGER_LEVEL_DEBUG,
-    LOGGER_LEVEL_WARN,
-    LOGGER_LEVEL_ERROR,
-    LOGGER_LEVEL_CATASTROPHIC // The logging subsystem will kill the program
+    LOG_LEVEL_INFO = 0,
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_WARN,
+    LOG_LEVEL_ERROR,
+    LOG_LEVEL_CATASTROPHIC // The logging subsystem will kill the program
 };
 
 typedef struct
@@ -38,7 +38,7 @@ typedef struct
     boolean print_stack_frames;
 } s3_log_settings_s;
 
-logger_s
+logs_s
 logs_open (s3_log_settings_s settings);
 void
 logs_close ();
@@ -47,6 +47,6 @@ get_backtrace (int *backtrace_count);
 char *
 logs_gettime_s (char *format, char ns, long *len);
 boolean
-logs_write (enum logger_level level, char *string, va_list args);
+logs_write (enum logs_level level, char *string, va_list args);
 
 #endif

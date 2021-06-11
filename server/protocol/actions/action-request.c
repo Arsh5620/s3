@@ -31,9 +31,7 @@ s3_action_request_writer (s3_response_s *response)
 int
 s3_preprocess_request (s3_request_s *request)
 {
-    if (
-      filemgmt_file_exists (request->file_name.file_name, request->file_name.real_file_name, NULL)
-      == FALSE)
+    if (filemgmt_file_exists (request->file_name.file_name, request->file_name.real_file_name, NULL) == FALSE)
     {
         return (S3_RESPONSE_FILE_NOT_FOUND);
     }
@@ -41,11 +39,6 @@ s3_preprocess_request (s3_request_s *request)
     if (request->header_info.data_length != 0)
     {
         return (S3_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT);
-    }
-
-    if (access (request->file_name.real_hash_file_name.address, F_OK) != SUCCESS)
-    {
-        return (S3_RESPONSE_FILE_NOT_FOUND);
     }
 
     request->data_write_confirm = TRUE;
