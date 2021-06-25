@@ -1,8 +1,8 @@
 #ifndef MESSAGES_INCLUDE_GAURD
 #define MESSAGES_INCLUDE_GAURD
 
-#include "../logger/logs.h"
 #include "../general/define.h"
+#include "../logger/logs.h"
 #include "../protocol/build.h"
 #include <sqlite3.h>
 
@@ -47,11 +47,11 @@
 
 #define PROTOCOL_SETUP_ENV_DIR_PERMISSIONS "could not open directory \"%s\", permission denied"
 
-#define PROTOCOL_ABORTED_CORRUPTION "connection terminated because of corruption: [0x%.16lx]"
+#define PROTOCOL_ABORTED_CORRUPTION "client magic is not correct, cannot identify packet: [0x%.16lx]"
 
 #define PROTOCOL_READ_HEADERS_FAILED "network error while reading the header information"
 
-#define REQUEST_ACTION_TYPE "packet action type : %d"
+#define REQUEST_ACTION_TYPE "Packet requests action type: %d"
 
 #define PROTOCOL_SHUTDOWN_REASON_FLOW "expected as per program flow"
 
@@ -77,11 +77,11 @@
 
 #define NETWORK_READ_REQUEST_TOO_BIG "network read request too big to handle in-memory"
 
-#define NETWORK_READ_NOALLOCATE "no global allocation needed when handling file based caching"
-
 #define NETWORK_ASSERT_SSL_MESSAGE "tls ssl function \"%s\" failed errno: %d, more information:\n%s"
 
 #define NETWORK_ASSERT_SSL_LEVEL_MESSAGE "tls ssl negotiation connected to client over \"%s\" cipher"
+
+#define NETWORK_SSL_PLAIN_CLIENT "A client tried to connect over plain mode, rejected"
 
 #define NETWORK_PORT_LISTENING                                                                                                   \
     "network initialization complete on port number (%d), "                                                                      \

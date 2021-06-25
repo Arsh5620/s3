@@ -1,23 +1,17 @@
-#include "protocol.h"
 #include "../crypto/sha.h"
+#include "protocol.h"
 #include <openssl/sha.h>
 
 int
 s3_request_data (s3_protocol_s *protocol, s3_request_s *request)
 {
-    if (s3_request_data_headers (protocol, request) == SUCCESS)
-    {
-        if (s3_file_download (request) == SUCCESS)
-        {
+    if (s3_request_data_headers (protocol, request) == SUCCESS) {
+        if (s3_file_download (request) == SUCCESS) {
             return (S3_RESPONSE_SUCCESS);
-        }
-        else
-        {
+        } else {
             return S3_RESPONSE_SERVER_INTERNAL_ERROR;
         }
-    }
-    else
-    {
+    } else {
         return (S3_RESPONSE_CORRUPTED_DATA_HEADERS);
     }
 }
@@ -42,8 +36,7 @@ s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request)
 void
 s3_file_hash (file_hash_s *hash, network_read_s data, boolean fin)
 {
-    if (hash->hash_buffer == NULL)
-    {
+    if (hash->hash_buffer == NULL) {
         hash->hash_buffer = m_calloc (FILE_BUFFER_LENGTH);
         hash->hash_size = FILE_BUFFER_LENGTH;
         hash->hash_index = 0;
@@ -53,20 +46,17 @@ s3_file_hash (file_hash_s *hash, network_read_s data, boolean fin)
     ulong write = hash->hash_size - hash->hash_index;
     ulong actual_write = data.length;
 
-    if (write > actual_write)
-    {
+    if (write > actual_write) {
         write = actual_write;
     }
 
-    if (write)
-    {
+    if (write) {
         memcpy (hash->hash_buffer + hash->hash_index, data.address, write);
     }
 
     hash->hash_index += write;
 
-    if (hash->hash_index == hash->hash_size || (fin && hash->hash_index))
-    {
+    if (hash->hash_index == hash->hash_size || (fin && hash->hash_index)) {
         char hash_buffer[hash->hash_compute_length];
 
         hash->hash_function (hash, hash_buffer, hash->hash_compute_length);
@@ -87,8 +77,7 @@ s3_file_hash_sha1 (void *file_hash_address, char *hash_buffer, int hash_buffer_l
 {
     file_hash_s *hash = (file_hash_s *) file_hash_address;
 
-    unsigned char *digest
-      = SHA1 ((unsigned char *) hash->hash_buffer, hash->hash_size, (unsigned char *) hash_buffer);
+    unsigned char *digest = SHA1 ((unsigned char *) hash->hash_buffer, hash->hash_size, (unsigned char *) hash_buffer);
 
     my_list_push (&hash->hash_list, (char *) digest);
 }
@@ -102,17 +91,14 @@ s3_file_hash_write (char *file_name, file_hash_s hash)
     *(hash_string + (hash.hash_compute_length * 2)) = '\n';
 
     my_list_s hash_list = hash.hash_list;
-    for (ulong i = 0; i < hash_list.count; ++i)
-    {
+    for (ulong i = 0; i < hash_list.count; ++i) {
         unsigned char *digest = (unsigned char *) my_list_get (hash_list, i);
-        for (size_t j = 0; j < hash.hash_compute_length; j++)
-        {
+        for (size_t j = 0; j < hash.hash_compute_length; j++) {
             hash_string[j * 2 + 1] = sha_tohex (digest[j] & 0xF);
             hash_string[j * 2] = sha_tohex ((digest[j] >> 4) & 0xF);
         }
 
-        if (fwrite (hash_string, sizeof (char), allocation_length, file) != allocation_length)
-        {
+        if (fwrite (hash_string, sizeof (char), allocation_length, file) != allocation_length) {
             return (FAILED);
         }
     }

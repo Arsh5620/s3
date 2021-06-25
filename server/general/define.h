@@ -12,13 +12,13 @@
 #define GENERAL_ERROR -1
 #define NULL_ZERO (0)
 
-#define MB(x) (x * 1024 * 1024)
+#define KB(x) (x * 1024)
+#define MB(x) (KB (x) * 1024)
 
 #define NETWORK_QUEQUE 8
 #define NETWORK_PORT 4096
 #define APPLICATION_NAME "s3"
-enum exit_codes_enum
-{
+enum exit_codes_enum {
     SERVER_ERROR_TOLOGS = 1,
     SERVER_SOCK_INIT_FAILED,
     SERVER_SET_SOCKOPT_FAILED,
@@ -30,22 +30,20 @@ enum exit_codes_enum
     SERVER_TLS_LOAD_KEY_FAILED,
     SERVER_TLS_CERT_KEY_CHK_FAILED,
     SERVER_TLS_SSL_NEW_FAILED,
-    SERVER_TLS_SET_FILE_DESCRIPTOR_FAILED,
-    SERVER_TLS_SSL_ACCEPT_FAILED
+    SERVER_TLS_SET_FILE_DESCRIPTOR_FAILED
 };
 
 #define ASSERT(x)                                                                                                                \
-    if ((x) != SUCCESS)                                                                                                          \
-    {                                                                                                                            \
+    if ((x) != SUCCESS) {                                                                                                        \
         return (FAILED);                                                                                                         \
     }
 #define m_free_null_check(x)                                                                                                     \
-    if ((x) != NULL)                                                                                                             \
-    {                                                                                                                            \
+    if ((x) != NULL) {                                                                                                           \
         m_free (x);                                                                                                              \
     }
 
 #define max(x, y) x > y ? x : y
+#define min(x, y) x < y ? x : y
 
 typedef char boolean;
 typedef unsigned char uchar;

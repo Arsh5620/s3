@@ -1,6 +1,6 @@
-#include <string.h>
-#include <assert.h>
 #include "hash_table.h"
+#include <assert.h>
+#include <string.h>
 
 /**
  * this function calculates a hash given the number and the modulus
@@ -73,8 +73,7 @@ hash_table_add (hash_table_s *table, hash_table_bucket_s entry)
     if (dest->is_occupied)
         table->collision_count++;
 
-    while (dest->is_occupied == HASH_OCCUPIED)
-    {
+    while (dest->is_occupied == HASH_OCCUPIED) {
         dest++;
         if (dest >= (table->memory + table->size))
             dest = table->memory;
@@ -95,8 +94,7 @@ hash_table_remove (hash_table_s *table, hash_input_u key, size_t key_length)
     size_t hash = hash_hash (key, key_length, table->is_string, table->size);
     hash_table_bucket_s *addr = (table->memory + hash);
 
-    while (hash_compare (*addr, key, key_length, table->is_string))
-    {
+    while (hash_compare (*addr, key, key_length, table->is_string)) {
         addr++;
         if (addr >= table->memory + table->size)
             addr = table->memory;
@@ -132,8 +130,7 @@ hash_table_expand (hash_table_s *table)
     assert (table->memory != NULL);
 
     size_t i = size;
-    while (i--)
-    {
+    while (i--) {
         // we don't want to copy tombstoned buckets
         if (src->is_occupied == HASH_OCCUPIED)
             hash_table_add (table, *src);
@@ -150,17 +147,13 @@ hash_table_expand (hash_table_s *table)
  */
 char inline hash_compare (hash_table_bucket_s bucket, hash_input_u key, size_t key_len, char is_string)
 {
-    if (is_string == 0)
-    {
+    if (is_string == 0) {
         if (bucket.key.number == key.number)
             return (0);
-    }
-    else if (is_string == 1)
-    {
+    } else if (is_string == 1) {
         if (bucket.key.address == NULL || memcmp (bucket.key.address, key.address, key_len) == 0)
             return (0);
-    }
-    else
+    } else
         return (0);
 
     // we can continue searching if the bucket is full or has a tombstone
@@ -180,8 +173,7 @@ hash_table_get (hash_table_s table, hash_input_u key, size_t key_length)
     hash_table_bucket_s *addr = (table.memory + hash), result = {0};
 
     int i = 0;
-    while (i = hash_compare (*addr, key, key_length, table.is_string), i)
-    {
+    while (i = hash_compare (*addr, key, key_length, table.is_string), i) {
         addr++;
         if (addr >= table.memory + table.size)
             addr = table.memory;
@@ -196,8 +188,7 @@ hash_table_get (hash_table_s table, hash_input_u key, size_t key_length)
 void
 hash_table_free (hash_table_s table)
 {
-    if (table.memory)
-    {
+    if (table.memory) {
         free (table.memory);
     }
 }

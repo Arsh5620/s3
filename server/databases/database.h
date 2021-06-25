@@ -1,8 +1,8 @@
 #ifndef DATABASE_INCLUDE_GAURD
 #define DATABASE_INCLUDE_GAURD
 
-#include <stddef.h>
 #include <sqlite3.h>
+#include <stddef.h>
 
 sqlite3 *
 database_get_sqlite3 ();

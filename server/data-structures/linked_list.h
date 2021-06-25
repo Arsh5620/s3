@@ -1,16 +1,14 @@
 #ifndef LINKED_LIST_INCLUDE_GAURD
 #define LINKED_LIST_INCLUDE_GAURD
 
-typedef struct linked_list_node
-{
+typedef struct linked_list_node {
     char *child;
     char *parent;
     char *data;
     long length;
 } linked_list_node_s;
 
-typedef struct linked_list
-{
+typedef struct linked_list {
     struct linked_list_node *root;
     struct linked_list_node *last;
     long counter;

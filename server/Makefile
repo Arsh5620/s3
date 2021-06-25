@@ -28,7 +28,7 @@ build-file: $(OBJFILES)
 	$(CC) -pg -rdynamic  -o$(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
 
 clean: 
-	git clean -xid -e "backup*" -e "schema.db"
+	git clean -xid -e "backup*" -e "schema.db" -e "certificates"
 
 clean-logs:
 	@cd ./logs/ && rm * -I || echo "No logs to clear";

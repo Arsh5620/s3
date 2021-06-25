@@ -14,6 +14,8 @@ sock = socket.socket()
 hostname = "localhost"
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+if len(sys.argv) > 1 and sys.argv[1] == "ssl":
+    sock = ssl.wrap_socket(sock, ssl_version=ssl.PROTOCOL_TLS, ciphers="ADH-AES256-SHA")
 
 print("Trying to connect to a s3 server on " + str(hostname))
 sock.connect((hostname, 4096))

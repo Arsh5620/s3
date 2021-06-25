@@ -8,8 +8,7 @@
 #include "../networking/network.h"
 #include "../ssbs/list.h"
 
-enum file_errors_enum
-{
+enum file_errors_enum {
     FILE_SUCCESS,
     FILE_ERROR,
     FILE_DIR_EXISTS,
@@ -31,8 +30,7 @@ enum file_errors_enum
 #define FILE_BUFFER_LENGTH (MB (1))
 #define FILE_SHA1_SIZE (160 / 8)
 
-typedef struct file_hash
-{
+typedef struct file_hash {
     /**
      * hash_function is called on a given data buffer to compute the
      * hash of that buffer, while hash_compute_length is the length
@@ -58,8 +56,7 @@ typedef struct file_hash
     ulong hash_index, hash_size;
 } file_hash_s;
 
-typedef struct
-{
+typedef struct {
     FILE *file;
     struct stat stats;
 
@@ -89,11 +86,7 @@ file_reader_next (file_reader_s *reader, long index, long size);
 int
 file_append (char *dest, char *src, ulong index, ulong size);
 int
-file_download (
-  FILE *file,
-  network_s *network,
-  network_read_s *data_read,
-  file_hash_s *hash);
+file_download (FILE *file, network_s *network, network_read_s *data_read, file_hash_s *hash);
 string_s
 file_path_concat (string_s path1, string_s path2);
 

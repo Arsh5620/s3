@@ -1,23 +1,20 @@
 #ifndef STRING_INCLUDE_GAURD
 #define STRING_INCLUDE_GAURD
 
-#include <stdarg.h>
 #include "../general/define.h"
+#include <stdarg.h>
 
-typedef struct string_struct
-{
+typedef struct string {
     char *address;
-    size_t length;
-    size_t max_length;
+    long length;
 } string_s;
 
-// @ simple if statement to check if string is empty
-#define STRING_ISEMPTY(string) (string.address == NULL || string.length < 1)
+#define STRING_ISEMPTY(string) (string.address == NULL || string.length <= 0)
 
 #define STRING(x)                                                                                                                \
-    (string_s) { .address = x, .length = sizeof (x) - 1, .max_length = sizeof (x) }
-// @ lower case flag
-#define STRING_LC_FLAG (0x20)
+    (string_s) { .address = x, .length = sizeof (x) - 1 }
+#define STRING2(x, y)                                                                                                            \
+    (string_s) { .address = x, .length = y }
 
 string_s
 string_new (ulong length);

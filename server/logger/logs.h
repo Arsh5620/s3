@@ -1,9 +1,9 @@
 #ifndef LOGS_INCLUDE_GAURD
 #define LOGS_INCLUDE_GAURD
 
+#include "../general/define.h"
 #include <stdarg.h>
 #include <stdio.h>
-#include "../general/define.h"
 
 #define LOG_DIR_NAME "logs/"
 // DD-MM-YYYY HH:MM:SS.msms
@@ -16,15 +16,13 @@
 #define LOG_MAX_SPRINTFBUFFER 2048
 #define LOG_MAX_TIMESTRINGL 64
 
-typedef struct logs
-{
+typedef struct logs {
     FILE *file_p;
     char *filename;
     boolean init;
 } logs_s;
 
-enum logs_level
-{
+enum logs_level {
     LOG_LEVEL_INFO = 0,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_WARN,
@@ -32,8 +30,7 @@ enum logs_level
     LOG_LEVEL_CATASTROPHIC // The logging subsystem will kill the program
 };
 
-typedef struct
-{
+typedef struct {
     boolean print_debug_logs;
     boolean print_stack_frames;
 } s3_log_settings_s;

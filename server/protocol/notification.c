@@ -3,12 +3,9 @@
 int
 s3_preprocess_notification (s3_request_s *request)
 {
-    if (request->header_info.data_length > 0 && request->header_info.data_length < FILE_BUFFER_LENGTH)
-    {
+    if (request->header_info.data_length > 0 && request->header_info.data_length < FILE_BUFFER_LENGTH) {
         return (SUCCESS);
-    }
-    else
-    {
+    } else {
         return (S3_RESPONSE_NOTIFY_TOOBIG);
     }
 }

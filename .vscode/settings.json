@@ -79,9 +79,10 @@
         "iterator": "c",
         "bitset": "c",
         "messages.h": "c",
-        "build.h": "c"
+        "build.h": "c",
+        "deserializer.h": "c"
     },
-	"python.pythonPath": "/usr/bin/python2",
+	"python.pythonPath": "/usr/bin/python",
 	"python.linting.pylintEnabled": true,
 	"python.linting.enabled": true
 }

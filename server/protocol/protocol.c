@@ -1,4 +1,5 @@
 #include "protocol.h"
+#include "../ssbs/deserializer.h"
 
 /**
  * This is the main functions that sets up everything, and this functions should only return when
@@ -23,20 +24,17 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, 
 #endif
 
     my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
+    protocol.client_table = hash_table_init (100, FALSE);
 
-    if (filemgmt_create_backup_folders () != SUCCESS)
-    {
+    if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS) {
         my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_BACKUP_FOLDER_NOT_CREATED);
     }
 
-    if (
-      database_init (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME) == SUCCESS
-      && database_make_schema (1, AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE)) == SUCCESS)
-    {
+    if (database_init (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME) == SUCCESS &&
+        database_make_schema (
+          2, AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE), FILEMGMT_TABLE_CREATE, sizeof (FILEMGMT_TABLE_CREATE)) == SUCCESS) {
         *success = TRUE;
-    }
-    else
-    {
+    } else {
         my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_MYSQL_FAILED_CONNECT);
     }
 
@@ -51,8 +49,7 @@ s3_epollctl_add_epollin (int epoll_fd, int socket_fd)
     listener_epoll.events = EPOLLIN | EPOLLRDHUP;
     listener_epoll.data.fd = socket_fd;
 
-    if (epoll_ctl (epoll_fd, EPOLL_CTL_ADD, socket_fd, &listener_epoll) == -1)
-    {
+    if (epoll_ctl (epoll_fd, EPOLL_CTL_ADD, socket_fd, &listener_epoll) == -1) {
         my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CTL_FAILED, strerror (errno));
     }
 }
@@ -61,8 +58,7 @@ void
 s3_setup_epoll (s3_protocol_s *protocol)
 {
     protocol->epoll_fd = epoll_create1 (NULL_ZERO);
-    if (protocol->epoll_fd == -1)
-    {
+    if (protocol->epoll_fd == -1) {
         my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CREATE_FAILED, strerror (errno));
     }
 
@@ -89,75 +85,331 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
     s3_setup_epoll (protocol);
     my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
 
-    while (TRUE)
-    {
+    while (TRUE) {
         int epoll_count = epoll_wait (protocol->epoll_fd, protocol->epoll_events, protocol->epoll_events_count, -1);
 
-        if (epoll_count == -1)
-        {
+        if (epoll_count == -1) {
             my_print (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_EPOLL_WAIT_FAILED, strerror (errno));
             continue;
         }
 
-        for (size_t i = 0; i < epoll_count; i++)
-        {
+        for (size_t i = 0; i < epoll_count; i++) {
             struct epoll_event epoll_event = protocol->epoll_events[i];
 
-            if (epoll_event.data.fd == protocol->server)
-            {
-                network_s new_connection;
+            if (epoll_event.data.fd == protocol->server) {
+                network_s *new_connection = m_calloc (sizeof (network_s));
 #ifndef DEBUG
-                network_connect_accept_sync (&new_connection, protocol->server, protocol->ssl_context);
+                network_connect_accept_sync (new_connection, protocol->server, protocol->ssl_context);
 #else
-                network_connect_accept_sync (&new_connection, protocol->server);
+                network_connect_accept_sync (new_connection, protocol->server);
 #endif
 
-                s3_make_connection_async (protocol->epoll_fd, new_connection.client);
-                struct sockaddr_in client = new_connection.client_socket;
+                s3_make_connection_async (protocol->epoll_fd, new_connection->client);
+                struct sockaddr_in client = new_connection->client_socket;
                 char *client_ip = inet_ntoa (client.sin_addr);
                 ushort client_port = ntohs (client.sin_port);
 
                 my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_CLIENT_CONNECT, client_ip, client_port);
-            }
-            else
-            {
-                if (epoll_event.events & EPOLLERR || epoll_event.events & EPOLLHUP || epoll_event.events & EPOLLRDHUP)
-                {
-                    close(epoll_event.data.fd);
+
+                new_connection->data_read.address = m_malloc (NETWORK_READ_BUFFER);
+                new_connection->data_read.length = S3_PROTOCOL_MAGIC_LEN;
+                new_connection->network_completed_action = s3_connection_magic_read;
+
+                hash_table_bucket_s bucket;
+                bucket.key.number = new_connection->client;
+                bucket.key_len = 0;
+                bucket.value.address = (char *) new_connection;
+                bucket.value_len = sizeof (*new_connection);
+                hash_table_add (&protocol->client_table, bucket);
+            } else {
+                hash_input_u key = {.number = epoll_event.data.fd};
+
+                if (epoll_event.events & EPOLLERR || epoll_event.events & EPOLLHUP || epoll_event.events & EPOLLRDHUP) {
+                    close (epoll_event.data.fd);
                     my_print (LOG_OUT_BOTH, LOG_LEVEL_WARN, "A remote client hung up");
+                    hash_table_remove (&protocol->client_table, key, 0);
+                    continue;
                 }
-                // int shutdown = S3_SHUTDOWN_CLOSE;
-                // int error = 0;
 
-                // if (protocol->current.request == NULL)
-                // {
-                //     protocol->current.request = m_calloc (sizeof (s3_request_s));
-                //     protocol->current.request->instance = (char *) protocol;
-                // }
+                hash_table_bucket_s bucket = hash_table_get (protocol->client_table, key, 0);
+                network_s *client_network = (network_s *) bucket.value.address;
 
-                // if (protocol->current.response == NULL)
-                // {
-                //     protocol->current.response = m_calloc (sizeof (s3_response_s));
-                //     protocol->current.response->instance = (char *) protocol;
-                //     protocol->current.response->file_name = &protocol->current.request->file_name;
-                // }
+                network_read_stream (client_network);
 
-                // error = s3_next_request (protocol);
-                // if (error == S3_RESPONSE_SUCCESS && protocol->current.program_status == STATUS_RESPONSE_NOW)
-                // {
-                //     error = s3_handle_response (protocol->current.response, error);
-                // }
-
-                // if (error != S3_RESPONSE_SUCCESS)
-                // {
-                //     shutdown = S3_SHUTDOWN_INVALID;
-                //     s3_handle_close (protocol->current.request, protocol->current.response);
-                //     s3_connection_shutdown (*protocol, shutdown);
-                // }
+                if (client_network->data_read.index == client_network->data_read.length) {
+                    client_network->network_completed_action (client_network);
+                }
             }
         }
     }
     my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
+}
+
+void
+s3_connection_magic_read (network_s *data)
+{
+    size_t magic = *(size_t *) (data->data_read.address);
+
+    boolean valid;
+    s3_header_s header_magic = s3_request_read_magic (magic, &valid);
+
+    if (valid) {
+        // setup connection
+        s3_connection_alloc (data);
+
+        ((s3_request_s *) data->request)->header_info = header_magic;
+        data->data_read.index = 0;
+        data->data_read.length = header_magic.header_length;
+        data->network_completed_action = s3_connection_headers_read;
+    } else {
+        // close connection
+    }
+}
+
+void
+s3_connection_headers_read (network_s *data)
+{
+    my_list_s header_list = my_list_new (10, sizeof (deserializer_value_t));
+    deserializer_t deserializer = deserializer_init (data->data_read.address, data->data_read.length);
+    deserialize_all (&deserializer, &header_list);
+
+    s3_print_headers (header_list);
+    s3_request_s *request = ((s3_request_s *) data->request);
+    request->header_list = header_list;
+    request->header_table = make_hash_table (header_list);
+
+    int error = s3_request_read_action (request);
+    // TODO: call response handler here
+
+    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
+
+    char **params_assert = s3_asserts + (request->action * attribs_count);
+    boolean assert = s3_attribs_assert (request->header_table, params_assert, attribs_count);
+
+    if (assert == FALSE) {
+        // TODO: send this to response output handler
+        // return (S3_RESPONSE_MISSING_ATTRIBS);
+    }
+
+    error = s3_auth_transaction (request);
+
+    if (error != S3_RESPONSE_SUCCESS) {
+        // TODO: send this to response output handler
+        // return (error);
+    }
+
+    error = s3_setup_environment (request);
+
+    if (error != SUCCESS) {
+        // return error;
+    }
+
+    data->temporary_file = fopen (request->file_name.temp_file_name.address, FILE_MODE_WRITEBINARY);
+
+    error = s3_action_preprocess (request);
+    if (error != S3_RESPONSE_SUCCESS) {
+        // return (error);
+    }
+
+    if (request->header_info.data_length) {
+        if (s3_handle_response (data, S3_RESPONSE_DATA_SEND) != SUCCESS) {
+            // return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+        }
+    }
+
+    if (request->header_info.data_length > 0) {
+        data->data_read.index = 0;
+        data->data_read.length = request->header_info.data_length;
+        data->network_completed_action = s3_connection_confirm_upload;
+    } else {
+        s3_connection_confirm_upload (data);
+    }
+}
+
+/**
+ * Even though the function is named confirm_upload, the function will only do any real-work when
+ * data_write_confirm is set to true by a preprocess function, otherwise it will fall through to
+ * next function and so on
+ */
+void
+s3_connection_confirm_upload (network_s *network)
+{
+    s3_request_s *request = (s3_request_s *) network->request;
+
+    if (request->data_write_confirm == TRUE) {
+        if (s3_handle_response (network, S3_RESPONSE_PACKET_DATA_MORE) != SUCCESS) {
+            //  S3_RESPONSE_NETWORK_ERROR_WRITE;
+        }
+
+        network->data_read.index = 0;
+        network->network_completed_action = s3_connection_upload;
+        network->data_read.length = sizeof (long);
+    } else {
+        s3_connection_upload (network);
+    }
+}
+
+void
+s3_connection_upload (network_s *network)
+{
+    s3_request_s *request = (s3_request_s *) network->request;
+
+    int error = FAILED;
+
+    if (request->data_write_confirm == TRUE) {
+        error = s3_response_accept_status (network);
+    } else {
+        error = SUCCESS;
+    }
+
+    if (error != SUCCESS) {
+        // return S3_RESPONSE_NETWORK_ERROR_WRITE;
+    }
+
+    if (error == SUCCESS) {
+        error = s3_action_send (network);
+
+        if (error != S3_RESPONSE_SUCCESS) {
+            // return error;
+        }
+    }
+
+    s3_connection_post_process (network);
+}
+
+void
+s3_connection_post_process (network_s *network)
+{
+    // This function is where all of the heavy-lifting should happen.
+    // Preferably on a different thread to avoid blocking the rest of the requests
+
+    int error = s3_action_postprocess (network);
+
+    if (error != S3_RESPONSE_SUCCESS) {
+        // return error;
+    }
+
+    if (s3_handle_response (network, S3_RESPONSE_PACKET_OK) != SUCCESS) {
+        // return S3_RESPONSE_NETWORK_ERROR_WRITE;
+    }
+
+    // We just finished processing this packet, reset everything
+    network->data_read.index = 0;
+    network->data_read.length = S3_PROTOCOL_MAGIC_LEN;
+    network->network_completed_action = s3_connection_magic_read;
+
+    s3_connection_free (network);
+}
+
+/***
+ * This function should be called before dispatching the request
+ * to make sure that the header contains all the required key:value
+ * pairs needed by the called function.
+ */
+int
+s3_attribs_assert (hash_table_s table, char **asserts, int count)
+{
+    for (long i = 0; i < count; i++) {
+        char *attrib = asserts[i];
+
+        if (attrib != NULL && s3_attrib_contains (table, attrib) == FALSE) {
+            return (FALSE);
+        }
+    }
+    return (TRUE);
+}
+
+// returns TRUE on success and FALSE otherwise
+int
+s3_attrib_contains (hash_table_s table, char *attrib)
+{
+    if (attrib == NULL) {
+        return FALSE;
+    }
+
+    hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = attrib}, NULL_ZERO);
+    // this is intentional for clarity on the return values
+    return bucket.is_occupied ? TRUE : FALSE;
+}
+
+/***
+ * This function will return the RAW value for a given attribute, any data processing (such as deserializing long/int etc.)
+ * must be done by the function responsible for the call
+ *
+ * Also note that if the attrib cannot be found the out_length will not be modified
+ */
+char *
+s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length)
+{
+    if (attrib == NULL) {
+        return NULL;
+    }
+
+    hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = attrib}, strlen (attrib));
+
+    if (bucket.is_occupied) {
+        if (out_length != NULL) {
+            *out_length = bucket.value_len;
+        }
+        return bucket.value.address;
+    }
+
+    return NULL;
+}
+
+hash_table_s
+make_hash_table (my_list_s list)
+{
+    hash_table_s table = hash_table_init (10, TRUE);
+
+    for (long i = 0; i < list.count; ++i) {
+        deserializer_value_t pair = *(deserializer_value_t *) my_list_get (list, i);
+        hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = pair.value_2}, pair.value_1);
+
+        if (bucket.is_occupied) {
+            // This means that a same key has already been added, ignore and continue
+            continue;
+        }
+
+        hash_table_bucket_s new_item = (hash_table_bucket_s){
+          .key.address = pair.key,
+          .key_len = pair.key_size,
+          .value.address = pair.value_2,
+          .value_len = pair.value_1,
+        };
+
+        hash_table_add (&table, new_item);
+    }
+    return (table);
+}
+
+void
+s3_connection_alloc (network_s *data)
+{
+    data->request = m_calloc (sizeof (s3_request_s));
+    data->response = m_calloc (sizeof (s3_response_s));
+}
+
+void
+s3_connection_free (network_s *data)
+{
+    m_free (data->request);
+    m_free (data->response);
+
+    data->request = NULL;
+    data->response = NULL;
+}
+
+void
+hexdump (char *string, int string_length, int line_width)
+{
+    for (size_t i = 0; i < string_length; i++) {
+        printf ("%02x ", (unsigned char) *(string + i));
+        if (i > 0 && i % line_width == 0) {
+            printf ("\n");
+        }
+    }
+    printf ("\n");
 }
 
 void
@@ -167,8 +419,7 @@ s3_handle_close (s3_request_s *request, s3_response_s *response)
     my_list_free (request->header_list);
     my_list_free (response->header_list);
     hash_table_free (request->header_table);
-    if (request->additional_data)
-    {
+    if (request->additional_data) {
         m_free (request->additional_data);
         request->additional_data = NULL_ZERO;
     }
@@ -182,8 +433,7 @@ s3_handle_response_string (s3_response_s *response)
 {
     string_s link;
 
-    switch (response->response_code)
-    {
+    switch (response->response_code) {
         S3_CASE (link, S3_RESPONSE_DATA_SEND, S3_RESPONSE_STRING_DATA_SEND);
 
         S3_CASE (link, S3_RESPONSE_PACKET_OK, S3_RESPONSE_STRING_PACKET_OK);
@@ -224,27 +474,23 @@ s3_handle_response_string (s3_response_s *response)
 }
 
 int
-s3_handle_response (s3_response_s *response, enum s3_response_code code)
+s3_handle_response (network_s *network, enum s3_response_code code)
 {
-    if (code == S3_RESPONSE_SUCCESS)
-    {
-        return (SUCCESS);
+    if (code == S3_RESPONSE_SUCCESS) {
+        return SUCCESS;
     }
 
+    s3_response_s *response = (s3_response_s *) network->response;
     response->response_code = code;
 
-    if (s3_response_write (response, s3_handle_response_string) != SUCCESS)
-    {
-        return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+    if (s3_response_write (network, s3_handle_response_string) != SUCCESS) {
+        return S3_RESPONSE_NETWORK_ERROR_WRITE;
     }
 
-    if (response->response_code > S3_RESPONSE_ERRORS)
-    {
-        return (response->response_code);
-    }
-    else
-    {
-        return (SUCCESS);
+    if (response->response_code > S3_RESPONSE_ERRORS) {
+        return response->response_code;
+    } else {
+        return SUCCESS;
     }
 }
 
@@ -282,229 +528,64 @@ s3_close (s3_protocol_s protocol)
 int
 s3_setup_environment (s3_request_s *request)
 {
-    string_s client_filename;
-    if (filemgmt_setup_temp_files (&request->file_name) != SUCCESS)
-    {
-        return (S3_RESPONSE_CANNOT_CREATE_TEMP_FILE);
+    if (filemgmt_set_tmp_path (&request->file_name) != SUCCESS) {
+        return S3_RESPONSE_CANNOT_CREATE_TEMP_FILE;
     }
 
-    int error;
-    client_filename = data_get_string_s (request->header_list, request->header_table, S3_ATTRIB_FILENAME, &error);
+    size_t filename_length;
+    char *filename = s3_attrib_get (request->header_table, S3_ATTRIBNAME_FILENAME, &filename_length);
 
-    if (error == SUCCESS)
-    {
-        if (client_filename.address != NULL && client_filename.length == 0)
-        {
-            return (S3_RESPONSE_ATTRIB_VALUE_INVALID);
-        }
-        error = filemgmt_setup_environment (client_filename, &request->file_name);
-
-        if (error != SUCCESS)
-        {
-            return (S3_RESPONSE_SETUP_ENVIRONMENT_FAILED);
+    if (filename != NULL) {
+        if (filename_length == 0) {
+            return S3_RESPONSE_ATTRIB_VALUE_INVALID;
         }
 
-        switch (request->action)
-        {
+        int error = filemgmt_set_real_path (STRING2 (filename, filename_length), &request->file_name);
+
+        if (error != SUCCESS) {
+            return S3_RESPONSE_SETUP_ENVIRONMENT_FAILED;
+        }
+
+        switch (request->action) {
         case S3_ACTION_CREATE:
         case S3_ACTION_UPDATE:
             break;
 
         default:
-        {
-            return (SUCCESS);
-        }
+            return SUCCESS;
         }
 
         error = filemgmt_mkdirs (&request->file_name);
-        if (error != SUCCESS)
-        {
-            return (S3_RESPONSE_SETUP_ENVIRONMENT_FAILED);
+        if (error != SUCCESS) {
+            return S3_RESPONSE_SETUP_ENVIRONMENT_FAILED;
         }
     }
-    return (SUCCESS);
+    return SUCCESS;
 }
 
-// // returns 0 for no-error, any other number for error or conn close request
-// ulong
-// s3_next_request (s3_protocol_s *protocol)
-// {
-//     s3_request_s *request = protocol->current.request;
-//     s3_response_s *response = protocol->current.response;
-//     int error = 0;
-
-//     switch (protocol->current.program_status)
-//     {
-//     case STATUS_CONNECTION_ACCEPTED:
-//     case STATUS_HEADER_MAGIC_READ:
-//     {
-//         error = s3_request_read_magic (protocol, request);
-//         if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
-//         {
-//             return error;
-//         }
-//         protocol->current.program_status = STATUS_HEADER_SERIALIZED_READ;
-//         return S3_RESPONSE_SUCCESS;
-//     }
-
-//     case STATUS_HEADER_SERIALIZED_READ:
-//     {
-//         int error = s3_request_read_headers (protocol, request);
-//         if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
-//         {
-//             return error;
-//         }
-
-//         request->header_table = data_make_table (request->header_list, attribs, attribs_count);
-
-//         error = s3_request_read_action (request);
-
-//         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
-
-//         if (error != S3_RESPONSE_SUCCESS)
-//         {
-//             return (error);
-//         }
-
-//         /**
-//          * s3_asserts is one dimensional array of enums (int) so to go to
-//          * second index just add the attribs_count to the s3_asserts pointer
-//          */
-//         enum s3_attribs_enum *params_assert = s3_asserts + attribs_count * (request->action - S3_ACTION_CREATE);
-//         boolean assert = s3_attribs_assert (request->header_table, params_assert, attribs_count);
-
-//         if (assert == FALSE)
-//         {
-//             return (S3_RESPONSE_MISSING_ATTRIBS);
-//         }
-
-//         error = s3_auth_transaction (request);
-
-//         if (error != S3_RESPONSE_SUCCESS)
-//         {
-//             return (error);
-//         }
-
-//         error = s3_setup_environment (request);
-//         if (error != SUCCESS)
-//         {
-//             return (error);
-//         }
-//         protocol->current.program_status = STATUS_REQUEST_PREPROCESS;
-//     }
-
-//     case STATUS_REQUEST_PREPROCESS:
-//     {
-//         // Generally these actions are expensive
-//         // But they don't require any data from the client
-//         error = s3_action_preprocess (request);
-
-//         if (error != S3_RESPONSE_SUCCESS)
-//         {
-//             return (error);
-//         }
-
-//         if (request->header_info.data_length)
-//         {
-//             if (s3_handle_response (response, S3_RESPONSE_DATA_SEND) != SUCCESS)
-//             {
-//                 return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-//             }
-//         }
-
-//         protocol->current.program_status = STATUS_REQUEST_DOWNLOADING;
-//     }
-
-//     case STATUS_REQUEST_DOWNLOADING:
-//     {
-//         if (request->header_info.data_length)
-//         {
-//             error = s3_request_data (protocol, request);
-//             if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
-//             {
-//                 return (error);
-//             }
-//         }
-//         protocol->current.program_status = STATUS_REQUEST_UPLOADING;
-//     }
-
-//     case STATUS_REQUEST_UPLOADING:
-//     {
-//         boolean send_data = FALSE;
-//         if (request->data_write_confirm == TRUE)
-//         {
-//             if (s3_handle_response (response, S3_RESPONSE_PACKET_DATA_MORE) != SUCCESS)
-//             {
-//                 return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-//             }
-
-//             error = s3_response_accept_status (response);
-//             if (error != SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
-//             {
-//                 return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-//             }
-
-//             send_data = TRUE;
-//         }
-
-//         if (send_data == TRUE || request->data_write_confirm == FALSE)
-//         {
-//             error = s3_action_send (request, response);
-
-//             if (error != S3_RESPONSE_SUCCESS)
-//             {
-//                 return error;
-//             }
-//         }
-//         protocol->current.program_status = STATUS_REQUEST_POSTPROCESS;
-//     }
-
-//     case STATUS_REQUEST_POSTPROCESS:
-//     {
-//         // Again no network IO just some heavy lifting for other IO
-//         error = s3_action_postprocess (request, response);
-
-//         if (error != S3_RESPONSE_SUCCESS)
-//         {
-//             return (error);
-//         }
-
-//         if (
-//           response->response_code != S3_RESPONSE_PACKET_DATA_READY
-//           && s3_handle_response (response, S3_RESPONSE_PACKET_OK) != SUCCESS)
-//         {
-//             return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-//         }
-//         protocol->current.program_status = STATUS_RESPONSE_NOW;
-//     }
-//     case STATUS_RESPONSE_NOW:
-//         break;
-//     }
-//     return (S3_RESPONSE_SUCCESS);
-// }
-
 int
-s3_action_send (s3_request_s *request, s3_response_s *response)
+s3_action_send (network_s *network)
 {
+    s3_request_s *request = (s3_request_s *) network->request;
+    s3_response_s *response = (s3_response_s *) network->response;
+
     int result = 0;
-    response->response_code = S3_RESPONSE_PACKET_DATA_READY;
-    long (*writer) (s3_response_s *) = NULL;
+    // response->response_code = S3_RESPONSE_PACKET_DATA_READY;
+    // long (*writer)(s3_response_s *) = NULL;
 
-    switch (request->action)
-    {
-    case S3_ACTION_REQUEST:
-        writer = s3_action_request_writer;
-        break;
+    // switch (request->action) {
+    // case S3_ACTION_REQUEST:
+    //     writer = s3_action_request_writer;
+    //     break;
 
-    default:
-        result = S3_RESPONSE_SUCCESS;
-        break;
-    }
+    // default:
+    //     result = S3_RESPONSE_SUCCESS;
+    //     break;
+    // }
 
-    if (writer != NULL && s3_response_write (response, writer) != SUCCESS)
-    {
-        return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-    }
+    // if (writer != NULL && s3_response_write(response, writer) != SUCCESS) {
+    //     return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+    // }`
     return result;
 }
 
@@ -516,11 +597,13 @@ s3_action_send (s3_request_s *request, s3_response_s *response)
  * just return S3_RESPONSE_SUCCESS immediately.
  */
 int
-s3_action_postprocess (s3_request_s *request, s3_response_s *response)
+s3_action_postprocess (network_s *network)
 {
+    s3_request_s *request = (s3_request_s *) network->request;
+    s3_response_s *response = (s3_response_s *) network->response;
+
     int result = 0;
-    switch (request->action)
-    {
+    switch (request->action) {
     case S3_ACTION_NOTIFICATION:
         result = s3_postprocess_notification (request, response);
         break;
@@ -546,7 +629,8 @@ s3_action_postprocess (s3_request_s *request, s3_response_s *response)
         result = S3_RESPONSE_SERVER_INTERNAL_ERROR;
         break;
     }
-    return (result);
+
+    return result;
 }
 
 /**
@@ -568,8 +652,7 @@ int
 s3_action_preprocess (s3_request_s *request)
 {
     int result = 0;
-    switch (request->action)
-    {
+    switch (request->action) {
     case S3_ACTION_NOTIFICATION:
         result = s3_preprocess_notification (request);
         break;

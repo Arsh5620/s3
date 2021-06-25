@@ -7,6 +7,5 @@
 
 size_t
 binary_search (
-  void *memory, size_t block_length, size_t count, char *element, size_t length, size_t (*compare) (void *, char *, size_t));
-
+  char *address, size_t block, size_t count, char *element, size_t length, size_t (*compare) (char *, char *, size_t));
 #endif

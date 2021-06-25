@@ -3,14 +3,12 @@
 
 #include <stdlib.h>
 
-typedef union
-{
+typedef union {
     char *address;
     size_t number;
 } hash_input_u;
 
-typedef struct
-{
+typedef struct {
     /* union allows for us to use both addresses and numbers */
     hash_input_u key;
     hash_input_u value;
@@ -19,8 +17,7 @@ typedef struct
     char is_occupied;
 } hash_table_bucket_s;
 
-typedef struct hash_table_struct
-{
+typedef struct hash_table_struct {
     hash_table_bucket_s *memory;
     size_t count;
     size_t size;
@@ -40,7 +37,7 @@ typedef struct hash_table_struct
 long
 hash_collision_count ();
 hash_table_s
-hash_table_init (long size, char is_string);
+hash_table_init (long count, char is_string);
 void
 hash_table_expand (hash_table_s *table);
 void

@@ -1,141 +1,123 @@
-#include "protocol.h"
 #include "../ssbs/serializer.h"
+#include "protocol.h"
 
 int
 s3_response_writer_update (s3_response_s *response, string_s write)
 {
-    string_s writer = response->writer_buffer;
-    response->header_info.data_length = write.length;
+    // string_s writer = response->writer_buffer;
+    // response->header_info.data_length = write.length;
 
-    long avail_write = writer.max_length - writer.length;
-    long required_write = write.length - response->total_write_completed;
-    long actual_write = required_write > avail_write ? avail_write : required_write;
+    // long avail_write = writer.max_length - writer.length;
+    // long required_write = write.length - response->total_write_completed;
+    // long actual_write = required_write > avail_write ? avail_write : required_write;
 
-    if (actual_write > 0)
-    {
-        memcpy (writer.address + writer.length, write.address + response->total_write_completed, actual_write);
-        response->total_write_completed += actual_write;
-        response->writer_buffer.length += actual_write;
-    }
+    // if (actual_write > 0)
+    // {
+    //     memcpy (writer.address + writer.length, write.address + response->total_write_completed, actual_write);
+    //     response->total_write_completed += actual_write;
+    //     response->writer_buffer.length += actual_write;
+    // }
 
-    return (actual_write);
+    // return (actual_write);
+    return 0;
 }
 
 int
-s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *))
+s3_response_write (network_s *network, long (*writer) (s3_response_s *))
 {
-    // network_s *connection = &((s3_protocol_s *) response->instance)->connection;
+    s3_response_s *response = (s3_response_s *) network->response;
 
-    // char *memory = m_calloc (NETWORK_WRITE_BUFFER);
-    // response->writer_buffer.address = memory;
-    // response->writer_buffer.length = S3_PROTOCOL_MAGIC_LEN;
-    // response->writer_buffer.max_length = NETWORK_WRITE_BUFFER;
-    // response->total_write_completed = 0;
+    char *memory = m_calloc (NETWORK_WRITE_BUFFER);
+    response->writer_buffer.address = memory;
+    response->writer_buffer.length = S3_PROTOCOL_MAGIC_LEN;
+    response->writer_buffer.length_max = NETWORK_WRITE_BUFFER;
+    response->total_write_completed = 0;
 
-    // key_value_pair_s pair = {0};
-    // pair.key = S3_RESPONSE_KEY_NAME;
-    // pair.value = 0;
-    // pair.key_length = sizeof (S3_RESPONSE_KEY_NAME) - 1;
-    // pair.value_length = response->response_code;
+    kvpair_s pair = KVPAIR (S3_RESPONSE_KEY_NAME, sizeof (S3_RESPONSE_KEY_NAME) - 1, NULL, response->response_code);
 
-    // if (response->header_list.address == NULL)
-    // {
-    //     response->header_list = my_list_new (1, sizeof (key_value_pair_s));
-    // }
-    // my_list_push (&response->header_list, (char *) &pair);
+    if (response->header_list.address == NULL) {
+        response->header_list = my_list_new (1, sizeof (kvpair_s));
+    }
 
-    // long result
-    //   = s3_response_write_header (response, memory + S3_PROTOCOL_MAGIC_LEN, NETWORK_WRITE_BUFFER - S3_PROTOCOL_MAGIC_LEN);
+    my_list_push (&response->header_list, (char *) &pair);
 
-    // if (result == -1)
-    // {
-    //     return (S3_RESPONSE_ERROR_WRITING_HEADERS);
-    // }
+    long result =
+      s3_response_write_header (response, memory + S3_PROTOCOL_MAGIC_LEN, NETWORK_WRITE_BUFFER - S3_PROTOCOL_MAGIC_LEN);
 
-    // // align the header on a 16 byte boundary
-    // // we are checking if the result is on a 16 byte boundary,
-    // // if it is not, then we add 15 which increments the boundary
-    // // and then we ZERO the last 4 of the bits.
-    // result = result & 0XF ? (result + 0XF) & ~0XF : result;
+    if (result == -1) {
+        return S3_RESPONSE_ERROR_WRITING_HEADERS;
+    }
 
-    // response->writer_buffer.length += result;
+    // align the header on a 16 byte boundary
+    // we are checking if the result is on a 16 byte boundary,
+    // if it is not, then we add 15 which increments the boundary
+    // and then we ZERO the last 4 of the bits.
+    result = result & 0XF ? (result + 0XF) & ~0XF : result;
 
-    // response->header_info.magic = S3_PROTOCOL_MAGIC;
-    // response->header_info.header_length = result;
-    // response->header_info.data_length = 0;
-    // /*
-    //  * Here it is writer's responsiblity to set the
-    //  * "response->header_info.data_length" upon first call to this function
-    //  */
-    // long total_write_completed = 0;
-    // int error = NETWORK_SUCCESS; // NETWORK_SUCCESS is alias for SUCCESS
-    // boolean header_written = FALSE;
-    // while (TRUE)
-    // {
-    //     total_write_completed = writer (response);
+    response->writer_buffer.length += result;
 
-    //     if (total_write_completed < 0)
-    //     {
-    //         return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-    //     }
+    response->header_info.magic = S3_PROTOCOL_MAGIC;
+    response->header_info.header_length = result;
+    response->header_info.data_length = 0;
+    /*
+     * Here it is writer's responsiblity to set the
+     * "response->header_info.data_length" upon first call to this function
+     */
+    long total_write_completed = 0;
+    int error = NETWORK_SUCCESS; // NETWORK_SUCCESS is alias for SUCCESS
+    boolean header_written = FALSE;
+    while (TRUE) {
+        total_write_completed = writer (response);
 
-    //     if (header_written == FALSE)
-    //     {
-    //         *(ulong *) (response->writer_buffer.address) = s3_response_make_magic (response);
-    //     }
+        if (total_write_completed < 0) {
+            return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+        }
 
-    //     header_written = TRUE;
-    //     int error = network_write_stream (connection, response->writer_buffer.address, response->writer_buffer.length);
+        if (header_written == FALSE) {
+            *(ulong *) (response->writer_buffer.address) = s3_response_make_magic (response);
+        }
 
-    //     if (error != NETWORK_SUCCESS)
-    //     {
-    //         break;
-    //     }
+        header_written = TRUE;
+        int error = network_write_stream (network, response->writer_buffer.address, response->writer_buffer.length);
 
-    //     if (response->total_write_completed == response->header_info.data_length)
-    //     {
-    //         break;
-    //     }
-    //     response->writer_buffer.length = 0;
-    // }
+        if (error != NETWORK_SUCCESS) {
+            break;
+        }
 
-    // m_free (memory);
-    // my_list_free (response->header_list);
-    // response->header_list = (my_list_s){0};
+        if (response->total_write_completed == response->header_info.data_length) {
+            break;
+        }
+        response->writer_buffer.length = 0;
+    }
 
-    // return (error);
-    return 0;
+    m_free (memory);
+    my_list_free (response->header_list);
+    response->header_list = (my_list_s){0};
+
+    return (error);
 }
 
 long
 s3_response_write_header (s3_response_s *response, char *buffer, ulong buffer_length)
 {
     long index = 0;
-    if (buffer != NULL)
-    {
+    if (buffer != NULL) {
         serializer_t serializer = serializer_init ();
 
-        for (size_t i = 0; i < response->header_list.count; i++)
-        {
-            key_value_pair_s pair = *(key_value_pair_s *) my_list_get (response->header_list, i);
+        for (size_t i = 0; i < response->header_list.count; i++) {
+            kvpair_s pair = *(kvpair_s *) my_list_get (response->header_list, i);
 
-            if (pair.value != NULL)
-            {
-                serializer_add_blob (&serializer, pair.key, pair.key_length, pair.value, pair.value_length);
-            }
-            else
-            {
-                serializer_add_long (&serializer, pair.key, pair.key_length, pair.value_length);
+            if (pair.value != NULL) {
+                serializer_add_blob (&serializer, pair.key, pair.key_len, pair.value, pair.value_len);
+            } else {
+                serializer_add_long (&serializer, pair.key, pair.key_len, pair.value_len);
             }
         }
 
-        if (serializer.index > S3_PROTOCOL_HEADER_MAXLEN || serializer.index > buffer_length)
-        {
+        if (serializer.index > S3_PROTOCOL_HEADER_MAXLEN || serializer.index > buffer_length) {
             serializer_free (serializer);
             return (-1);
-        }
-        else
-        {
+        } else {
             memcpy (buffer, serializer.memory, serializer.index);
             serializer_free (serializer);
         }
@@ -160,24 +142,13 @@ s3_response_make_magic (s3_response_s *response)
 }
 
 int
-s3_response_accept_status (s3_response_s *response)
+s3_response_accept_status (network_s *response)
 {
-    // s3_protocol_s *protocol = ((s3_protocol_s *) response->instance);
-    // network_s *connection = &protocol->connection;
+    long magic = *(long *) response->data_read.address;
 
-    // if (connection)
-    // {
-    //     long magic;
-    //     int error = s3_network_read_stream_async (protocol, (char *) &magic, sizeof (long));
-    //     if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status == STATUS_ASYNC_COMPLETED)
-    //     {
-    //         return error;
-    //     }
-
-    //     if (magic != 0x0000545045434341) // ACCEPT\0\0 in string
-    //     {
-    //         return (S3_RESPONSE_INVALID_COMMUNICATION);
-    //     }
-    // }
+    if (magic != 0x0000545045434341) // ACCEPT\0\0 in string
+    {
+        return S3_RESPONSE_INVALID_COMMUNICATION;
+    }
     return S3_RESPONSE_SUCCESS;
 }

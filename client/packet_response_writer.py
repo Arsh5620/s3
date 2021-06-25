@@ -55,8 +55,6 @@ class PacketResponseWriter:
 
     @ staticmethod
     def send_data_with_confirm(socket, data):
-        socket.send("DATA".encode("ascii"))
-        socket.send(len(data).to_bytes(8, byteorder='little'))
         socket.send(data)
 
     @ staticmethod

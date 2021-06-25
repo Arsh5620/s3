@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "string.h"
 #include "../general/define.h"
 #include "../memdbg/memory.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 char *
 string_internal_svprintf (char *string, va_list list, long *length, boolean alloc_debug)
@@ -15,23 +15,18 @@ string_internal_svprintf (char *string, va_list list, long *length, boolean allo
     va_copy (copy, list);
     size = vsnprintf (pointer, size, string, list);
 
-    if (size < 0)
-    {
+    if (size < 0) {
         return NULL;
     }
 
     size++; /* For '\0' */
-    if (alloc_debug)
-    {
+    if (alloc_debug) {
         pointer = m_calloc (size);
-    }
-    else
-    {
+    } else {
         pointer = calloc (1, size);
     }
 
-    if (pointer == NULL)
-    {
+    if (pointer == NULL) {
         return NULL;
     }
 
@@ -40,14 +35,12 @@ string_internal_svprintf (char *string, va_list list, long *length, boolean allo
     va_end (list);
     va_end (copy);
 
-    if (size < 0)
-    {
+    if (size < 0) {
         free (pointer);
         return NULL;
     }
 
-    if (length != NULL)
-    {
+    if (length != NULL) {
         *length = size;
     }
     return (pointer);
@@ -88,12 +81,10 @@ string_sprintf2 (char *string, long *length, ...)
 void
 string_tolower (char *memory, ulong length)
 {
-    for (int i = 0; i < length; ++i)
-    {
+    for (int i = 0; i < length; ++i) {
         char c = *(memory + i);
-        if (c >= 'A' && c <= 'Z')
-        {
-            *(memory + i) |= STRING_LC_FLAG;
+        if (c >= 'A' && c <= 'Z') {
+            *(memory + i) |= 0x20;
         }
     }
 }
@@ -109,7 +100,6 @@ string_new_copy (char *data, ulong length)
     memcpy (string.address, data, length);
     *(string.address + length) = NULL_ZERO;
     string.length = length;
-    string.max_length = allocation_size;
 
     return (string);
 }
@@ -119,15 +109,13 @@ string_new (ulong length)
 {
     string_s string = {0};
     string.address = m_calloc (length);
-    string.max_length = length;
     return (string);
 }
 
 void
 string_free (string_s string)
 {
-    if (string.address)
-    {
+    if (string.address) {
         m_free (string.address);
     }
 }

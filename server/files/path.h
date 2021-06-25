@@ -3,16 +3,14 @@
 #include "../memdbg/memory.h"
 #include "./file.h"
 
-typedef struct
-{
+typedef struct {
     boolean is_file;
     char *buffer;
     ulong index;
     ulong length;
 } file_path_node_s;
 
-typedef struct
-{
+typedef struct {
     my_list_s path_list;
     boolean is_absolute;
 } file_path_s;

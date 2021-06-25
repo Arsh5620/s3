@@ -1,7 +1,9 @@
-#include <string.h>
 #include "./filemgmt.h"
-#include "../logger/messages.h"
 #include "../files/path.h"
+#include "../logger/messages.h"
+#include <string.h>
+
+static long temp_file_counter = 0;
 
 int
 filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length)
@@ -9,8 +11,7 @@ filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length)
     int error;
     sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_EQUALS, sizeof (FILEMGMT_QUERY_SELECT_EQUALS), &error);
 
-    if (error != SUCCESS)
-    {
+    if (error != SUCCESS) {
         sqlite3_finalize (stmt);
         return error;
     }
@@ -26,8 +27,7 @@ filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length)
     int error;
     sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_DELETE, sizeof (FILEMGMT_QUERY_DELETE), &error);
 
-    if (error != SUCCESS)
-    {
+    if (error != SUCCESS) {
         sqlite3_finalize (stmt);
         return error;
     }
@@ -43,8 +43,7 @@ filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_lengt
     int error;
     sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_INSERT, sizeof (FILEMGMT_QUERY_INSERT), &error);
 
-    if (error != SUCCESS)
-    {
+    if (error != SUCCESS) {
         sqlite3_finalize (stmt);
         return error;
     }
@@ -63,8 +62,7 @@ filemgmt_folder_exists_sqlite3 (string_s folder_name)
     int error;
     sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_LIKE, sizeof (FILEMGMT_QUERY_SELECT_EQUALS), &error);
 
-    if (error != SUCCESS)
-    {
+    if (error != SUCCESS) {
         sqlite3_finalize (stmt);
         return error;
     }
@@ -83,24 +81,19 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
 {
     int result = filemgmt_file_exists_sqlite3 (file_name.address, file_name.length);
 
-    if (result == SUCCESS)
-    {
+    if (result == SUCCESS) {
         my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, FILEMGMT_RECORD_EXISTS, file_name.length, file_name.address);
-    }
-    else
-    {
+    } else {
         return (FALSE);
     }
 
     FILE *file = fopen (real_name.address, FILE_MODE_READBINARY);
 
-    if (file == NULL)
-    {
+    if (file == NULL) {
         return (FALSE);
     }
 
-    if (file_stats != NULL)
-    {
+    if (file_stats != NULL) {
         struct stat f1 = file_stat (file);
         *file_stats = f1;
     }
@@ -126,8 +119,7 @@ int
 filemgmt_rename_file (string_s dest, string_s src)
 {
     path_mkdir_recursive (FILEMGMT_FOLDER_NAME);
-    if (file_rename (dest, src) == FAILED)
-    {
+    if (file_rename (dest, src) == FAILED) {
         return (FAILED);
     }
     return (SUCCESS);
@@ -146,61 +138,44 @@ filemgmt_mkdirs (filemgmt_file_name_s *file_info)
 }
 
 int
-filemgmt_create_backup_folders ()
+filemgmt_set_real_path (string_s filename, filemgmt_file_name_s *file)
 {
-    if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS)
-    {
-        return (FAILED);
-    }
-
-    return SUCCESS;
-}
-
-int
-filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file_info)
-{
-    if (filemgmt_create_backup_folders () != SUCCESS)
-    {
+    if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS) {
         return FAILED;
     }
 
-    my_list_s path_list = path_parse (client_filename).path_list;
+    my_list_s path_list = path_parse (filename).path_list;
     string_s file_name = path_construct (path_list);
     my_list_free (path_list);
 
-    if (file_name.address == NULL)
-    {
+    if (file_name.address == NULL) {
         return (FAILED);
     }
 
     string_s real_file_name = file_path_concat (STRING (FILEMGMT_FOLDER_NAME), file_name);
 
-    file_info->file_name = file_name;
-    file_info->real_file_name = real_file_name;
+    file->file_name = file_name;
+    file->real_file_name = real_file_name;
 
     return (SUCCESS);
 }
 
 int
-filemgmt_setup_temp_files (filemgmt_file_name_s *file_info)
+filemgmt_set_tmp_path (filemgmt_file_name_s *file_info)
 {
-    if (path_mkdir_recursive (FILEMGMT_TEMP_DIR) != SUCCESS)
-    {
+    if (path_mkdir_recursive (FILEMGMT_TEMP_DIR) != SUCCESS) {
         return (FAILED);
     }
-    static long counter = 0;
+
+    temp_file_counter++;
 
     long length;
-    char *temp_file_p = string_sprintf (FILEMGMT_TEMP_FORMAT, &length, FILEMGMT_TEMP_DIR, ++counter);
+    char *temp = string_sprintf (FILEMGMT_TEMP_FORMAT, &length, FILEMGMT_TEMP_DIR, temp_file_counter);
 
-    string_s temp_file = {0, .address = temp_file_p, .length = length};
-
-    if (temp_file_p == NULL)
-    {
+    if (temp == NULL) {
         return (FAILED);
     }
-    
-    file_info->temp_file_name = temp_file;
 
+    file_info->temp_file_name = (string_s){.address = temp, .length = length};
     return (SUCCESS);
 }

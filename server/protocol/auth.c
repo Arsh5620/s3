@@ -4,19 +4,14 @@
 int
 s3_auth_transaction (s3_request_s *request)
 {
-    boolean user = s3_attrib_contains (request->header_table, S3_ATTRIB_USERNAME);
-    boolean secret = s3_attrib_contains (request->header_table, S3_ATTRIB_PASSWORD);
+    boolean user = s3_attrib_contains (request->header_table, S3_ATTRIBNAME_USERNAME);
+    boolean secret = s3_attrib_contains (request->header_table, S3_ATTRIBNAME_SECRET);
 
-    if (user == TRUE && secret == TRUE)
-    {
-        return (s3_auth_query (request));
-    }
-    else if (user == TRUE || secret == TRUE)
-    {
+    if (user == TRUE && secret == TRUE) {
+        return s3_auth_query (request);
+    } else if (user == TRUE || secret == TRUE) {
         return (S3_RESPONSE_MIX_AUTH_ERROR);
-    }
-    else
-    {
+    } else {
         return (SUCCESS); // no authentication was required for the action.
     }
 }
@@ -24,26 +19,25 @@ s3_auth_transaction (s3_request_s *request)
 int
 s3_auth_query (s3_request_s *request)
 {
-    int error;
-    string_s username = data_get_string_s (request->header_list, request->header_table, S3_ATTRIB_USERNAME, &error);
+    size_t username_length = 0;
+    char *username = s3_attrib_get (request->header_table, S3_ATTRIBNAME_USERNAME, &username_length);
 
-    if (error != SUCCESS)
-    {
-        return (S3_RESPONSE_SERVER_ERROR_NOAUTH);
+    if (username == NULL) {
+        return S3_RESPONSE_SERVER_ERROR_NOAUTH;
     }
 
-    string_s password = data_get_string_s (request->header_list, request->header_table, S3_ATTRIB_PASSWORD, &error);
+    size_t secret_length = 0;
+    char *password = s3_attrib_get (request->header_table, S3_ATTRIBNAME_SECRET, &secret_length);
 
-    if (error != SUCCESS)
-    {
-        return (S3_RESPONSE_SERVER_ERROR_NOAUTH);
+    if (password == NULL) {
+        return S3_RESPONSE_SERVER_ERROR_NOAUTH;
     }
 
     char sha_hash[SHA256LENGTH] = {0};
-    sha_256 (password, (uchar *) sha_hash, SHA256LENGTH);
+    sha_256 (password, secret_length, (uchar *) sha_hash, SHA256LENGTH);
 
-    error = s3_auth_query_sqlite3 (username.address, username.length, sha_hash, sizeof (sha_hash));
-    return (error == SUCCESS ? S3_RESPONSE_SUCCESS : S3_RESPONSE_FAILED_AUTHENTICATION);
+    int error = s3_auth_query_sqlite3 (username, username_length, sha_hash, sizeof (sha_hash));
+    return error == SUCCESS ? S3_RESPONSE_SUCCESS : S3_RESPONSE_FAILED_AUTHENTICATION;
 }
 
 int
@@ -52,8 +46,7 @@ s3_auth_query_sqlite3 (char *username, int username_length, char *password, int 
     int error;
     sqlite3_stmt *stmt = database_get_stmt (AUTH_QUERY, sizeof (AUTH_QUERY), &error);
 
-    if (error != SUCCESS)
-    {
+    if (error != SUCCESS) {
         return error;
     }
 

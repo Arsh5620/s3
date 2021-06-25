@@ -1,22 +1,16 @@
 #ifndef FILEMGMT_INCLUDE_GAURD
 #define FILEMGMT_INCLUDE_GAURD
 
+#include "../databases/database.h"
 #include "../files/file.h"
 #include "../general/string.h"
-#include "../databases/database.h"
 
-enum filemgmt_errors_enum
-{
-    FILEMGMT_EXISTS = 1,
-    FILEMGMT_NOT_FOUND,
-    FILEMGMT_SQL_COULD_NOT_BIND
-};
+enum filemgmt_errors_enum { FILEMGMT_EXISTS = 1, FILEMGMT_NOT_FOUND, FILEMGMT_SQL_COULD_NOT_BIND };
 
-typedef struct filemgmt_file_name
-{
-    string_s file_name;           // The name of the file as per the client
-    string_s real_file_name;      // The name of the file as the per the server
-    string_s temp_file_name;      // Temporary file name used during file download
+typedef struct filemgmt_file_name {
+    string_s file_name;      // The name of the file as per the client
+    string_s real_file_name; // The name of the file as the per the server
+    string_s temp_file_name; // Temporary file name used during file download
 } filemgmt_file_name_s;
 
 #define FILEMGMT_TABLE_NAME "metadata"
@@ -67,11 +61,9 @@ filemgmt_rename_file (string_s dest, string_s src);
 int
 filemgmt_remove_meta (string_s file_name);
 int
-filemgmt_setup_environment (string_s client_filename, filemgmt_file_name_s *file_info);
+filemgmt_set_real_path (string_s client_filename, filemgmt_file_name_s *file);
 int
-filemgmt_create_backup_folders ();
-int
-filemgmt_setup_temp_files (filemgmt_file_name_s *file_info);
+filemgmt_set_tmp_path (filemgmt_file_name_s *file_info);
 int
 filemgmt_mkdirs (filemgmt_file_name_s *file_info);
 #endif

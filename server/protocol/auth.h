@@ -1,7 +1,7 @@
 #ifndef AUTH_INCLUDE_GAURD
 #define AUTH_INCLUDE_GAURD
-#include "protocol.h"
 #include "../databases/database.h"
+#include "protocol.h"
 
 #define AUTH_TABLE_NAME "authentication"
 

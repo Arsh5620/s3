@@ -1,12 +1,12 @@
-#include <errno.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 #include "./file.h"
-#include "./path.h"
-#include "../memdbg/memory.h"
 #include "../general/string.h"
+#include "../memdbg/memory.h"
+#include "./path.h"
+#include <dirent.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 /**
  * make a directory if not exists, returns FILE_DIR_EXISTS if the directory
@@ -22,20 +22,14 @@ file_dir_mkine (char *dir_name)
     DIR *dir = opendir (dir_name);
     int error = errno;
 
-    if (dir != NULL)
-    {
+    if (dir != NULL) {
         closedir (dir);
         return (FILE_DIR_EXISTS);
-    }
-    else if (error == ENOENT)
-    {
+    } else if (error == ENOENT) {
         error = mkdir (dir_name, S_IRWXU | S_IRGRP | S_IXGRP);
-        if (error != 0)
-        {
+        if (error != 0) {
             return FILE_DIR_CREATE_FAILED;
-        }
-        else
-        {
+        } else {
             return FILE_DIR_EXISTS;
         }
     }
@@ -45,8 +39,7 @@ file_dir_mkine (char *dir_name)
 FILE *
 file_open (string_s name, char *mode)
 {
-    if (name.length > FILE_NAME_LENGTH)
-    {
+    if (name.length > FILE_NAME_LENGTH) {
         return (NULL);
     }
 
@@ -64,11 +57,7 @@ file_delete (char *filename)
 }
 
 int
-file_download (
-  FILE *file,
-  network_s *network,
-  network_read_s *data_read,
-  file_hash_s *hash)
+file_download (FILE *file, network_s *network, network_read_s *data_read, file_hash_s *hash)
 {
     // network_data_s data = network_read_stream (network, data_read);
 
@@ -122,8 +111,7 @@ file_reader_s
 file_reader_init (FILE *file)
 {
     file_reader_s reader = {0};
-    if (file == NULL)
-    {
+    if (file == NULL) {
         return (reader);
     }
 
@@ -137,8 +125,7 @@ file_reader_init (FILE *file)
 void
 file_reader_close (file_reader_s *reader)
 {
-    if (reader->buffer)
-    {
+    if (reader->buffer) {
         free (reader->buffer);
     }
 }
@@ -147,8 +134,7 @@ file_reader_close (file_reader_s *reader)
 int
 file_reader_next (file_reader_s *reader, long index, long size)
 {
-    if (reader->eof)
-    {
+    if (reader->eof) {
         reader->readlength = -1;
         return (FILE_ERROR);
     }
@@ -158,8 +144,7 @@ file_reader_next (file_reader_s *reader, long index, long size)
     reader->eof = feof (reader->file);
     reader->readlength = read;
 
-    if (read != size && reader->eof == FALSE)
-    {
+    if (read != size && reader->eof == FALSE) {
         return (FILE_READ_ERROR);
     }
     return (FILE_SUCCESS);
@@ -199,31 +184,26 @@ file_append (char *dest, char *src, ulong index, ulong size)
     FILE *src_file = fopen (src, FILE_MODE_READBINARY);
     FILE *dest_file = fopen (dest, FILE_MODE_WRITEEXISTING);
 
-    if (src_file == NULL || dest_file == NULL)
-    {
+    if (src_file == NULL || dest_file == NULL) {
         return (FILE_ERROR_OPEN);
     }
 
-    if (fseek (dest_file, index, SEEK_SET))
-    {
+    if (fseek (dest_file, index, SEEK_SET)) {
         return (FILE_ERROR_SEEK);
     }
 
-    while (written < size)
-    {
+    while (written < size) {
         ulong read_required = (size - written) > maxread ? maxread : (size - written);
 
         ulong read_len = fread (buffer, 1, read_required, src_file);
 
-        if (read_len == -1 || read_len != read_required)
-        {
+        if (read_len == -1 || read_len != read_required) {
             return (FILE_READ_ERROR);
         }
 
         ulong write_len = fwrite (buffer, 1, read_len, dest_file);
 
-        if (write_len == -1 || write_len != read_len)
-        {
+        if (write_len == -1 || write_len != read_len) {
             return (FILE_WRITE_ERROR);
         }
 

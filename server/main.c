@@ -1,10 +1,10 @@
+#include "protocol/build.h"
+#include "protocol/protocol.h"
+#include <argp.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <argp.h>
-#include <signal.h>
-#include "protocol/protocol.h"
-#include "protocol/build.h"
 
 struct argp_option argument_options[] = {
   {"disable_debug_logs", 'd', NULL_ZERO, NULL_ZERO, "DO NOT print debug information in logs"},
@@ -17,8 +17,7 @@ argument_parser (int key, char *arg, struct argp_state *state)
 {
     s3_log_settings_s *settings = (s3_log_settings_s *) state->input;
 
-    switch (key)
-    {
+    switch (key) {
     case 'd':
         settings->print_debug_logs = FALSE;
         break;
@@ -55,10 +54,9 @@ main (int argc, char *argv[])
 
     boolean success;
     s3_protocol_s protocol = s3_connection_initialize_sync (NETWORK_PORT, settings, &success);
-    if (success)
-    {
+    if (success) {
         s3_connection_accept_loop_async (&protocol);
     }
-    
+
     s3_close (protocol);
 }

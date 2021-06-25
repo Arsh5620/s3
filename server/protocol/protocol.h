@@ -1,27 +1,27 @@
 #ifndef PROTOCOL_INCLUDE_GAURD
 #define PROTOCOL_INCLUDE_GAURD
 
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/epoll.h>
-#include "./auth.h"
-#include "../networking/network.h"
-#include "../logger/messages.h"
+#include "../data-structures/hash_table.h"
+#include "../data/data.h"
+#include "../databases/database.h"
 #include "../files/file.h"
+#include "../files/filemgmt.h"
+#include "../files/path.h"
 #include "../general/binarysearch.h"
 #include "../general/define.h"
-#include "../data-structures/hash_table.h"
-#include "../memdbg/memory.h"
 #include "../general/string.h"
+#include "../logger/messages.h"
+#include "../memdbg/memory.h"
+#include "../networking/network.h"
 #include "../ssbs/list.h"
-#include "../databases/database.h"
-#include "../data/data.h"
-#include "../files/path.h"
-#include "../files/filemgmt.h"
+#include "./auth.h"
+#include <assert.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/epoll.h>
+#include <time.h>
+#include <unistd.h>
 
 #define S3_PROTOCOL_MAGIC 0xD0
 #define S3_PROTOCOL_MAGIC_LEN (8)
@@ -41,9 +41,8 @@
 #define S3_ATTRIBNAME_SECRET "secret"
 
 // one-to-one mapping to the actions_supported
-enum s3_actions_enum
-{
-    S3_ACTION_CREATE = 1,
+enum s3_actions_enum {
+    S3_ACTION_CREATE = 0,
     S3_ACTION_DELETE,
     S3_ACTION_DIR,
     S3_ACTION_NOTIFICATION,
@@ -53,9 +52,8 @@ enum s3_actions_enum
     S3_ACTION_INVALID = -1
 };
 
-enum s3_attribs_enum
-{
-    S3_ATTRIB_ACTION = 1,
+enum s3_attribs_enum {
+    S3_ATTRIB_ACTION = 0,
     S3_ATTRIB_CRC,
     S3_ATTRIB_DIRNAME,
     S3_ATTRIB_FILENAME,
@@ -65,14 +63,9 @@ enum s3_attribs_enum
     S3_ATTRIB_PASSWORD
 };
 
-enum s3_shutdown_enum
-{
-    S3_SHUTDOWN_CLOSE,
-    S3_SHUTDOWN_INVALID
-};
+enum s3_shutdown_enum { S3_SHUTDOWN_CLOSE, S3_SHUTDOWN_INVALID };
 
-enum s3_response_code
-{
+enum s3_response_code {
     S3_RESPONSE_SUCCESS,           // Internal, no response to the client
     S3_RESPONSE_DATA_SEND,         // The server is expecting client to send data
     S3_RESPONSE_PACKET_OK,         // Server has processed the action
@@ -115,20 +108,17 @@ enum s3_response_code
 };
 
 #define S3_CASE(string_dest, code, string)                                                                                       \
-    case code:                                                                                                                   \
-    {                                                                                                                            \
+    case code: {                                                                                                                 \
         string_dest = STRING (string);                                                                                           \
-    }                                                                                                                            \
-    break;
+    } break;
 
-extern data_keys_s attribs[];
-extern data_keys_s actions[];
-extern enum s3_attribs_enum *s3_asserts;
+extern char *attribs[];
+extern char *actions[];
+extern char **s3_asserts;
 extern const int attribs_count;
 extern const int actions_count;
 
-enum packet_status
-{
+enum packet_status {
     STATUS_CONNECTION_ACCEPTED,
     STATUS_HEADER_MAGIC_READ,
     STATUS_HEADER_SERIALIZED_READ,
@@ -139,27 +129,25 @@ enum packet_status
     STATUS_RESPONSE_NOW
 };
 
-enum async_operation_status
-{
-    STATUS_ASYNC_MORE,
-    STATUS_ASYNC_COMPLETED
-};
+enum async_operation_status { STATUS_ASYNC_MORE, STATUS_ASYNC_COMPLETED };
 
-typedef struct
-{
+typedef struct {
     size_t data_length;
     unsigned short header_length;
     unsigned char magic;
 } s3_header_s;
 
-typedef struct
-{
-    long update_at;
-    boolean trim;
-} s3_action_update_s;
+typedef struct {
+    char *key;
+    char *value;
+    size_t key_len;
+    size_t value_len;
+} kvpair_s;
 
-typedef struct
-{
+#define KVPAIR(_key, _key_len, _value, _value_len)                                                                               \
+    (kvpair_s) { .key = _key, .key_len = _key_len, .value = _value, .value_len = _value_len }
+
+typedef struct {
     /*
      * action is the type of action that the client has requested to perform
      * this can include but is not limited to "notification", "request"
@@ -200,8 +188,14 @@ typedef struct
     char *instance;
 } s3_request_s;
 
-typedef struct
-{
+typedef struct response_writer {
+    char *address;
+    size_t index;
+    size_t length;
+    size_t length_max;
+} response_writer_s;
+
+typedef struct {
     my_list_s header_list;
     s3_header_s header_info;
 
@@ -211,28 +205,17 @@ typedef struct
      */
     long response_code;
     filemgmt_file_name_s *file_name;
-    string_s writer_buffer;
+    response_writer_s writer_buffer;
     long total_write_completed;
     char *instance;
 } s3_response_s;
 
-typedef struct
-{
-    network_read_s read_info;
-    enum packet_status program_status;
-    enum async_operation_status read_status;
-    s3_request_s *request;
-    s3_response_s *response;
-} s3_protocol_state_s;
+typedef struct {
+    long update_at;
+    boolean trim;
+} s3_action_update_s;
 
-typedef struct
-{
-    network_s connection;
-    s3_protocol_state_s current;
-} s3_client_s;
-
-typedef struct
-{
+typedef struct {
     int epoll_fd;
     int epoll_events_count;
     struct epoll_event *epoll_events;
@@ -271,9 +254,8 @@ void
 s3_setup_epoll (s3_protocol_s *protocol);
 void
 s3_epollctl_add_epollin (int epoll_fd, int socket_fd);
-
-int
-s3_request_read_magic (s3_protocol_s *protocol, s3_request_s *request);
+s3_header_s
+s3_request_read_magic (size_t magic, boolean *valid);
 int
 s3_request_read_headers (s3_protocol_s *protocol, s3_request_s *request);
 int
@@ -318,9 +300,9 @@ int
 s3_preprocess_serverinfo (s3_request_s *request);
 
 int
-s3_attribs_assert (hash_table_s table, enum s3_attribs_enum *match, int count);
+s3_attribs_assert (hash_table_s table, char **match, int count);
 int
-s3_attrib_contains (hash_table_s table, int attrib);
+s3_attrib_contains (hash_table_s table, char *attrib);
 
 int
 s3_file_setup_environment ();
@@ -335,34 +317,43 @@ my_list_s
 s3_deserialize_headers (char *address, int length, int *error);
 void
 s3_print_headers (my_list_s list);
-int
-s3_request_read_magic (s3_protocol_s *protocol, s3_request_s *request);
 
 int
 s3_action_preprocess (s3_request_s *request);
 int
-s3_action_postprocess (s3_request_s *request, s3_response_s *response);
+s3_action_postprocess (network_s *network);
 int
-s3_action_send (s3_request_s *request, s3_response_s *response);
+s3_action_send (network_s *network);
 
 int
-s3_handle_response (s3_response_s *response, enum s3_response_code code);
-
+s3_handle_response (network_s *network, enum s3_response_code code);
 int
-s3_response_write (s3_response_s *response, long (*writer) (s3_response_s *in));
+s3_response_write (network_s *network, long (*writer) (s3_response_s *));
 long
 s3_response_write_header (s3_response_s *response, char *buffer, ulong buffer_length);
 ulong
 s3_response_make_magic (s3_response_s *response);
 int
-s3_response_accept_status (s3_response_s *response);
+s3_response_accept_status (network_s *response);
 int
 s3_response_writer_update (s3_response_s *response, string_s write);
 
+void
+s3_connection_alloc (network_s *data);
+void
+s3_connection_free (network_s *data);
+hash_table_s
+make_hash_table (my_list_s list);
 int
 s3_request_data (s3_protocol_s *protocol, s3_request_s *request);
 int
 s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request);
+void
+s3_connection_confirm_upload (network_s *network);
+void
+s3_connection_upload (network_s *network);
+void
+s3_connection_post_process (network_s *network);
 
 int
 s3_auth_query (s3_request_s *request);
@@ -373,4 +364,17 @@ s3_auth_query_sqlite3 (char *username, int username_length, char *password, int 
 
 int
 s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);
+
+void
+hexdump (char *string, int string_length, int line_width);
+
+void
+s3_connection_magic_read (network_s *data);
+void
+s3_connection_headers_read (network_s *data);
+
+int
+s3_setup_environment (s3_request_s *request);
+char *
+s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length);
 #endif // PROTOCOL_INCLUDE_GAURD
