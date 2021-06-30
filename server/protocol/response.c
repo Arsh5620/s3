@@ -11,8 +11,7 @@ s3_response_writer_update (s3_response_s *response, string_s write)
     long required_write = write.length - response->total_write_completed;
     long actual_write = required_write > avail_write ? avail_write : required_write;
 
-    if (actual_write > 0)
-    {
+    if (actual_write > 0) {
         memcpy (writer.address + writer.length, write.address + response->total_write_completed, actual_write);
         response->total_write_completed += actual_write;
         response->writer_buffer.length += actual_write;
@@ -150,5 +149,5 @@ s3_response_accept_status (network_s *response)
     {
         return S3_RESPONSE_INVALID_COMMUNICATION;
     }
-    return S3_RESPONSE_SUCCESS;
+    return SUCCESS;
 }

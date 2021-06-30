@@ -49,7 +49,9 @@ typedef struct network_connection {
     // This is necessary as we are not going to allocate any more than 4K memory per client.
     network_read_s data_read;
     FILE *temporary_file;
-    void (*network_completed_action) (struct network_connection *);
+
+    // if a network function returns a value other than SUCCESS, client connection will be terminated
+    int (*network_completed_action) (struct network_connection *);
 
     // Most times, compiler doesn't require the type names to be defined/included if they are pointers
     struct response_s *response;

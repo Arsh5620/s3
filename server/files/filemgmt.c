@@ -71,7 +71,7 @@ filemgmt_folder_exists_sqlite3 (string_s folder_name)
     string[folder_name.length] = '%';
     memcpy (string, folder_name.address, folder_name.length);
 
-    sqlite3_bind_text (stmt, 1, string, folder_name.length = 1, SQLITE_TRANSIENT);
+    sqlite3_bind_text (stmt, 1, string, folder_name.length + 1, SQLITE_TRANSIENT);
 
     return database_finish_stmt (stmt, SQLITE_ROW, "Couldn't find the folder name given");
 }

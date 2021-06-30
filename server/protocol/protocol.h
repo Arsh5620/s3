@@ -66,7 +66,7 @@ enum s3_attribs_enum {
 enum s3_shutdown_enum { S3_SHUTDOWN_CLOSE, S3_SHUTDOWN_INVALID };
 
 enum s3_response_code {
-    S3_RESPONSE_SUCCESS,           // Internal, no response to the client
+    S3_RESPONSE_SUCCESS,           // Internal, NOT USED
     S3_RESPONSE_DATA_SEND,         // The server is expecting client to send data
     S3_RESPONSE_PACKET_OK,         // Server has processed the action
     S3_RESPONSE_PACKET_DATA_MORE,  // Requesting send permission from client
@@ -111,6 +111,12 @@ enum s3_response_code {
     case code: {                                                                                                                 \
         string_dest = STRING (string);                                                                                           \
     } break;
+
+#define RESPONSE_RESET_RETURN(statement, network, response_code)                                                                 \
+    if (statement) {                                                                                                             \
+        s3_connection_reset_with_response (network, response_code);                                                              \
+        return SUCCESS;                                                                                                          \
+    }
 
 extern char *attribs[];
 extern char *actions[];
@@ -348,11 +354,11 @@ int
 s3_request_data (s3_protocol_s *protocol, s3_request_s *request);
 int
 s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request);
-void
+int
 s3_connection_confirm_upload (network_s *network);
-void
+int
 s3_connection_upload (network_s *network);
-void
+int
 s3_connection_post_process (network_s *network);
 void
 s3_connection_reset_new_packet (network_s *network);
@@ -370,13 +376,17 @@ s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);
 void
 hexdump (char *string, int string_length, int line_width);
 
-void
+int
 s3_connection_magic_read (network_s *data);
-void
+int
 s3_connection_headers_read (network_s *data);
 
 int
 s3_setup_environment (s3_request_s *request);
 char *
 s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length, boolean *is_valid);
+void
+s3_connection_abort (network_s *network, hash_table_s *client_table);
+void
+s3_connection_reset_with_response (network_s *network, enum s3_response_code response_code);
 #endif // PROTOCOL_INCLUDE_GAURD

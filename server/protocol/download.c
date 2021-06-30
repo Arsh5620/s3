@@ -7,7 +7,7 @@ s3_request_data (s3_protocol_s *protocol, s3_request_s *request)
 {
     if (s3_request_data_headers (protocol, request) == SUCCESS) {
         if (s3_file_download (request) == SUCCESS) {
-            return (S3_RESPONSE_SUCCESS);
+            return (SUCCESS);
         } else {
             return S3_RESPONSE_SERVER_INTERNAL_ERROR;
         }
@@ -21,7 +21,7 @@ s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request)
 {
     // long number;
     // int error = s3_network_read_stream_async (protocol, (char *) &number, sizeof (int));
-    // if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status == STATUS_ASYNC_MORE)
+    // if (error != SUCCESS || protocol->current.read_status == STATUS_ASYNC_MORE)
     // {
     //     return error;
     // }
@@ -30,7 +30,7 @@ s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request)
     // {
     //     return (S3_RESPONSE_INVALID_COMMUNICATION);
     // }
-    return S3_RESPONSE_SUCCESS;
+    return SUCCESS;
 }
 
 void
@@ -131,7 +131,7 @@ s3_file_download (s3_request_s *request)
     // int error = file_download (
     //   temp, &protocol->connection, &protocol->current.read_info, &hash, s3_file_hash);
 
-    // if (error != S3_RESPONSE_SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
+    // if (error != SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
     // {
     //     return error;
     // }

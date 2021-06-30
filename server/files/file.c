@@ -209,6 +209,6 @@ file_append (char *dest, char *src, ulong index, ulong size)
         written += write_len;
     }
 
-    fflush(dest_file);
+    fflush (dest_file);
     return FILE_SUCCESS;
 }

@@ -10,7 +10,7 @@ s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size)
     // if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
     // {
     //     protocol->current.read_status = STATUS_ASYNC_MORE;
-    //     return S3_RESPONSE_SUCCESS;
+    //     return SUCCESS;
     // }
     // else if (data.error_code != SUCCESS)
     // {
@@ -25,7 +25,7 @@ s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size)
     //     network_complete_async_read (&protocol->current.read_info);
     // }
     // protocol->current.read_status = STATUS_ASYNC_COMPLETED;
-    return S3_RESPONSE_SUCCESS;
+    return SUCCESS;
 }
 
 void
@@ -123,7 +123,7 @@ s3_request_read_action (s3_request_s *request)
     if (kvpair != NULL) {
         request->action = binary_search (
           (char *) actions, sizeof (char *), actions_count, kvpair->value_pointer, kvpair->value_long, data_string_compare);
-        return (S3_RESPONSE_SUCCESS);
+        return (SUCCESS);
     } else {
         return (S3_RESPONSE_ACTION_INVALID);
     }

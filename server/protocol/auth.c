@@ -10,9 +10,9 @@ s3_auth_transaction (s3_request_s *request)
     if (user == TRUE && secret == TRUE) {
         return s3_auth_query (request);
     } else if (user == TRUE || secret == TRUE) {
-        return (S3_RESPONSE_MIX_AUTH_ERROR);
+        return S3_RESPONSE_MIX_AUTH_ERROR;
     } else {
-        return (SUCCESS); // no authentication was required for the action.
+        return SUCCESS; // no authentication was required for the action.
     }
 }
 
@@ -37,7 +37,7 @@ s3_auth_query (s3_request_s *request)
     sha_256 (password, secret_length, (uchar *) sha_hash, SHA256LENGTH);
 
     int error = s3_auth_query_sqlite3 (username, username_length, sha_hash, sizeof (sha_hash));
-    return error == SUCCESS ? S3_RESPONSE_SUCCESS : S3_RESPONSE_FAILED_AUTHENTICATION;
+    return error == SUCCESS ? SUCCESS : S3_RESPONSE_FAILED_AUTHENTICATION;
 }
 
 int
