@@ -123,16 +123,16 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                 hash_table_add (&protocol->client_table, bucket);
             } else {
                 hash_input_u key = {.number = epoll_event.data.fd};
+                hash_table_bucket_s bucket = hash_table_get (protocol->client_table, key, 0);
+                network_s *client_network = (network_s *) bucket.value.address;
 
                 if (epoll_event.events & EPOLLERR || epoll_event.events & EPOLLHUP || epoll_event.events & EPOLLRDHUP) {
                     close (epoll_event.data.fd);
-                    my_print (LOG_OUT_BOTH, LOG_LEVEL_WARN, "A remote client hung up");
+                    my_print (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote client hung up");
                     hash_table_remove (&protocol->client_table, key, 0);
+                    m_free (client_network->data_read.address);
                     continue;
                 }
-
-                hash_table_bucket_s bucket = hash_table_get (protocol->client_table, key, 0);
-                network_s *client_network = (network_s *) bucket.value.address;
 
                 network_read_stream (client_network);
 
@@ -170,7 +170,7 @@ void
 s3_connection_headers_read (network_s *data)
 {
     my_list_s header_list = my_list_new (10, sizeof (deserializer_value_t));
-    deserializer_t deserializer = deserializer_init (data->data_read.address, data->data_read.length);
+    deserializer_t deserializer = deserializer_init (data->data_read.address, data->data_read.length, FALSE);
     deserialize_all (&deserializer, &header_list);
 
     s3_print_headers (header_list);
@@ -205,6 +205,7 @@ s3_connection_headers_read (network_s *data)
     }
 
     data->temporary_file = fopen (request->file_name.temp_file_name.address, FILE_MODE_WRITEBINARY);
+    data->response->file_name = &request->file_name;
 
     error = s3_action_preprocess (request);
     if (error != S3_RESPONSE_SUCCESS) {
@@ -234,7 +235,7 @@ s3_connection_headers_read (network_s *data)
 void
 s3_connection_confirm_upload (network_s *network)
 {
-    s3_request_s *request = (s3_request_s *) network->request;
+    s3_request_s *request = network->request;
 
     if (request->data_write_confirm == TRUE) {
         if (s3_handle_response (network, S3_RESPONSE_PACKET_DATA_MORE) != SUCCESS) {
@@ -252,7 +253,7 @@ s3_connection_confirm_upload (network_s *network)
 void
 s3_connection_upload (network_s *network)
 {
-    s3_request_s *request = (s3_request_s *) network->request;
+    s3_request_s *request = network->request;
 
     int error = FAILED;
 
@@ -289,9 +290,24 @@ s3_connection_post_process (network_s *network)
         // return error;
     }
 
-    if (s3_handle_response (network, S3_RESPONSE_PACKET_OK) != SUCCESS) {
+    if (network->response->response_code != S3_RESPONSE_PACKET_DATA_READY &&
+        s3_handle_response (network, S3_RESPONSE_PACKET_OK) != SUCCESS) {
         // return S3_RESPONSE_NETWORK_ERROR_WRITE;
     }
+
+    s3_connection_reset_new_packet (network);
+}
+
+void
+s3_connection_reset_new_packet (network_s *network)
+{
+    if (network->temporary_file != NULL) {
+        fclose (network->temporary_file);
+        network->temporary_file = NULL;
+    }
+
+    // Don't bother checking if file successfully removed
+    unlink (network->request->file_name.temp_file_name.address);
 
     // We just finished processing this packet, reset everything
     network->data_read.index = 0;
@@ -332,15 +348,24 @@ s3_attrib_contains (hash_table_s table, char *attrib)
     return bucket.is_occupied ? TRUE : FALSE;
 }
 
-/***
+/**
  * This function will return the RAW value for a given attribute, any data processing (such as deserializing long/int etc.)
  * must be done by the function responsible for the call
  *
  * Also note that if the attrib cannot be found the out_length will not be modified
+ *
+ * There are two ways to confirm if the return value of the function is correct, if you are expecting a blob-value then you
+ * can check the return value of the function, for value types you can check the is_valid param.
+ *
+ * The function does checks if is_valid is NULL before setting, so you can safely pass it in as NULL if you won't use it
  */
 char *
-s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length)
+s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length, boolean *is_valid)
 {
+    if (is_valid != NULL) {
+        *is_valid = FALSE;
+    }
+
     if (attrib == NULL) {
         return NULL;
     }
@@ -350,6 +375,9 @@ s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length)
     if (bucket.is_occupied) {
         if (out_length != NULL) {
             *out_length = bucket.value_len;
+        }
+        if (is_valid != NULL) {
+            *is_valid = TRUE;
         }
         return bucket.value.address;
     }
@@ -364,7 +392,7 @@ make_hash_table (my_list_s list)
 
     for (long i = 0; i < list.count; ++i) {
         deserializer_value_t pair = *(deserializer_value_t *) my_list_get (list, i);
-        hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = pair.value_2}, pair.value_1);
+        hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = pair.key}, pair.key_length);
 
         if (bucket.is_occupied) {
             // This means that a same key has already been added, ignore and continue
@@ -372,10 +400,10 @@ make_hash_table (my_list_s list)
         }
 
         hash_table_bucket_s new_item = (hash_table_bucket_s){
-          .key.address = pair.key,
-          .key_len = pair.key_size,
-          .value.address = pair.value_2,
-          .value_len = pair.value_1,
+          .key.address = (char *) pair.key,
+          .key_len = pair.key_length,
+          .value.address = pair.value_pointer,
+          .value_len = pair.value_long,
         };
 
         hash_table_add (&table, new_item);
@@ -480,7 +508,7 @@ s3_handle_response (network_s *network, enum s3_response_code code)
         return SUCCESS;
     }
 
-    s3_response_s *response = (s3_response_s *) network->response;
+    s3_response_s *response = network->response;
     response->response_code = code;
 
     if (s3_response_write (network, s3_handle_response_string) != SUCCESS) {
@@ -533,7 +561,7 @@ s3_setup_environment (s3_request_s *request)
     }
 
     size_t filename_length;
-    char *filename = s3_attrib_get (request->header_table, S3_ATTRIBNAME_FILENAME, &filename_length);
+    char *filename = s3_attrib_get (request->header_table, S3_ATTRIBNAME_FILENAME, &filename_length, NULL);
 
     if (filename != NULL) {
         if (filename_length == 0) {
@@ -566,26 +594,28 @@ s3_setup_environment (s3_request_s *request)
 int
 s3_action_send (network_s *network)
 {
-    s3_request_s *request = (s3_request_s *) network->request;
-    s3_response_s *response = (s3_response_s *) network->response;
+    s3_request_s *request = network->request;
+    s3_response_s *response = network->response;
 
     int result = 0;
-    // response->response_code = S3_RESPONSE_PACKET_DATA_READY;
-    // long (*writer)(s3_response_s *) = NULL;
+    response->response_code = S3_RESPONSE_PACKET_DATA_READY;
+    long (*writer) (s3_response_s *) = NULL;
 
-    // switch (request->action) {
-    // case S3_ACTION_REQUEST:
-    //     writer = s3_action_request_writer;
-    //     break;
+    switch (request->action) {
+    case S3_ACTION_REQUEST:
+        writer = s3_action_request_writer;
+        break;
 
-    // default:
-    //     result = S3_RESPONSE_SUCCESS;
-    //     break;
-    // }
+    default:
+        result = S3_RESPONSE_SUCCESS;
+        break;
+    }
 
-    // if (writer != NULL && s3_response_write(response, writer) != SUCCESS) {
-    //     return (S3_RESPONSE_NETWORK_ERROR_WRITE);
-    // }`
+    if (writer != NULL && s3_response_write (network, writer) != SUCCESS) {
+        // return S3_RESPONSE_NETWORK_ERROR_WRITE;
+    }
+
+    response->response_code = S3_RESPONSE_PACKET_OK;
     return result;
 }
 
@@ -599,31 +629,30 @@ s3_action_send (network_s *network)
 int
 s3_action_postprocess (network_s *network)
 {
-    s3_request_s *request = (s3_request_s *) network->request;
-    s3_response_s *response = (s3_response_s *) network->response;
+    s3_request_s *request = network->request;
 
     int result = 0;
     switch (request->action) {
     case S3_ACTION_NOTIFICATION:
-        result = s3_postprocess_notification (request, response);
+        result = s3_postprocess_notification (network);
         break;
     case S3_ACTION_CREATE:
-        result = s3_postprocess_create (request, response);
+        result = s3_postprocess_create (network);
         break;
     case S3_ACTION_DIR:
         result = S3_RESPONSE_SUCCESS;
         break;
     case S3_ACTION_UPDATE:
-        result = s3_postprocess_update (request, response);
+        result = s3_postprocess_update (network);
         break;
     case S3_ACTION_DELETE:
-        result = s3_postprocess_delete (request, response);
+        result = s3_postprocess_delete (network);
         break;
     case S3_ACTION_REQUEST:
         result = S3_RESPONSE_SUCCESS;
         break;
     case S3_ACTION_SERVER:
-        result = s3_postprocess_serverinfo (request, response);
+        result = s3_postprocess_serverinfo (network);
         break;
     case S3_ACTION_INVALID:
         result = S3_RESPONSE_SERVER_INTERNAL_ERROR;

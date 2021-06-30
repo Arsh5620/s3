@@ -185,17 +185,16 @@ file_append (char *dest, char *src, ulong index, ulong size)
     FILE *dest_file = fopen (dest, FILE_MODE_WRITEEXISTING);
 
     if (src_file == NULL || dest_file == NULL) {
-        return (FILE_ERROR_OPEN);
+        return FILE_ERROR_OPEN;
     }
 
     if (fseek (dest_file, index, SEEK_SET)) {
-        return (FILE_ERROR_SEEK);
+        return FILE_ERROR_SEEK;
     }
 
     while (written < size) {
-        ulong read_required = (size - written) > maxread ? maxread : (size - written);
-
-        ulong read_len = fread (buffer, 1, read_required, src_file);
+        ulong read_required = min (size - written, maxread);
+        ulong read_len = fread (buffer, sizeof (char), read_required, src_file);
 
         if (read_len == -1 || read_len != read_required) {
             return (FILE_READ_ERROR);
@@ -209,5 +208,7 @@ file_append (char *dest, char *src, ulong index, ulong size)
 
         written += write_len;
     }
-    return (FILE_SUCCESS);
+
+    fflush(dest_file);
+    return FILE_SUCCESS;
 }

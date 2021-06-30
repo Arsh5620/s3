@@ -147,7 +147,7 @@ typedef struct {
 #define KVPAIR(_key, _key_len, _value, _value_len)                                                                               \
     (kvpair_s) { .key = _key, .key_len = _key_len, .value = _value, .value_len = _value_len }
 
-typedef struct {
+typedef struct request_s {
     /*
      * action is the type of action that the client has requested to perform
      * this can include but is not limited to "notification", "request"
@@ -195,7 +195,7 @@ typedef struct response_writer {
     size_t length_max;
 } response_writer_s;
 
-typedef struct {
+typedef struct response_s {
     my_list_s header_list;
     s3_header_s header_info;
 
@@ -270,17 +270,17 @@ long
 s3_action_request_writer (s3_response_s *in);
 
 int
-s3_postprocess_notification (s3_request_s *request, s3_response_s *response);
+s3_postprocess_notification (network_s *network);
 int
-s3_postprocess_create (s3_request_s *request, s3_response_s *response);
+s3_postprocess_create (network_s *network);
 int
-s3_postprocess_update (s3_request_s *request, s3_response_s *response);
+s3_postprocess_update (network_s *network);
 int
-s3_postprocess_delete (s3_request_s *request, s3_response_s *response);
+s3_postprocess_delete (network_s *network);
 int
-s3_postprocess_request (s3_request_s *request, s3_response_s *response);
+s3_postprocess_request (network_s *network);
 int
-s3_postprocess_serverinfo (s3_request_s *request, s3_response_s *response);
+s3_postprocess_serverinfo (network_s *network);
 int
 s3_preprocess_dirlist (s3_request_s *request);
 
@@ -354,6 +354,8 @@ void
 s3_connection_upload (network_s *network);
 void
 s3_connection_post_process (network_s *network);
+void
+s3_connection_reset_new_packet (network_s *network);
 
 int
 s3_auth_query (s3_request_s *request);
@@ -376,5 +378,5 @@ s3_connection_headers_read (network_s *data);
 int
 s3_setup_environment (s3_request_s *request);
 char *
-s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length);
+s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length, boolean *is_valid);
 #endif // PROTOCOL_INCLUDE_GAURD

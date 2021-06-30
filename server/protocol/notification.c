@@ -11,8 +11,9 @@ s3_preprocess_notification (s3_request_s *request)
 }
 
 int
-s3_postprocess_notification (s3_request_s *request, s3_response_s *response)
+s3_postprocess_notification (network_s *network)
 {
+    s3_request_s *request = network->request;
     FILE *file = fopen (request->file_name.temp_file_name.address, FILE_MODE_READBINARY);
 
     file_reader_s reader = file_reader_init (file);

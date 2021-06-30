@@ -3,30 +3,29 @@
 long
 s3_action_request_writer (s3_response_s *response)
 {
-    // string_s writer = response->writer_buffer;
-    // FILE *file = fopen (response->file_name->real_file_name.address, FILE_MODE_READBINARY);
+    response_writer_s writer = response->writer_buffer;
+    FILE *file = fopen (response->file_name->real_file_name.address, FILE_MODE_READBINARY);
 
-    // if (response->header_info.data_length == 0)
-    // {
-    //     response->header_info.data_length = file_stat (file).st_size;
-    // }
+    if (response->header_info.data_length == 0)
+    {
+        response->header_info.data_length = file_stat (file).st_size;
+    }
 
-    // fseek (file, response->total_write_completed, SEEK_SET);
+    fseek (file, response->total_write_completed, SEEK_SET);
 
-    // long write_available = writer.max_length - writer.length;
-    // long write_required = response->header_info.data_length - response->total_write_completed;
+    long write_available = writer.length_max - writer.length;
+    long write_required = response->header_info.data_length - response->total_write_completed;
 
-    // long write_todo = write_required > write_available ? write_available : write_required;
+    long write_todo = write_required > write_available ? write_available : write_required;
 
-    // if (write_todo > 0)
-    // {
-    //     fread (writer.address + writer.length, sizeof (char), write_todo, file);
-    //     response->total_write_completed += write_todo;
-    //     response->writer_buffer.length += write_todo;
-    // }
+    if (write_todo > 0)
+    {
+        fread (writer.address + writer.length, sizeof (char), write_todo, file);
+        response->total_write_completed += write_todo;
+        response->writer_buffer.length += write_todo;
+    }
 
-    // return (write_todo);
-    return 0;
+    return (write_todo);
 }
 
 int

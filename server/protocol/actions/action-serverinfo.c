@@ -7,7 +7,7 @@ long
 s3_server_request_writer (s3_response_s *response)
 {
     string_s string = SERVER_INFO_CONST_RESPONSE;
-    return (s3_response_writer_update (response, string));
+    return s3_response_writer_update (response, string);
 }
 
 int
@@ -20,10 +20,11 @@ s3_preprocess_serverinfo (s3_request_s *request)
 }
 
 int
-s3_postprocess_serverinfo (s3_request_s *request, s3_response_s *response)
+s3_postprocess_serverinfo (network_s *network)
 {
+    s3_response_s *response = network->response;
     response->response_code = S3_RESPONSE_PACKET_DATA_READY;
-    if (s3_response_write (response, s3_server_request_writer) != SUCCESS) {
+    if (s3_response_write (network, s3_server_request_writer) != SUCCESS) {
         return S3_RESPONSE_NETWORK_ERROR_WRITE;
     }
     return SUCCESS;

@@ -64,18 +64,18 @@ s3_request_read_magic (size_t magic, boolean *valid)
 void
 s3_print_headers (my_list_s list)
 {
-    my_print (LOG_OUT_BOTH, LOG_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
+    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
 
     for (size_t i = 0; i < list.count; i++) {
         deserializer_value_t *pair = (deserializer_value_t *) my_list_get (list, i);
 
-        my_print (LOG_OUT_BOTH,
+        my_print (LOG_OUT_LOGS,
                   LOG_LEVEL_DEBUG,
                   DESERIALIZER_PRINT_HEADERS_ROW_STRING,
-                  pair->key_size,
+                  pair->key_length,
                   pair->key,
-                  pair->value_1,
-                  pair->value_2);
+                  pair->value_long,
+                  pair->value_pointer);
     }
 }
 
@@ -83,9 +83,9 @@ deserializer_value_t *
 list_find_key_string (my_list_s list, char *key, int key_length)
 {
     for (size_t i = 0; i < list.count; i++) {
-        deserializer_value_t *pair = my_list_get (list, 0);
+        deserializer_value_t *pair = (deserializer_value_t *) my_list_get (list, 0);
 
-        if (pair != NULL && pair->key_size == key_length && memcmp (pair->key, key, key_length) == 0) {
+        if (pair != NULL && pair->key_length == key_length && memcmp (pair->key, key, key_length) == 0) {
             return pair;
         }
     }
@@ -96,9 +96,9 @@ int
 list_index_key_string (my_list_s list, char *key, int key_length)
 {
     for (size_t i = 0; i < list.count; i++) {
-        deserializer_value_t *pair = my_list_get (list, 0);
+        deserializer_value_t *pair = (deserializer_value_t *) my_list_get (list, 0);
 
-        if (pair != NULL && pair->key_size == key_length && memcmp (pair->key, key, key_length) == 0) {
+        if (pair != NULL && pair->key_length == key_length && memcmp (pair->key, key, key_length) == 0) {
             return i;
         }
     }
@@ -121,8 +121,8 @@ s3_request_read_action (s3_request_s *request)
     }
 
     if (kvpair != NULL) {
-        request->action =
-          binary_search ((char *) actions, sizeof (char *), actions_count, kvpair->value_2, kvpair->value_1, data_string_compare);
+        request->action = binary_search (
+          (char *) actions, sizeof (char *), actions_count, kvpair->value_pointer, kvpair->value_long, data_string_compare);
         return (S3_RESPONSE_SUCCESS);
     } else {
         return (S3_RESPONSE_ACTION_INVALID);

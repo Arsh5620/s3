@@ -10,12 +10,13 @@ s3_preprocess_create (s3_request_s *request)
 }
 
 int
-s3_postprocess_create (s3_request_s *request, s3_response_s *response)
+s3_postprocess_create (network_s *network)
 {
     // so now at this time, we can assume that the file does not exists already
     // and that the data has been downloaded to a temp file.
     // all we need to do is a simple file move.
 
+    s3_request_s *request = network->request;
     string_s dest = request->file_name.real_file_name;
     string_s source = request->file_name.temp_file_name;
 

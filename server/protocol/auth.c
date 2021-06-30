@@ -20,14 +20,14 @@ int
 s3_auth_query (s3_request_s *request)
 {
     size_t username_length = 0;
-    char *username = s3_attrib_get (request->header_table, S3_ATTRIBNAME_USERNAME, &username_length);
+    char *username = s3_attrib_get (request->header_table, S3_ATTRIBNAME_USERNAME, &username_length, NULL);
 
     if (username == NULL) {
         return S3_RESPONSE_SERVER_ERROR_NOAUTH;
     }
 
     size_t secret_length = 0;
-    char *password = s3_attrib_get (request->header_table, S3_ATTRIBNAME_SECRET, &secret_length);
+    char *password = s3_attrib_get (request->header_table, S3_ATTRIBNAME_SECRET, &secret_length, NULL);
 
     if (password == NULL) {
         return S3_RESPONSE_SERVER_ERROR_NOAUTH;

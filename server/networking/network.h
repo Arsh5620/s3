@@ -51,8 +51,9 @@ typedef struct network_connection {
     FILE *temporary_file;
     void (*network_completed_action) (struct network_connection *);
 
-    void *response;
-    void *request;
+    // Most times, compiler doesn't require the type names to be defined/included if they are pointers
+    struct response_s *response;
+    struct request_s *request;
 } network_s;
 
 void

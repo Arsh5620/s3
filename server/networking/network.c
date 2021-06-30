@@ -226,7 +226,7 @@ network_read_stream (network_s *connection)
         if (connection->temporary_file != NULL && read_info->index - buffer_index) {
             fwrite (read_info->address, sizeof (char), read_info->index - buffer_index, connection->temporary_file);
 
-            // This could cause a lot of latency issues if the IO wait it too long
+            // TODO: This would cause a lot of latency issues if the IO wait is too long
             fflush (connection->temporary_file);
         }
         buffer_index = read_info->index;

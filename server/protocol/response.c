@@ -4,28 +4,28 @@
 int
 s3_response_writer_update (s3_response_s *response, string_s write)
 {
-    // string_s writer = response->writer_buffer;
-    // response->header_info.data_length = write.length;
+    response_writer_s writer = response->writer_buffer;
+    response->header_info.data_length = write.length;
 
-    // long avail_write = writer.max_length - writer.length;
-    // long required_write = write.length - response->total_write_completed;
-    // long actual_write = required_write > avail_write ? avail_write : required_write;
+    long avail_write = writer.length_max - writer.length;
+    long required_write = write.length - response->total_write_completed;
+    long actual_write = required_write > avail_write ? avail_write : required_write;
 
-    // if (actual_write > 0)
-    // {
-    //     memcpy (writer.address + writer.length, write.address + response->total_write_completed, actual_write);
-    //     response->total_write_completed += actual_write;
-    //     response->writer_buffer.length += actual_write;
-    // }
+    if (actual_write > 0)
+    {
+        memcpy (writer.address + writer.length, write.address + response->total_write_completed, actual_write);
+        response->total_write_completed += actual_write;
+        response->writer_buffer.length += actual_write;
+    }
 
-    // return (actual_write);
+    return (actual_write);
     return 0;
 }
 
 int
 s3_response_write (network_s *network, long (*writer) (s3_response_s *))
 {
-    s3_response_s *response = (s3_response_s *) network->response;
+    s3_response_s *response = network->response;
 
     char *memory = m_calloc (NETWORK_WRITE_BUFFER);
     response->writer_buffer.address = memory;
@@ -70,7 +70,7 @@ s3_response_write (network_s *network, long (*writer) (s3_response_s *))
         total_write_completed = writer (response);
 
         if (total_write_completed < 0) {
-            return (S3_RESPONSE_NETWORK_ERROR_WRITE);
+            return S3_RESPONSE_NETWORK_ERROR_WRITE;
         }
 
         if (header_written == FALSE) {
@@ -102,7 +102,7 @@ s3_response_write_header (s3_response_s *response, char *buffer, ulong buffer_le
 {
     long index = 0;
     if (buffer != NULL) {
-        serializer_t serializer = serializer_init ();
+        serializer_t serializer = serializer_init (10);
 
         for (size_t i = 0; i < response->header_list.count; i++) {
             kvpair_s pair = *(kvpair_s *) my_list_get (response->header_list, i);

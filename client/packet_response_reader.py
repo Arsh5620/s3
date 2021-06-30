@@ -25,9 +25,6 @@ class PacketResponseReader:
         size_array = magic_header[0:6]
         data_size = int.from_bytes(size_array, byteorder='little')
 
-        print(str(size_array))
-        print("Server response received")
-
         binary_header = socket.recv(header_size)
         header_list = deserialize.deserialize_all(binary_header)
 
