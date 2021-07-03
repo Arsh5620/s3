@@ -237,7 +237,7 @@ int
 network_write_stream (network_s *network, char *buffer, ulong buffer_length)
 {
     ulong bytes_written = 0;
-    for (ulong length = 0; bytes_written < buffer_length;) {
+    for (long length = 0; bytes_written < buffer_length;) {
 #ifndef DEBUG
         length = SSL_write (network->ssl_tls, buffer + bytes_written, buffer_length - bytes_written);
 #else
@@ -259,7 +259,7 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
         } break;
         }
     }
-    return (NETWORK_SUCCESS);
+    return NETWORK_SUCCESS;
 }
 
 /*
