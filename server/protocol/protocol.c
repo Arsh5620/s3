@@ -135,7 +135,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                 network_read_stream (client_network);
 
                 if (client_network->data_read.index == client_network->data_read.length &&
-                    client_network->network_completed_action (client_network) == SUCCESS) {
+                    client_network->network_completed_action (client_network) != SUCCESS) {
                     my_print (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote connection has been terminated");
                 }
             }
@@ -253,13 +253,12 @@ s3_connection_upload (network_s *network)
 {
     s3_request_s *request = network->request;
 
-    int error = FAILED;
+    int error = SUCCESS;
 
     if (request->data_write_confirm == TRUE) {
         error = s3_response_accept_status (network);
-    } else {
-        error = SUCCESS;
     }
+
     RESPONSE_RESET_RETURN (error != SUCCESS, network, S3_RESPONSE_NETWORK_ERROR_WRITE);
 
     if (error == SUCCESS) {
@@ -513,11 +512,7 @@ s3_handle_response (network_s *network, enum s3_response_code code)
         return S3_RESPONSE_NETWORK_ERROR_WRITE;
     }
 
-    if (response->response_code > S3_RESPONSE_ERRORS) {
-        return response->response_code;
-    } else {
-        return SUCCESS;
-    }
+    return SUCCESS;
 }
 
 // void
@@ -596,11 +591,11 @@ s3_action_send (network_s *network)
     s3_response_s *response = network->response;
 
     int result = 0;
-    response->response_code = S3_RESPONSE_PACKET_DATA_READY;
     long (*writer) (s3_response_s *) = NULL;
 
     switch (request->action) {
     case S3_ACTION_REQUEST:
+        response->response_code = S3_RESPONSE_PACKET_DATA_READY;
         writer = s3_action_request_writer;
         break;
 
@@ -610,10 +605,9 @@ s3_action_send (network_s *network)
     }
 
     if (writer != NULL && s3_response_write (network, writer) != SUCCESS) {
-        // return S3_RESPONSE_NETWORK_ERROR_WRITE;
+        return S3_RESPONSE_NETWORK_ERROR_WRITE;
     }
 
-    response->response_code = S3_RESPONSE_PACKET_OK;
     return result;
 }
 

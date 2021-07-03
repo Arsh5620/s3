@@ -191,9 +191,9 @@ network_read_stream (network_s *connection)
         char *buffer_offset = read_info->address + read_info->index - buffer_index;
 
 #ifndef DEBUG
-        ulong length = SSL_read (connection->ssl_tls, buffer_offset, read_amount);
+        long length = SSL_read (connection->ssl_tls, buffer_offset, read_amount);
 #else
-        ulong length = read (connection->client, buffer_offset, read_amount);
+        long length = read (connection->client, buffer_offset, read_amount);
 #endif
 
         if (length == 0) {

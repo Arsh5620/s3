@@ -115,7 +115,7 @@ enum s3_response_code {
 #define RESPONSE_RESET_RETURN(statement, network, response_code)                                                                 \
     if (statement) {                                                                                                             \
         s3_connection_reset_with_response (network, response_code);                                                              \
-        return SUCCESS;                                                                                                          \
+        return response_code > S3_RESPONSE_ERRORS ? FAILED : SUCCESS;                                                            \
     }
 
 extern char *attribs[];

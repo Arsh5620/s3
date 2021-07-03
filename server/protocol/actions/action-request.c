@@ -23,6 +23,7 @@ s3_action_request_writer (s3_response_s *response)
         response->writer_buffer.length += write_todo;
     }
 
+    fclose(file);
     return (write_todo);
 }
 

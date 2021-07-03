@@ -10,22 +10,25 @@ import inspect
 from packet_response_reader import PacketResponseReader
 from packet_response_writer import PacketResponseWriter
 
-sock = socket.socket()
-hostname = "localhost"
-noout = False
-commands_processed = 0
 
-try:
+def generic_func():
+    sock = socket.socket()
+    hostname = "localhost"
+    noout = False
+    commands_processed = 0
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
     if len(sys.argv) > 1 and sys.argv[1] == "ssl":
-        sock = ssl.wrap_socket(sock, ssl_version=ssl.PROTOCOL_TLS, ciphers="ADH-AES256-SHA")
+        sock = ssl.wrap_socket(
+            sock, ssl_version=ssl.PROTOCOL_TLS, ciphers="ADH-AES256-SHA")
     if len(sys.argv) > 1 and sys.argv[1] == "noout":
         noout = True
     if len(sys.argv) > 2 and sys.argv[1] == "ssl" and sys.argv[2] == "noout":
         noout = True
-        sock = ssl.wrap_socket(sock, ssl_version=ssl.PROTOCOL_TLS, ciphers="ADH-AES256-SHA")
-        
-    if not noout: 
+        sock = ssl.wrap_socket(
+            sock, ssl_version=ssl.PROTOCOL_TLS, ciphers="ADH-AES256-SHA")
+
+    if not noout:
         print("Trying to connect to a s3 server on " + str(hostname))
     sock.connect((hostname, 4096))
 
@@ -42,40 +45,38 @@ try:
     extras_common = "filename=" + str(file_name) + "\n"
     input_file = "./file"
 
-
     def open_file(file_name):
         file = open(file_name, 'rb')
         file_len = os.stat(file_name).st_size
         return file, file_len
 
-
     def response_status(response):
         response_code = response.get_headers()["response"]
 
-        if not noout: 
+        if not noout:
             print("Server response code is : " + str(response_code))
-            print("Server response length : " + str(len(response.get_data_byte_array())))
+            print("Server response length : " +
+                  str(len(response.get_data_byte_array())))
         if (response_code != 4 or response.get_data_length() < 400) and not noout:
             print("Server response said : " + str(response.get_data_string()))
         return response_code
 
-
     while (True):
 
-        if not noout: 
+        if not noout:
             print("Please select of the options to continue: ")
             print("1. Send the file\n"
-                "2. Send a file update\n"
-                "3. Delete the file\n"
-                "4. Request the file\n"
-                "5. Request server info\n"
-                "6. List directory contents\n"
-                "Ctrl + C Exit client\n")
+                  "2. Send a file update\n"
+                  "3. Delete the file\n"
+                  "4. Request the file\n"
+                  "5. Request server info\n"
+                  "6. List directory contents\n"
+                  "Ctrl + C Exit client\n")
 
-        if not noout: 
+        if not noout:
             selection = input()
         else:
-            selection = "5" #input()  # wait for the client to press enter before sending the packet
+            selection = "5"  # input()  # wait for the client to press enter before sending the packet
 
         file_reader, file_length = open_file(input_file)
         extra_headers = extras_common
@@ -109,11 +110,12 @@ try:
         response_code = response_status(response)
 
         if (response_code == 1):
-            PacketResponseWriter.send_data_with_confirm(sock, file_reader.read())
+            PacketResponseWriter.send_data_with_confirm(
+                sock, file_reader.read())
 
             response = PacketResponseReader(sock)
             response_code = response_status(response)
-            if not noout:  
+            if not noout:
                 if response_code == 2:
                     print("Data sent")
                 else:
@@ -135,7 +137,13 @@ try:
 
         if not noout:
             print("****")
-        
+
         commands_processed += 1
-except:
-    print("Total commands processed " + str(commands_processed))
+
+
+# try:
+#     generic_func(commands_processed)
+# except:
+#     print("Total commands processed " + str(commands_processed))
+
+generic_func()

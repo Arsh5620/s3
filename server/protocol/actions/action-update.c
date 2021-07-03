@@ -7,7 +7,7 @@ s3_preprocess_update (s3_request_s *request)
     struct stat file_stats = {0};
 
     if (!filemgmt_file_exists (request->file_name.file_name, request->file_name.real_file_name, &file_stats)) {
-        // return S3_RESPONSE_FILE_NOT_FOUND;
+        return S3_RESPONSE_FILE_NOT_FOUND;
     }
 
     request->additional_data = m_malloc (sizeof (s3_action_update_s));
