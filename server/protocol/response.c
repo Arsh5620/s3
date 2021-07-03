@@ -17,8 +17,7 @@ s3_response_writer_update (s3_response_s *response, string_s write)
         response->writer_buffer.length += actual_write;
     }
 
-    return (actual_write);
-    return 0;
+    return actual_write;
 }
 
 int

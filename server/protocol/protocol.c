@@ -456,46 +456,13 @@ s3_handle_close (s3_request_s *request, s3_response_s *response)
 long
 s3_handle_response_string (s3_response_s *response)
 {
-    string_s link;
-
-    switch (response->response_code) {
-        S3_CASE (link, S3_RESPONSE_DATA_SEND, S3_RESPONSE_STRING_DATA_SEND);
-
-        S3_CASE (link, S3_RESPONSE_PACKET_OK, S3_RESPONSE_STRING_PACKET_OK);
-
-        S3_CASE (link, S3_RESPONSE_ACTION_INVALID, S3_RESPONSE_STRING_ACTION_INVALID);
-
-        S3_CASE (link, S3_RESPONSE_HEADER_EMPTY, S3_RESPONSE_STRING_HEADER_EMPTY);
-
-        S3_CASE (link, S3_RESPONSE_DESERIALIZER_ERROR, S3_RESPONSE_STRING_DESERIALIZER_ERROR);
-
-        S3_CASE (link, S3_RESPONSE_MISSING_ATTRIBS, S3_RESPONSE_STRING_MISSING_ATTRIBS);
-
-        S3_CASE (link, S3_RESPONSE_ATTRIB_VALUE_INVALID, S3_RESPONSE_STRING_ATTIB_VALUE_INVALID);
-
-        S3_CASE (link, S3_RESPONSE_FILE_EXISTS_ALREADY, S3_RESPONSE_STRING_FILE_EXISTS_ALREADY);
-
-        S3_CASE (link, S3_RESPONSE_FILE_NOT_FOUND, S3_RESPONSE_STRING_FILE_NOT_FOUND);
-
-        S3_CASE (link, S3_RESPONSE_FILE_UPDATE_OUTOFBOUNDS, S3_RESPONSE_STRING_FILE_UPDATE_OUTOFBOUNDS);
-
-        S3_CASE (link, S3_RESPONSE_CORRUPTED_PACKET, S3_RESPONSE_STRING_CORRUPTED_PACKET);
-
-        S3_CASE (link, S3_RESPONSE_CORRUPTED_DATA_HEADERS, S3_RESPONSE_STRING_CORRUPTED_DATA_HEADERS);
-
-        S3_CASE (link, S3_RESPONSE_SETUP_ENVIRONMENT_FAILED, S3_RESPONSE_STRING_SETUP_ENVIRONMENT_FAILED);
-
-        S3_CASE (link, S3_RESPONSE_SERVER_INTERNAL_ERROR, S3_RESPONSE_STRING_SERVER_INTERNAL_ERROR);
-
-        S3_CASE (link, S3_RESPONSE_UNEXPECTED_DATA_FROM_CLIENT, S3_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT);
-
-        S3_CASE (link, S3_RESPONSE_FAILED_AUTHENTICATION, S3_RESPONSE_STRING_FAILED_AUTHENTICATION);
-
-    default:
-        link = (string_s){0};
+    char *response_message = s3_response_messages[response->response_code];
+    if (response_message != NULL) {
+        string_s response_string = STRING2 (response_message, strlen (response_message));
+        return s3_response_writer_update (response, response_string);
+    } else {
+        return SUCCESS;
     }
-
-    return (s3_response_writer_update (response, link));
 }
 
 int

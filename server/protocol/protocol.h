@@ -104,13 +104,11 @@ enum s3_response_code {
     S3_RESPONSE_NETWORK_ERROR_WRITE,
     S3_RESPONSE_NETWORK_ERROR_READ,
     S3_RESPONSE_CANNOT_CREATE_TEMP_FILE,
-    S3_RESPONSE_ERROR_WRITING_HEADERS
-};
+    S3_RESPONSE_ERROR_WRITING_HEADERS,
 
-#define S3_CASE(string_dest, code, string)                                                                                       \
-    case code: {                                                                                                                 \
-        string_dest = STRING (string);                                                                                           \
-    } break;
+    // Do not add anything after here
+    __S3_RESPONSE_END_ITEMS,
+};
 
 #define RESPONSE_RESET_RETURN(statement, network, response_code)                                                                 \
     if (statement) {                                                                                                             \
@@ -121,21 +119,9 @@ enum s3_response_code {
 extern char *attribs[];
 extern char *actions[];
 extern char **s3_asserts;
+extern char **s3_response_messages;
 extern const int attribs_count;
 extern const int actions_count;
-
-enum packet_status {
-    STATUS_CONNECTION_ACCEPTED,
-    STATUS_HEADER_MAGIC_READ,
-    STATUS_HEADER_SERIALIZED_READ,
-    STATUS_REQUEST_PREPROCESS,
-    STATUS_REQUEST_DOWNLOADING,
-    STATUS_REQUEST_UPLOADING,
-    STATUS_REQUEST_POSTPROCESS,
-    STATUS_RESPONSE_NOW
-};
-
-enum async_operation_status { STATUS_ASYNC_MORE, STATUS_ASYNC_COMPLETED };
 
 typedef struct {
     size_t data_length;
@@ -186,12 +172,6 @@ typedef struct request_s {
      */
     boolean data_write_confirm;
     filemgmt_file_name_s file_name;
-
-    /*
-     * instance is a pointer to the s3_protocol_s that will have
-     * information in regards of the current network and its status
-     */
-    char *instance;
 } s3_request_s;
 
 typedef struct response_writer {
@@ -213,7 +193,6 @@ typedef struct response_s {
     filemgmt_file_name_s *file_name;
     response_writer_s writer_buffer;
     long total_write_completed;
-    char *instance;
 } s3_response_s;
 
 typedef struct {
