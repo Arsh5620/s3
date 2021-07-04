@@ -224,7 +224,13 @@ network_read_stream (network_s *connection)
         }
 
         if (connection->temporary_file != NULL && read_info->index - buffer_index) {
+            if (buffer_index == 0) {
+                sha_256_init (&connection->sha256_context);
+            }
+
             fwrite (read_info->address, sizeof (char), read_info->index - buffer_index, connection->temporary_file);
+
+            sha_256_update (&connection->sha256_context, (uchar *) read_info->address, read_info->index - buffer_index);
 
             /*
              * Only flush when the entire file has been downloaded.
@@ -237,6 +243,7 @@ network_read_stream (network_s *connection)
                 fflush (connection->temporary_file);
 
                 printf ("Flush operations are too expensive to be used frequently\n");
+                sha_256_finalize (&connection->sha256_context, connection->sha256_hex);
             }
         }
         buffer_index = read_info->index;

@@ -33,10 +33,13 @@ s3_auth_query (s3_request_s *request)
         return S3_RESPONSE_SERVER_ERROR_NOAUTH;
     }
 
-    char sha_hash[SHA256LENGTH] = {0};
-    sha_256 (password, secret_length, (uchar *) sha_hash, SHA256LENGTH);
+    uchar sha_hash[SHA256_LENGTH] = {0};
+    uchar sha_hash_hex[SHA256_HEXLENGTH] = {0};
+    
+    sha_256 (sha_hash, (uchar *) password, secret_length);
+    sha_256_hex (sha_hash_hex, sha_hash);
 
-    int error = s3_auth_query_sqlite3 (username, username_length, sha_hash, sizeof (sha_hash));
+    int error = s3_auth_query_sqlite3 (username, username_length, (char *) sha_hash_hex, sizeof (sha_hash_hex));
     return error == SUCCESS ? SUCCESS : S3_RESPONSE_FAILED_AUTHENTICATION;
 }
 

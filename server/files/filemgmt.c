@@ -45,7 +45,7 @@ filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length)
 }
 
 int
-filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_length)
+filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, char *hash, int hash_length, int file_length)
 {
     int error;
     sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_INSERT, sizeof (FILEMGMT_QUERY_INSERT), &error);
@@ -58,7 +58,7 @@ filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_lengt
     sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
     sqlite3_bind_int64 (stmt, 2, time (NULL));
     sqlite3_bind_int64 (stmt, 3, file_length);
-    sqlite3_bind_null (stmt, 4);
+    sqlite3_bind_blob (stmt, 4, hash, hash_length, SQLITE_TRANSIENT);
 
     return database_rows_affected (stmt, SQLITE_DONE, "Could not add file");
 }
@@ -203,10 +203,9 @@ filemgmt_folder_exists (string_s folder_name)
 }
 
 int
-filemgmt_file_add (string_s file_name)
+filemgmt_file_add (string_s file_name, string_s hash, long file_size)
 {
-    // TODO: instead of 0x8100 add the actual file size
-    return filemgmt_file_add_sqlite3 (file_name.address, file_name.length, 0x8100);
+    return filemgmt_file_add_sqlite3 (file_name.address, file_name.length, hash.address, hash.length, file_size);
 }
 
 int

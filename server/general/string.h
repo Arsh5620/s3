@@ -12,7 +12,7 @@ typedef struct string {
 #define STRING_ISEMPTY(string) (string.address == NULL || string.length <= 0)
 
 #define STRING(x)                                                                                                                \
-    (string_s) { .address = x, .length = sizeof (x) - 1 }
+    (string_s) { .address = (char *) x, .length = sizeof (x) - 1 }
 
 #define STRING2(x, y)                                                                                                            \
     (string_s) { .address = x, .length = y }

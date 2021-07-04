@@ -87,7 +87,8 @@
         "bit": "c",
         "memory_resource": "c",
         "sstream": "c",
-        "stdexcept": "c"
+        "stdexcept": "c",
+        "sha.h": "c"
     },
 	"python.pythonPath": "/usr/bin/python",
 	"python.linting.pylintEnabled": true,

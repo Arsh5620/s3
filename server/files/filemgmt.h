@@ -76,7 +76,7 @@ filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length);
 int
 filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length);
 int
-filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, int file_length);
+filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, char *hash, int hash_length, int file_length);
 int
 filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_stats);
 
@@ -92,7 +92,7 @@ void
 database_read_column_for_type (sqlite3_stmt *stmt, enum sqltypes type, int column, sqlite_result_s *result);
 
 int
-filemgmt_file_add (string_s file_name);
+filemgmt_file_add (string_s file_name, string_s hash, long file_size);
 int
 filemgmt_rename_file (string_s dest, string_s src);
 int

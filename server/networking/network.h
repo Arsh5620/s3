@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 
 #include "../general/define.h"
+#include "../crypto/sha.h"
 
 #define NETWORK_READ_BUFFER KB (4)
 #define NETWORK_WRITE_BUFFER KB (4)
@@ -48,6 +49,9 @@ typedef struct network_connection {
     // We prioritize writing to temporary files over writing to in-memory buffer to save memory
     // This is necessary as we are not going to allocate any more than 4K memory per client.
     network_read_s data_read;
+
+    SHA256_CTX sha256_context;
+    uchar sha256_hex[SHA256_HEXLENGTH];
     FILE *temporary_file;
 
     // if a network function returns a value other than SUCCESS, client connection will be terminated

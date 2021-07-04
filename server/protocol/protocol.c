@@ -188,7 +188,6 @@ s3_connection_headers_read (network_s *network)
     request->header_table = make_hash_table (header_list);
 
     int error = s3_request_read_action (request);
-    // TODO: call response handler here
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
 
@@ -207,7 +206,7 @@ s3_connection_headers_read (network_s *network)
     } else {
         network->temporary_file = NULL;
     }
-    
+
     network->response->file_name = &request->file_name;
 
     error = s3_action_preprocess (request);
