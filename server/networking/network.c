@@ -21,7 +21,7 @@ void
 assert (int c1, char *fn, int err)
 {
     if (c1 == GENERAL_ERROR) {
-        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_MESSAGE, fn, strerror (errno), errno);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_MESSAGE, fn, strerror (errno), errno);
     }
 }
 
@@ -33,7 +33,7 @@ assert_ssl (int c1, int c2, char *fn, int err)
         char *buffer = m_calloc (buff_len);
         ERR_error_string_n (ERR_get_error (), buffer, buff_len);
 
-        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_SSL_MESSAGE, fn, errno, buffer);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_SSL_MESSAGE, fn, errno, buffer);
         free (buffer); // unreachable code
     }
 }
@@ -55,7 +55,7 @@ network_connect_init_sync (int port,
 {
     int result = 0;
 
-    my_print (LOG_OUT_LOGS,
+    logs_put (LOG_OUT_LOGS,
               LOG_LEVEL_DEBUG,
               NETWORK_MODE_INFORMATION,
 #ifdef DEBUG
@@ -91,7 +91,7 @@ network_connect_init_sync (int port,
         assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key", SERVER_TLS_CERT_KEY_CHK_FAILED);
     }
 
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
 #endif
 
     *server = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -116,7 +116,7 @@ network_connect_init_sync (int port,
     result = listen (*server, NETWORK_QUEQUE);
     assert (result, "listen", SERVER_LISTEN_FAILED);
 
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
 }
 
 /*
@@ -152,12 +152,12 @@ network_connect_accept_sync (network_s *connection,
 
         result = SSL_accept (connection->ssl_tls);
         if (result != SSL_SUCCESS) {
-            my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_SSL_PLAIN_CLIENT);
+            logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_SSL_PLAIN_CLIENT);
 
             close (connection->client);
             connected = FALSE;
         } else {
-            my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_ASSERT_SSL_LEVEL_MESSAGE, SSL_get_cipher (connection->ssl_tls));
+            logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_ASSERT_SSL_LEVEL_MESSAGE, SSL_get_cipher (connection->ssl_tls));
         }
 #endif
     } while (!connected);
@@ -172,12 +172,12 @@ network_read_stream (network_s *connection)
 {
     network_read_s *read_info = &connection->data_read;
     if (read_info == NULL) {
-        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_INVALID_READ_ARGS);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_INVALID_READ_ARGS);
         return;
     }
 
     if (read_info->length > NETWORK_READ_BUFFER && connection->temporary_file == NULL) {
-        my_print (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_READ_REQUEST_TOO_BIG);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_READ_REQUEST_TOO_BIG);
         return;
     }
 
@@ -226,8 +226,18 @@ network_read_stream (network_s *connection)
         if (connection->temporary_file != NULL && read_info->index - buffer_index) {
             fwrite (read_info->address, sizeof (char), read_info->index - buffer_index, connection->temporary_file);
 
-            // TODO: This would cause a lot of latency issues if the IO wait is too long
-            fflush (connection->temporary_file);
+            /*
+             * Only flush when the entire file has been downloaded.
+             * Flush operations include a lot of disk IO wait and we want to avoid them as much as possible
+             * for latency, while also making sure that our data is getting written to disk instead of staying
+             * in memory. This is afforded by the kernel and filesystem IO buffers caching the data until
+             * the buffer is filled and then doing an internal async IO flush.
+             */
+            if (read_info->index == read_info->length) {
+                fflush (connection->temporary_file);
+
+                printf ("Flush operations are too expensive to be used frequently\n");
+            }
         }
         buffer_index = read_info->index;
     }

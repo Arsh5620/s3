@@ -111,7 +111,7 @@ char *log_levels[] = {" [INFO] -> ", " [DEBUG] -> ", " [WARN] -> ", " [ERROR] ->
 
 // this function returns TRUE for no error, and FALSE if an error occur
 boolean
-logs_write (enum logs_level level, char *string, va_list args)
+logs_write_internal (enum logs_level level, char *string, va_list args)
 {
     if (log_settings.print_debug_logs == FALSE && level == LOG_LEVEL_DEBUG) {
         return TRUE;
@@ -168,6 +168,36 @@ logs_write (enum logs_level level, char *string, va_list args)
 
     fflush (logs.file_p);
     return (TRUE);
+}
+
+void
+logs_put (enum log_types logs_type, enum logs_level level, char *format, ...)
+{
+    char stdout_print = (logs_type & LOG_OUT_STDOUT) > 0;
+    char logs_print = (logs_type & LOG_OUT_LOGS) > 0;
+
+    if (stdout_print == 0 && logs_print == 0) {
+        return; // do nothing.
+    }
+
+    if (stdout_print) {
+        va_list args;
+        va_start (args, format);
+        vfprintf (stdout, format, args);
+        fprintf (stdout, LOG_FILE_NEWLINE);
+        va_end (args);
+    }
+
+    if (logs_print) {
+        va_list args;
+        va_start (args, format);
+        logs_write_internal (level, format, args);
+        va_end (args);
+    }
+
+    if (level == LOG_LEVEL_CATASTROPHIC) {
+        exit (LOG_LEVEL_CATASTROPHIC);
+    }
 }
 
 char **

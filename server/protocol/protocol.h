@@ -14,6 +14,7 @@
 #include "../memdbg/memory.h"
 #include "../networking/network.h"
 #include "../ssbs/list.h"
+#include "../ssbs/serializer.h"
 #include "./auth.h"
 #include <assert.h>
 #include <fcntl.h>
@@ -177,8 +178,7 @@ typedef struct request_s {
 typedef struct response_writer {
     char *address;
     size_t index;
-    size_t length;
-    size_t length_max;
+    size_t capacity;
 } response_writer_s;
 
 typedef struct response_s {
@@ -252,7 +252,9 @@ int
 s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size);
 
 long
-s3_action_request_writer (s3_response_s *in);
+s3_action_request_writer (network_s *network);
+long
+s3_action_dirlist_writer (network_s *response);
 
 int
 s3_postprocess_notification (network_s *network);
@@ -313,7 +315,7 @@ s3_action_send (network_s *network);
 int
 s3_handle_response (network_s *network, enum s3_response_code code);
 int
-s3_response_write (network_s *network, long (*writer) (s3_response_s *));
+s3_response_write (network_s *network, long (*writer) (network_s *));
 long
 s3_response_write_header (s3_response_s *response, char *buffer, ulong buffer_length);
 ulong
@@ -368,4 +370,8 @@ void
 s3_connection_abort (network_s *network, hash_table_s *client_table);
 void
 s3_connection_reset_with_response (network_s *network, enum s3_response_code response_code);
+void
+s3_dirlist_serialize_sqltype (enum sqltypes type, sqlite_result_s *result, serializer_t *serializer);
+boolean
+s3_connection_temp_file_required (enum s3_actions_enum action);
 #endif // PROTOCOL_INCLUDE_GAURD

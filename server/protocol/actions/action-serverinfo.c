@@ -4,10 +4,10 @@
 #define SERVER_INFO_CONST_RESPONSE STRING ("S3 server version " __SERVER_VERSION__ ", " __SERVER_INFO__)
 
 long
-s3_server_request_writer (s3_response_s *response)
+s3_server_request_writer (network_s *network)
 {
     string_s string = SERVER_INFO_CONST_RESPONSE;
-    return s3_response_writer_update (response, string);
+    return s3_response_writer_update (network->response, string);
 }
 
 int

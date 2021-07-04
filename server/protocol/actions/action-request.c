@@ -1,8 +1,9 @@
 #include "../protocol.h"
 
 long
-s3_action_request_writer (s3_response_s *response)
+s3_action_request_writer (network_s *network)
 {
+    s3_response_s *response = network->response;
     response_writer_s writer = response->writer_buffer;
     FILE *file = fopen (response->file_name->real_file_name.address, FILE_MODE_READBINARY);
 
@@ -12,19 +13,19 @@ s3_action_request_writer (s3_response_s *response)
 
     fseek (file, response->total_write_completed, SEEK_SET);
 
-    long write_available = writer.length_max - writer.length;
+    long write_available = writer.capacity - writer.index;
     long write_required = response->header_info.data_length - response->total_write_completed;
 
     long write_todo = write_required > write_available ? write_available : write_required;
 
     if (write_todo > 0) {
-        fread (writer.address + writer.length, sizeof (char), write_todo, file);
+        fread (writer.address + writer.index, sizeof (char), write_todo, file);
         response->total_write_completed += write_todo;
-        response->writer_buffer.length += write_todo;
+        response->writer_buffer.index += write_todo;
     }
 
     fclose (file);
-    return (write_todo);
+    return write_todo;
 }
 
 int

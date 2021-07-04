@@ -61,10 +61,13 @@ class PacketResponseReader:
             return self.buffer
 
     def get_data_string(self):
-        return(self.get_data_internal().decode("ascii"))
+        return self.get_data_internal().decode("ascii")
+
+    def dump_deserialized(self):
+        return deserialize.deserialize_all(self.get_data_internal())
 
     def get_data_byte_array(self):
-        return (self.get_data_internal())
+        return self.get_data_internal()
 
     def get_data_length(self):
-        return(self.length)
+        return self.length

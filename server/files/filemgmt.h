@@ -20,10 +20,42 @@ typedef struct filemgmt_file_name {
 #define FILEMGMT_COLUMN_SIZE "size"
 #define FILEMGMT_COLUMN_HASH "md5"
 
+#define FILEMGMT_COLUMN_FILENAME_INDEX 0
+#define FILEMGMT_COLUMN_DATE_INDEX 1
+#define FILEMGMT_COLUMN_SIZE_INDEX 2
+#define FILEMGMT_COLUMN_HASH_INDEX 3
+
+typedef struct __attribute__ ((aligned (8))) sqlite_result {
+    union result_value {
+        char _char;
+        short _short;
+        int _int32;
+        long _int64;
+        float _float;
+        double _double;
+        char *_char_p;
+        void *_void_p;
+    } value;
+    int size;
+} sqlite_result_s;
+
+typedef struct filemgmt_record {
+    sqlite_result_s filename;
+    sqlite_result_s date;
+    sqlite_result_s size;
+    sqlite_result_s md5;
+} filemgmt_record_s;
+
+#define FILEMGMT_COLUMN_COUNT sizeof (filemgmt_record_s) / sizeof (sqlite_result_s)
+
+extern enum sqltypes filemgmt_record_types[FILEMGMT_COLUMN_COUNT];
+
 #define FILEMGMT_QUERY_SELECT_EQUALS                                                                                             \
     "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ? LIMIT 1;"
 
-#define FILEMGMT_QUERY_SELECT_LIKE "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " LIKE ?;"
+#define FILEMGMT_QUERY_SELECT_LIKE_COUNT "SELECT COUNT(*) FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " LIKE ?;"
+
+#define FILEMGMT_QUERY_SELECT_LIKE "SELECT * FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " LIKE ?;"
 
 #define FILEMGMT_QUERY_DELETE "DELETE FROM " FILEMGMT_TABLE_NAME " WHERE " FILEMGMT_COLUMN_FILENAME " = ?;"
 
@@ -38,7 +70,6 @@ typedef struct filemgmt_file_name {
 
 #define FILEMGMT_TEMP_DIR "temp/"
 #define FILEMGMT_TEMP_FORMAT "%s/file(%ld).tmp"
-#define FILEMGMT_HASH_FORMAT "%s/hash(%ld).tmp"
 
 int
 filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length);
@@ -53,6 +84,12 @@ int
 filemgmt_folder_exists (string_s folder_name);
 int
 filemgmt_folder_exists_sqlite3 (string_s folder_name);
+my_list_s *
+filemgmt_folder_files (string_s folder_name);
+int
+filemgmt_read_sqlite_row_into_list (void *list_void, sqlite3_stmt *stmt);
+void
+database_read_column_for_type (sqlite3_stmt *stmt, enum sqltypes type, int column, sqlite_result_s *result);
 
 int
 filemgmt_file_add (string_s file_name);

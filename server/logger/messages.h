@@ -159,11 +159,4 @@
 #define S3_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT "Unexpected data from client for the requested action type."
 
 #define S3_RESPONSE_STRING_FAILED_AUTHENTICATION "Failed authentication."
-
-#define LOG_OUT_STDOUT 1
-#define LOG_OUT_LOGS 2
-#define LOG_OUT_BOTH 3
-
-void
-my_print (long logs_type, enum logs_level log_level, char *format, ...);
 #endif

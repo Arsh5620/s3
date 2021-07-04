@@ -13,9 +13,9 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, 
     s3_protocol_s protocol = {0};
     protocol.logs = logs_open (settings);
 
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
 
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
 
 #ifndef DEBUG
     network_connect_init_sync (port, &protocol.server, &protocol.server_socket, &protocol.ssl_context, &protocol.ssl_method);
@@ -23,11 +23,11 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, 
     network_connect_init_sync (port, &protocol.server, &protocol.server_socket);
 #endif
 
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
     protocol.client_table = hash_table_init (100, FALSE);
 
     if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS) {
-        my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_BACKUP_FOLDER_NOT_CREATED);
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_BACKUP_FOLDER_NOT_CREATED);
     }
 
     if (database_init (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME) == SUCCESS &&
@@ -35,10 +35,10 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, 
           2, AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE), FILEMGMT_TABLE_CREATE, sizeof (FILEMGMT_TABLE_CREATE)) == SUCCESS) {
         *success = TRUE;
     } else {
-        my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_MYSQL_FAILED_CONNECT);
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_MYSQL_FAILED_CONNECT);
     }
 
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_SETUP_FINISH);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_SETUP_FINISH);
     return (protocol);
 }
 
@@ -50,7 +50,7 @@ s3_epollctl_add_epollin (int epoll_fd, int socket_fd)
     listener_epoll.data.fd = socket_fd;
 
     if (epoll_ctl (epoll_fd, EPOLL_CTL_ADD, socket_fd, &listener_epoll) == -1) {
-        my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CTL_FAILED, strerror (errno));
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CTL_FAILED, strerror (errno));
     }
 }
 
@@ -59,7 +59,7 @@ s3_setup_epoll (s3_protocol_s *protocol)
 {
     protocol->epoll_fd = epoll_create1 (NULL_ZERO);
     if (protocol->epoll_fd == -1) {
-        my_print (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CREATE_FAILED, strerror (errno));
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CREATE_FAILED, strerror (errno));
     }
 
     s3_epollctl_add_epollin (protocol->epoll_fd, protocol->server);
@@ -83,13 +83,13 @@ void
 s3_connection_accept_loop_async (s3_protocol_s *protocol)
 {
     s3_setup_epoll (protocol);
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
 
     while (TRUE) {
         int epoll_count = epoll_wait (protocol->epoll_fd, protocol->epoll_events, protocol->epoll_events_count, -1);
 
         if (epoll_count == -1) {
-            my_print (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_EPOLL_WAIT_FAILED, strerror (errno));
+            logs_put (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_EPOLL_WAIT_FAILED, strerror (errno));
             continue;
         }
 
@@ -109,7 +109,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                 char *client_ip = inet_ntoa (client.sin_addr);
                 ushort client_port = ntohs (client.sin_port);
 
-                my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_CLIENT_CONNECT, client_ip, client_port);
+                logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_CLIENT_CONNECT, client_ip, client_port);
 
                 new_connection->data_read.address = m_malloc (NETWORK_READ_BUFFER);
                 new_connection->data_read.length = S3_PROTOCOL_MAGIC_LEN;
@@ -127,7 +127,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                 network_s *client_network = (network_s *) bucket.value.address;
 
                 if (epoll_event.events & EPOLLERR || epoll_event.events & EPOLLHUP || epoll_event.events & EPOLLRDHUP) {
-                    my_print (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote client hung up");
+                    logs_put (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote client hung up");
                     s3_connection_abort (client_network, &protocol->client_table);
                     continue;
                 }
@@ -136,12 +136,12 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
 
                 if (client_network->data_read.index == client_network->data_read.length &&
                     client_network->network_completed_action (client_network) != SUCCESS) {
-                    my_print (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote connection has been terminated");
+                    logs_put (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote connection has been terminated");
                 }
             }
         }
     }
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
 }
 
 void
@@ -190,7 +190,7 @@ s3_connection_headers_read (network_s *network)
     int error = s3_request_read_action (request);
     // TODO: call response handler here
 
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, REQUEST_ACTION_TYPE, request->action);
 
     char **params_assert = s3_asserts + (request->action * attribs_count);
     boolean assert = s3_attribs_assert (request->header_table, params_assert, attribs_count);
@@ -202,7 +202,12 @@ s3_connection_headers_read (network_s *network)
     error = s3_setup_environment (request);
     RESPONSE_RESET_RETURN (error != SUCCESS, network, error);
 
-    network->temporary_file = fopen (request->file_name.temp_file_name.address, FILE_MODE_WRITEBINARY);
+    if (s3_connection_temp_file_required (request->action)) {
+        network->temporary_file = fopen (request->file_name.temp_file_name.address, FILE_MODE_WRITEBINARY);
+    } else {
+        network->temporary_file = NULL;
+    }
+    
     network->response->file_name = &request->file_name;
 
     error = s3_action_preprocess (request);
@@ -221,6 +226,18 @@ s3_connection_headers_read (network_s *network)
         return SUCCESS;
     } else {
         return s3_connection_confirm_upload (network);
+    }
+}
+
+boolean
+s3_connection_temp_file_required (enum s3_actions_enum action)
+{
+    switch (action) {
+    case S3_ACTION_CREATE:
+    case S3_ACTION_UPDATE:
+        return TRUE;
+    default:
+        return FALSE;
     }
 }
 
@@ -454,12 +471,12 @@ s3_handle_close (s3_request_s *request, s3_response_s *response)
 }
 
 long
-s3_handle_response_string (s3_response_s *response)
+s3_handle_response_string (network_s *network)
 {
-    char *response_message = s3_response_messages[response->response_code];
+    char *response_message = s3_response_messages[network->response->response_code];
     if (response_message != NULL) {
         string_s response_string = STRING2 (response_message, strlen (response_message));
-        return s3_response_writer_update (response, response_string);
+        return s3_response_writer_update (network->response, response_string);
     } else {
         return SUCCESS;
     }
@@ -500,7 +517,7 @@ s3_handle_response (network_s *network, enum s3_response_code code)
 //             reason = PROTOCOL_SHUTDOWN_REASON_UNKNOWN;
 //             break;
 //         }
-//         my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
+//         logs_put (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
 //     }
 // }
 
@@ -509,7 +526,7 @@ s3_close (s3_protocol_s protocol)
 {
     // close (protocol.connection.client);
     // close (protocol.connection.server);
-    // my_print (MESSAGE_OUT_LOGS, LOGS_LEVEL_INFO, S3_CONNECTION_SHUTDOWN_CLEANUP);
+    // logs_put (MESSAGE_OUT_LOGS, LOGS_LEVEL_INFO, S3_CONNECTION_SHUTDOWN_CLEANUP);
     logs_close ();
 }
 
@@ -558,12 +575,16 @@ s3_action_send (network_s *network)
     s3_response_s *response = network->response;
 
     int result = 0;
-    long (*writer) (s3_response_s *) = NULL;
+    long (*writer) (network_s *) = NULL;
 
     switch (request->action) {
     case S3_ACTION_REQUEST:
         response->response_code = S3_RESPONSE_PACKET_DATA_READY;
         writer = s3_action_request_writer;
+        break;
+    case S3_ACTION_DIR:
+        response->response_code = S3_RESPONSE_PACKET_DATA_READY;
+        writer = s3_action_dirlist_writer;
         break;
 
     default:

@@ -13,8 +13,17 @@ typedef struct string {
 
 #define STRING(x)                                                                                                                \
     (string_s) { .address = x, .length = sizeof (x) - 1 }
+
 #define STRING2(x, y)                                                                                                            \
     (string_s) { .address = x, .length = y }
+
+// This macro uses a lot of memcpy and heap allocation, use sparingly
+#define APPEND_STRING(new_name, string, chars)                                                                                   \
+    char *new_name;                                                                                                              \
+    char __string_temp##new_name[string.length + sizeof (chars) - 1];                                                            \
+    memcpy (__string_temp##new_name, string.address, string.length);                                                             \
+    memcpy (__string_temp##new_name + string.length, chars, sizeof (chars) - 1);                                                 \
+    new_name = (char *) __string_temp##new_name;
 
 string_s
 string_new (ulong length);

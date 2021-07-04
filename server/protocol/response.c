@@ -7,28 +7,28 @@ s3_response_writer_update (s3_response_s *response, string_s write)
     response_writer_s writer = response->writer_buffer;
     response->header_info.data_length = write.length;
 
-    long avail_write = writer.length_max - writer.length;
+    long avail_write = writer.capacity - writer.index;
     long required_write = write.length - response->total_write_completed;
     long actual_write = required_write > avail_write ? avail_write : required_write;
 
     if (actual_write > 0) {
-        memcpy (writer.address + writer.length, write.address + response->total_write_completed, actual_write);
+        memcpy (writer.address + writer.index, write.address + response->total_write_completed, actual_write);
         response->total_write_completed += actual_write;
-        response->writer_buffer.length += actual_write;
+        response->writer_buffer.index += actual_write;
     }
 
     return actual_write;
 }
 
 int
-s3_response_write (network_s *network, long (*writer) (s3_response_s *))
+s3_response_write (network_s *network, long (*writer) (network_s *))
 {
     s3_response_s *response = network->response;
 
     char *memory = m_calloc (NETWORK_WRITE_BUFFER);
     response->writer_buffer.address = memory;
-    response->writer_buffer.length = S3_PROTOCOL_MAGIC_LEN;
-    response->writer_buffer.length_max = NETWORK_WRITE_BUFFER;
+    response->writer_buffer.index = S3_PROTOCOL_MAGIC_LEN;
+    response->writer_buffer.capacity = NETWORK_WRITE_BUFFER;
     response->total_write_completed = 0;
 
     kvpair_s pair = KVPAIR (S3_RESPONSE_KEY_NAME, sizeof (S3_RESPONSE_KEY_NAME) - 1, NULL, response->response_code);
@@ -52,7 +52,7 @@ s3_response_write (network_s *network, long (*writer) (s3_response_s *))
     // and then we ZERO the last 4 of the bits.
     result = result & 0XF ? (result + 0XF) & ~0XF : result;
 
-    response->writer_buffer.length += result;
+    response->writer_buffer.index += result;
 
     response->header_info.magic = S3_PROTOCOL_MAGIC;
     response->header_info.header_length = result;
@@ -65,7 +65,7 @@ s3_response_write (network_s *network, long (*writer) (s3_response_s *))
     int error = NETWORK_SUCCESS; // NETWORK_SUCCESS is alias for SUCCESS
     boolean header_written = FALSE;
     while (TRUE) {
-        total_write_completed = writer (response);
+        total_write_completed = writer (network);
 
         if (total_write_completed < 0) {
             return S3_RESPONSE_NETWORK_ERROR_WRITE;
@@ -76,7 +76,7 @@ s3_response_write (network_s *network, long (*writer) (s3_response_s *))
         }
 
         header_written = TRUE;
-        int error = network_write_stream (network, response->writer_buffer.address, response->writer_buffer.length);
+        int error = network_write_stream (network, response->writer_buffer.address, response->writer_buffer.index);
 
         if (error != NETWORK_SUCCESS) {
             break;
@@ -85,7 +85,7 @@ s3_response_write (network_s *network, long (*writer) (s3_response_s *))
         if (response->total_write_completed == response->header_info.data_length) {
             break;
         }
-        response->writer_buffer.length = 0;
+        response->writer_buffer.index = 0;
     }
 
     m_free (memory);

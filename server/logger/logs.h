@@ -22,6 +22,12 @@ typedef struct logs {
     boolean init;
 } logs_s;
 
+enum log_types {
+    LOG_OUT_STDOUT = 1,
+    LOG_OUT_LOGS = 2,
+    LOG_OUT_BOTH = 3,
+};
+
 enum logs_level {
     LOG_LEVEL_INFO = 0,
     LOG_LEVEL_DEBUG,
@@ -44,6 +50,7 @@ get_backtrace (int *backtrace_count);
 char *
 logs_gettime_s (char *format, char ns, long *len);
 boolean
-logs_write (enum logs_level level, char *string, va_list args);
-
+logs_write_internal (enum logs_level level, char *string, va_list args);
+void
+logs_put (enum log_types logs_type, enum logs_level log_level, char *format, ...);
 #endif

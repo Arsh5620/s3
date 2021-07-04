@@ -50,7 +50,7 @@ def generic_func():
         file_len = os.stat(file_name).st_size
         return file, file_len
 
-    def response_status(response):
+    def response_status(response, selection):
         response_code = response.get_headers()["response"]
 
         if not noout:
@@ -58,7 +58,11 @@ def generic_func():
             print("Server response length : " +
                   str(len(response.get_data_byte_array())))
         if (response_code != 4 or response.get_data_length() < 400) and not noout:
-            print("Server response said : " + str(response.get_data_string()))
+            if (selection == "6"):
+                print("Server response said : " + str(response.dump_deserialized()))
+            else:
+                print("Server response said : " + str(response.get_data_string()))
+
         return response_code
 
     while (True):
@@ -107,14 +111,14 @@ def generic_func():
         # now we have send the request to the server, and must wait for the server response
 
         response = PacketResponseReader(sock)
-        response_code = response_status(response)
+        response_code = response_status(response, selection)
 
         if (response_code == 1):
             PacketResponseWriter.send_data_with_confirm(
                 sock, file_reader.read())
 
             response = PacketResponseReader(sock)
-            response_code = response_status(response)
+            response_code = response_status(response, selection)
             if not noout:
                 if response_code == 2:
                     print("Data sent")
@@ -127,7 +131,7 @@ def generic_func():
             if not noout:
                 print("\nServer should be sending data now:\n")
             response = PacketResponseReader(sock)
-            response_code = response_status(response)
+            response_code = response_status(response, selection)
 
             if (response_code == 4):
                 if (response.file != None):

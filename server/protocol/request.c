@@ -14,7 +14,7 @@ s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size)
     // }
     // else if (data.error_code != SUCCESS)
     // {
-    //     my_print (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
+    //     logs_put (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
     //     return S3_RESPONSE_NETWORK_ERROR_READ;
     // }
 
@@ -44,7 +44,7 @@ s3_request_read_magic (size_t magic, boolean *valid)
     s3_header_s header_info = s3_header_parse8 (magic);
 
     if (header_info.magic != S3_PROTOCOL_MAGIC) {
-        my_print (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_ABORTED_CORRUPTION, magic);
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_ABORTED_CORRUPTION, magic);
         *valid = FALSE;
     }
 
@@ -64,12 +64,12 @@ s3_request_read_magic (size_t magic, boolean *valid)
 void
 s3_print_headers (my_list_s list)
 {
-    my_print (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, DESERIALIZER_PRINT_HEADERS, list.count);
 
     for (size_t i = 0; i < list.count; i++) {
         deserializer_value_t *pair = (deserializer_value_t *) my_list_get (list, i);
 
-        my_print (LOG_OUT_LOGS,
+        logs_put (LOG_OUT_LOGS,
                   LOG_LEVEL_DEBUG,
                   DESERIALIZER_PRINT_HEADERS_ROW_STRING,
                   pair->key_length,

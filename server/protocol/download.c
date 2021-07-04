@@ -120,7 +120,7 @@ s3_file_download (s3_request_s *request)
 
     // if (temp == NULL)
     // {
-    //     my_print (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
+    //     logs_put (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
     //     return (FAILED);
     // }
 
@@ -144,7 +144,7 @@ s3_file_download (s3_request_s *request)
 
     // long time_elapsed = (endtime - start_time) / (CLOCKS_PER_SEC / 1000);
 
-    // my_print (
+    // logs_put (
     //   MESSAGE_OUT_LOGS,
     //   LOGS_LEVEL_INFO,
     //   PROTOCOL_DOWNLOAD_COMPLETE,

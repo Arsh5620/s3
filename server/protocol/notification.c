@@ -19,7 +19,7 @@ s3_postprocess_notification (network_s *network)
     file_reader_s reader = file_reader_init (file);
     file_reader_next (&reader, 0, request->header_info.data_length);
 
-    my_print (LOG_OUT_BOTH, LOG_LEVEL_INFO, NOTIFICATION_GENERAL, (int) reader.readlength, (char *) reader.buffer);
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, NOTIFICATION_GENERAL, (int) reader.readlength, (char *) reader.buffer);
 
     file_reader_close (&reader);
     return (SUCCESS);

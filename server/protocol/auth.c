@@ -52,5 +52,5 @@ s3_auth_query_sqlite3 (char *username, int username_length, char *password, int 
 
     sqlite3_bind_text (stmt, 1, username, username_length, SQLITE_TRANSIENT);
     sqlite3_bind_text (stmt, 2, password, password_length, SQLITE_TRANSIENT);
-    return database_finish_stmt (stmt, SQLITE_ROW, "Authentication failed");
+    return database_rows_affected (stmt, SQLITE_ROW, "Authentication failed");
 }

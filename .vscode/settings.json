@@ -80,7 +80,14 @@
         "bitset": "c",
         "messages.h": "c",
         "build.h": "c",
-        "deserializer.h": "c"
+        "deserializer.h": "c",
+        "mutex": "c",
+        "serializer.h": "c",
+        "atomic": "c",
+        "bit": "c",
+        "memory_resource": "c",
+        "sstream": "c",
+        "stdexcept": "c"
     },
 	"python.pythonPath": "/usr/bin/python",
 	"python.linting.pylintEnabled": true,
