@@ -8,8 +8,8 @@
 #include <openssl/ssl.h>
 #include <sys/socket.h>
 
-#include "../general/define.h"
 #include "../crypto/sha.h"
+#include "../general/define.h"
 
 #define NETWORK_READ_BUFFER KB (4)
 #define NETWORK_WRITE_BUFFER KB (4)
@@ -17,6 +17,7 @@
 #define RSA_SERVER_CERT "certificates/CA-cert.pem"
 #define SSL_SUCCESS 1
 #define N_READ_SET(x) ({0, x})
+#define NETWORK_HOST_MAXLENGTH 256
 
 enum network_errors_enum {
     NETWORK_SUCCESS = 0,
@@ -65,7 +66,10 @@ typedef struct network_connection {
 void
 network_connect_init_sync (int port,
                            int *server,
-                           struct sockaddr_in *server_socket
+                           struct sockaddr_in *socket_v4, 
+                           struct sockaddr_in6 *socket_v6, 
+                           int *family, 
+                           int *sock_size
 #ifndef DEBUG
                            ,
                            SSL_CTX **ssl_context,
@@ -88,6 +92,8 @@ void
 network_read_stream (network_s *connection);
 void
 network_read_free (network_read_s data);
+char *
+network_gethostname (int family, struct sockaddr *sock, const char **error);
 
 int
 network_write_stream (network_s *network, char *buffer, ulong buffer_length);

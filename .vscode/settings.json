@@ -88,7 +88,10 @@
         "memory_resource": "c",
         "sstream": "c",
         "stdexcept": "c",
-        "sha.h": "c"
+        "sha.h": "c",
+        "types.h": "c",
+        "netdb.h": "c",
+        "tcp.h": "c"
     },
 	"python.pythonPath": "/usr/bin/python",
 	"python.linting.pylintEnabled": true,

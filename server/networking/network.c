@@ -4,10 +4,19 @@
  */
 
 #include <errno.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
+
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <linux/if_link.h>
+#include <netdb.h>
+#include <sys/socket.h>
 
 #include "../logger/logs.h"
 #include "../logger/messages.h"
@@ -21,7 +30,7 @@ void
 assert (int c1, char *fn, int err)
 {
     if (c1 == GENERAL_ERROR) {
-        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_MESSAGE, fn, strerror (errno), errno);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, NETWORK_ASSERT_MESSAGE, fn, strerror (errno), errno);
     }
 }
 
@@ -33,9 +42,94 @@ assert_ssl (int c1, int c2, char *fn, int err)
         char *buffer = m_calloc (buff_len);
         ERR_error_string_n (ERR_get_error (), buffer, buff_len);
 
-        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_ASSERT_SSL_MESSAGE, fn, errno, buffer);
-        free (buffer); // unreachable code
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, NETWORK_ASSERT_SSL_MESSAGE, fn, errno, buffer);
+        m_free (buffer); // unreachable code
     }
+}
+
+// @interface: null terminated interface name string
+// @returns: struct sockaddr for the found interface
+// check the @error for errors, only last error recorded
+// check `man 7 getifaddrs` for more details
+int
+network_iterate_all_available_ips (char *interface,
+                                   const char **error,
+                                   struct sockaddr_in *socket_v4,
+                                   struct sockaddr_in6 *socket_v6,
+                                   int *sock_family,
+                                   int *sock_size)
+{
+    struct ifaddrs *if_addresses;
+    int family;
+
+    if (getifaddrs (&if_addresses) == -1) {
+        if (error != NULL) {
+            *error = strerror (errno);
+        }
+
+        return FAILED;
+    }
+
+    struct ifaddrs *selected_address = NULL;
+    struct ifaddrs *if_address = if_addresses;
+    for (; if_address != NULL; if_address = if_address->ifa_next) {
+        if (if_address->ifa_addr == NULL)
+            continue;
+
+        family = if_address->ifa_addr->sa_family;
+
+        if (family != AF_INET && family != AF_INET6) {
+            continue;
+        }
+
+        if (interface != NULL) {
+            if (strcmp (if_address->ifa_name, interface)) {
+                selected_address = if_address;
+            }
+        } else {
+            selected_address = if_address;
+        }
+
+        char *family_str = family == AF_INET ? "AF_INET" : family == AF_INET6 ? "AF_INET6" : "UNKNOWN";
+        char *host = network_gethostname (family, if_address->ifa_addr, error);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_DEBUG, NETWORK_IP_DEBUG, if_address->ifa_name, family_str, family, host);
+        m_free (host);
+    }
+
+    if (selected_address != NULL) {
+        switch (selected_address->ifa_addr->sa_family) {
+        case AF_INET:
+            *socket_v4 = *(struct sockaddr_in *) selected_address->ifa_addr;
+            *sock_family = AF_INET;
+            *sock_size = sizeof (struct sockaddr_in);
+            break;
+        case AF_INET6:
+            *socket_v6 = *(struct sockaddr_in6 *) selected_address->ifa_addr;
+            *sock_family = AF_INET6;
+            *sock_size = sizeof (struct sockaddr_in6);
+            break;
+        }
+    }
+
+    freeifaddrs (if_addresses);
+
+    return socket_v4 != NULL || socket_v6 != NULL ? SUCCESS : FAILED;
+}
+
+char *
+network_gethostname (int family, struct sockaddr *sock, const char **error)
+{
+    char *host = m_malloc (NETWORK_HOST_MAXLENGTH);
+    int struct_size = family == AF_INET ? sizeof (struct sockaddr_in) : sizeof (struct sockaddr_in6);
+    int errn = getnameinfo (sock, struct_size, host, NETWORK_HOST_MAXLENGTH, NULL, 0, NI_NUMERICHOST);
+    if (errn != 0) {
+        if (error != NULL) {
+            *error = gai_strerror (errn);
+        }
+        memcpy (host, "none", sizeof ("none"));
+    }
+
+    return host;
 }
 
 /*
@@ -45,7 +139,10 @@ assert_ssl (int c1, int c2, char *fn, int err)
 void
 network_connect_init_sync (int port,
                            int *server,
-                           struct sockaddr_in *server_socket
+                           struct sockaddr_in *socket_v4,
+                           struct sockaddr_in6 *socket_v6,
+                           int *family,
+                           int *sock_size
 #ifndef DEBUG
                            ,
                            SSL_CTX **ssl_context,
@@ -93,13 +190,23 @@ network_connect_init_sync (int port,
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
 #endif
+    const char *error = NULL;
 
-    *server = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    int errn = network_iterate_all_available_ips (NULL, &error, socket_v4, socket_v6, family, sock_size);
+
+    if (errn != SUCCESS) {
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, "Cannot get the IP addresses available on the local machine: %s", error);
+    }
+
+    *server = socket (*family, SOCK_STREAM, IPPROTO_TCP);
+
+    if (*family == AF_INET) {
+        socket_v4->sin_port = htons (port);
+    } else {
+        socket_v6->sin6_port = htons (port);
+    }
+
     assert (*server, "socket", SERVER_SOCK_INIT_FAILED);
-
-    server_socket->sin_addr.s_addr = INADDR_ANY;
-    server_socket->sin_family = AF_INET;
-    server_socket->sin_port = htons (port);
 
 #ifndef RELEASE_BUILD
     int enable = 1;
@@ -110,7 +217,8 @@ network_connect_init_sync (int port,
     assert (result, "setsockopt", SERVER_SET_SOCKOPT_FAILED);
 #endif
 
-    result = bind (*server, (const struct sockaddr *) server_socket, sizeof (struct sockaddr_in));
+    const struct sockaddr *address = *family == AF_INET ? (struct sockaddr *) socket_v4 : (struct sockaddr *) socket_v6;
+    result = bind (*server, (const struct sockaddr *) address, *sock_size);
     assert (result, "bind", SERVER_BIND_FAILED);
 
     result = listen (*server, NETWORK_QUEQUE);
@@ -172,12 +280,12 @@ network_read_stream (network_s *connection)
 {
     network_read_s *read_info = &connection->data_read;
     if (read_info == NULL) {
-        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_INVALID_READ_ARGS);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, NETWORK_INVALID_READ_ARGS);
         return;
     }
 
     if (read_info->length > NETWORK_READ_BUFFER && connection->temporary_file == NULL) {
-        logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, NETWORK_READ_REQUEST_TOO_BIG);
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, NETWORK_READ_REQUEST_TOO_BIG);
         return;
     }
 

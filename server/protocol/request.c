@@ -46,9 +46,10 @@ s3_request_read_magic (size_t magic, boolean *valid)
     if (header_info.magic != S3_PROTOCOL_MAGIC) {
         logs_put (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_ABORTED_CORRUPTION, magic);
         *valid = FALSE;
+    } else {
+        *valid = TRUE;
     }
 
-    *valid = TRUE;
     return header_info;
 }
 

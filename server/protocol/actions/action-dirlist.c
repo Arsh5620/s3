@@ -27,6 +27,8 @@ s3_action_dirlist_writer (network_s *network)
         serializer_free (*(serializer_t *) network->request->additional_data);
     }
 
+    m_free(network->request->additional_data);
+    network->request->additional_data = NULL;
     return write_todo;
 }
 

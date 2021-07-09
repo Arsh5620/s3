@@ -206,7 +206,10 @@ typedef struct {
     struct epoll_event *epoll_events;
 
     int server;
-    struct sockaddr_in server_socket;
+    struct sockaddr_in server_sockv4;
+    struct sockaddr_in6 server_sockv6;
+    int sock_family;
+    int sock_size;
 
 // These variables are only required when using SSL, so they are not included in debug builds
 #ifndef DEBUG
@@ -356,6 +359,8 @@ s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);
 
 void
 hexdump (char *string, int string_length, int line_width);
+uchar *
+hexstring (uchar *string, int string_length);
 
 int
 s3_connection_magic_read (network_s *data);
@@ -374,4 +379,6 @@ void
 s3_dirlist_serialize_sqltype (enum sqltypes type, sqlite_result_s *result, serializer_t *serializer);
 boolean
 s3_connection_temp_file_required (enum s3_actions_enum action);
+void
+s3_exit_sigint_fired ();
 #endif // PROTOCOL_INCLUDE_GAURD

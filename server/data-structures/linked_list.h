@@ -2,8 +2,8 @@
 #define LINKED_LIST_INCLUDE_GAURD
 
 typedef struct linked_list_node {
-    char *child;
-    char *parent;
+    struct linked_list_node *child;
+    struct linked_list_node *parent;
     char *data;
     long length;
 } linked_list_node_s;

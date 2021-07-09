@@ -190,5 +190,6 @@ hash_table_free (hash_table_s table)
 {
     if (table.memory) {
         free (table.memory);
+        table.memory = NULL;
     }
 }

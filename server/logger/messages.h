@@ -6,6 +6,8 @@
 #include "../protocol/build.h"
 #include <sqlite3.h>
 
+#define EMPTY_STRING ""
+
 #define PROTOCOL_LOG_INIT_COMPLETE "logging sub-system has been started"
 
 #define PROTOCOL_NETWORK_SBS_INIT "starting network sub-system now"
@@ -91,6 +93,8 @@
 
 #define NETWORK_MODE_SSL_INITED "network successfully initialized SSL mode"
 
+#define NETWORK_IP_DEBUG "Discovered interface %-8s %-10s (%2d) [%s]"
+
 #define MYSQLBIND_QUERY_FAILED                                                                                                   \
     "mysql bind setup failed, setup required"                                                                                    \
     " for querying the server, error: %s"
@@ -114,9 +118,17 @@
 #define FILEMGMT_RECORD_EXISTS "file \"%.*s\" found"
 
 #define MEMORY_ALLOCATION_LOG                                                                                                    \
-    "{\n\t{address:\"%p\", new address:\"%p\"}\n\t, "                                                                            \
-    "{request type: \"%s\", request size: %d}\n\t, "                                                                             \
-    "{file name: \"%s\", file line number: %d}\n}"
+    "{\n\tAddress:\"%p [%p]\"\n"                                                                                                        \
+    "\tRequest: \"%s (%d)\"\n"                                                                                                       \
+    "\tLocation: \"%s:%d\"\n}"
+
+#define MEMORY_UNFREE_LOG_TITLE "ADDRESS:REALLOC-ADDRESS [LAST-TYPE]"
+
+#define MEMORY_UNFREE_LOG "* %p:%p [%s]"
+
+#define MEMORY_UNFREE_LOG_UPDATES_TITLE ">\tFILE:LINE [SIZE:TYPE]"
+
+#define MEMORY_UNFREE_LOG_UPDATES ">\t%s:%d [%d:%s]"
 
 #define MEMORY_ALLOCATION_ERROR MEMORY_ALLOCATION_LOG ", error: %s"
 

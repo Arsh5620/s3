@@ -35,7 +35,7 @@ s3_auth_query (s3_request_s *request)
 
     uchar sha_hash[SHA256_LENGTH] = {0};
     uchar sha_hash_hex[SHA256_HEXLENGTH] = {0};
-    
+
     sha_256 (sha_hash, (uchar *) password, secret_length);
     sha_256_hex (sha_hash_hex, sha_hash);
 

@@ -16,7 +16,7 @@
 #define MB(x) (KB (x) * 1024)
 
 #define NETWORK_QUEQUE 8
-#define NETWORK_PORT 4096
+#define NETWORK_PORT 5665
 #define APPLICATION_NAME "s3"
 enum exit_codes_enum {
     SERVER_ERROR_TOLOGS = 1,

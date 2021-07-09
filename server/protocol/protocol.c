@@ -1,6 +1,8 @@
 #include "protocol.h"
 #include "../ssbs/deserializer.h"
 
+boolean sigint_action_flag = FALSE;
+
 /**
  * This is the main functions that sets up everything, and this functions should only return when
  * success is 'true' otherwise it should kill the app. (Unless ofcourse if we have a bug)
@@ -18,16 +20,24 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
 
 #ifndef DEBUG
-    network_connect_init_sync (port, &protocol.server, &protocol.server_socket, &protocol.ssl_context, &protocol.ssl_method);
+    network_connect_init_sync (port,
+                               &protocol.server,
+                               &protocol.server_sockv4,
+                               &protocol.server_sockv6,
+                               &protocol.sock_family,
+                               &protocol.sock_size,
+                               &protocol.ssl_context,
+                               &protocol.ssl_method);
 #else
-    network_connect_init_sync (port, &protocol.server, &protocol.server_socket);
+    network_connect_init_sync (
+      port, &protocol.server, &protocol.server_sockv4, &protocol.server_sockv6, &protocol.sock_family, &protocol.sock_size);
 #endif
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
     protocol.client_table = hash_table_init (100, FALSE);
 
     if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS) {
-        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_BACKUP_FOLDER_NOT_CREATED);
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_FATAL, PROTOCOL_BACKUP_FOLDER_NOT_CREATED);
     }
 
     if (database_init (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME) == SUCCESS &&
@@ -35,7 +45,7 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, 
           2, AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE), FILEMGMT_TABLE_CREATE, sizeof (FILEMGMT_TABLE_CREATE)) == SUCCESS) {
         *success = TRUE;
     } else {
-        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_MYSQL_FAILED_CONNECT);
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_FATAL, PROTOCOL_MYSQL_FAILED_CONNECT);
     }
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_SETUP_FINISH);
@@ -50,7 +60,7 @@ s3_epollctl_add_epollin (int epoll_fd, int socket_fd)
     listener_epoll.data.fd = socket_fd;
 
     if (epoll_ctl (epoll_fd, EPOLL_CTL_ADD, socket_fd, &listener_epoll) == -1) {
-        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CTL_FAILED, strerror (errno));
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_FATAL, PROTOCOL_EPOLL_CTL_FAILED, strerror (errno));
     }
 }
 
@@ -59,7 +69,7 @@ s3_setup_epoll (s3_protocol_s *protocol)
 {
     protocol->epoll_fd = epoll_create1 (NULL_ZERO);
     if (protocol->epoll_fd == -1) {
-        logs_put (LOG_OUT_LOGS, LOG_LEVEL_CATASTROPHIC, PROTOCOL_EPOLL_CREATE_FAILED, strerror (errno));
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_FATAL, PROTOCOL_EPOLL_CREATE_FAILED, strerror (errno));
     }
 
     s3_epollctl_add_epollin (protocol->epoll_fd, protocol->server);
@@ -77,6 +87,12 @@ s3_make_connection_async (int epoll_fd, int client_fd)
     s3_epollctl_add_epollin (epoll_fd, client_fd);
 }
 
+void
+s3_exit_sigint_fired ()
+{
+    sigint_action_flag = TRUE;
+}
+
 // This is the main loop of the application, everything happens here, after exiting this function
 // the program will exit
 void
@@ -85,7 +101,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
     s3_setup_epoll (protocol);
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
 
-    while (TRUE) {
+    while (TRUE && sigint_action_flag == FALSE) {
         int epoll_count = epoll_wait (protocol->epoll_fd, protocol->epoll_events, protocol->epoll_events_count, -1);
 
         if (epoll_count == -1) {
@@ -128,6 +144,8 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
 
                 if (epoll_event.events & EPOLLERR || epoll_event.events & EPOLLHUP || epoll_event.events & EPOLLRDHUP) {
                     logs_put (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote client hung up");
+
+                    s3_connection_reset_new_packet (client_network);
                     s3_connection_abort (client_network, &protocol->client_table);
                     continue;
                 }
@@ -136,12 +154,28 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
 
                 if (client_network->data_read.index == client_network->data_read.length &&
                     client_network->network_completed_action (client_network) != SUCCESS) {
+                    // TODO: Actually terminate the remote client
                     logs_put (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote connection has been terminated");
+
+                    s3_connection_reset_new_packet (client_network);
+                    s3_connection_abort (client_network, &protocol->client_table);
                 }
             }
         }
     }
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
+
+#ifdef DEBUG
+    if (sigint_action_flag == TRUE) {
+        printf ("\n\n*************************************\n"
+                "Please wait while we try to close everything...\n"
+                "If this is taking too long, open another terminal and use: kill -SIGKILL %d\n"
+                "*************************************\n",
+                getpid ());
+        memory_debug_print_unfreed ();
+    }
+#endif
+    printf ("\nGoodbye!!\n");
 }
 
 void
@@ -150,6 +184,7 @@ s3_connection_abort (network_s *network, hash_table_s *client_table)
     close (network->client);
     hash_table_remove (client_table, (hash_input_u){.number = network->client}, 0);
     m_free (network->data_read.address);
+    m_free (network);
 }
 
 int
@@ -319,8 +354,10 @@ s3_connection_reset_new_packet (network_s *network)
         network->temporary_file = NULL;
     }
 
-    // Don't bother checking if file successfully removed
-    unlink (network->request->file_name.temp_file_name.address);
+    if (network->request != NULL) {
+        // Don't bother checking if file successfully removed
+        unlink (network->request->file_name.temp_file_name.address);
+    }
 
     // We just finished processing this packet, reset everything
     network->data_read.index = 0;
@@ -434,11 +471,33 @@ s3_connection_alloc (network_s *data)
 void
 s3_connection_free (network_s *data)
 {
-    m_free (data->request);
-    m_free (data->response);
+    if (data->request != NULL) {
+        my_list_free (data->request->header_list);
+        hash_table_free (data->request->header_table);
+        m_free (data->request);
+    }
+
+    if (data->response != NULL) {
+        my_list_free (data->response->header_list);
+        m_free (data->response);
+    }
 
     data->request = NULL;
     data->response = NULL;
+}
+
+uchar *
+hexstring (uchar *string, int string_length)
+{
+    uchar *memory = m_malloc (string_length * 2 + 1);
+    memory[string_length * 2] = 0;
+
+    for (size_t i = 0; i < string_length; i++) {
+        memory[i * 2] = sha_uchar_to_hex (string[i] & 0xF);
+        memory[i * 2 + 1] = sha_uchar_to_hex (string[i] & 0xF0 >> 4);
+    }
+
+    return memory;
 }
 
 void
@@ -453,21 +512,21 @@ hexdump (char *string, int string_length, int line_width)
     printf ("\n");
 }
 
-void
-s3_handle_close (s3_request_s *request, s3_response_s *response)
-{
-    m_free (request->header_raw);
-    my_list_free (request->header_list);
-    my_list_free (response->header_list);
-    hash_table_free (request->header_table);
-    if (request->additional_data) {
-        m_free (request->additional_data);
-        request->additional_data = NULL_ZERO;
-    }
-    m_free_null_check (request->file_name.file_name.address);
-    m_free_null_check (request->file_name.real_file_name.address);
-    m_free_null_check (request->file_name.temp_file_name.address);
-}
+// void
+// s3_handle_close (s3_request_s *request, s3_response_s *response)
+// {
+//     m_free (request->header_raw);
+//     my_list_free (request->header_list);
+//     my_list_free (response->header_list);
+//     hash_table_free (request->header_table);
+//     if (request->additional_data) {
+//         m_free (request->additional_data);
+//         request->additional_data = NULL_ZERO;
+//     }
+//     m_free_null_check (request->file_name.file_name.address);
+//     m_free_null_check (request->file_name.real_file_name.address);
+//     m_free_null_check (request->file_name.temp_file_name.address);
+// }
 
 long
 s3_handle_response_string (network_s *network)

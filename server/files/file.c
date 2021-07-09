@@ -126,7 +126,7 @@ void
 file_reader_close (file_reader_s *reader)
 {
     if (reader->buffer) {
-        free (reader->buffer);
+        m_free (reader->buffer);
     }
 }
 

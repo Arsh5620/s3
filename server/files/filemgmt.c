@@ -96,7 +96,7 @@ filemgmt_folder_files (string_s folder_name)
 
     sqlite3_bind_text (stmt, 1, my_string, folder_name.length + 1, SQLITE_TRANSIENT);
 
-    my_list_s *list = m_malloc (sizeof (list));
+    my_list_s *list = m_malloc (sizeof (*list));
     my_list_s tmp_list = my_list_new (10, sizeof (filemgmt_record_s));
     memcpy (list, &tmp_list, sizeof (*list));
 

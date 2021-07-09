@@ -9,9 +9,9 @@ linked_list_push (linked_list_s *list, char *data, long length)
     if (list->root == NULL) {
         list->root = node;
     }
-    node->parent = (char *) list->last;
+    node->parent = list->last;
     if (list->last != NULL)
-        list->last->child = (char *) node;
+        list->last->child = node;
 
     if (length) {
         node->data = malloc (length);

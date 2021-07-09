@@ -135,18 +135,18 @@ __free (void *address, char *file_name, long line_no)
 }
 
 char *
-memory_log_gettype (int i)
+memory_log_gettype (malloc_enum i)
 {
     static char *mem_types[] = {"malloc", "calloc", "realloc", "free"};
-    return (mem_types[i]);
+    return mem_types[i];
 }
 
 void
 memory_log_handle (malloc_enum type, malloc_node_s *node, malloc_update_s *update)
 {
 #ifdef MEMORY_DEBUG_LOG
-    logs_put (MESSAGE_OUT_LOGS,
-              LOGGER_LEVEL_DEBUG,
+    logs_put (LOG_OUT_LOGS,
+              LOG_LEVEL_DEBUG,
               MEMORY_ALLOCATION_LOG,
               node->address,
               node->new_addr,
@@ -167,6 +167,47 @@ memory_cleanup ()
         linked_list_free (&node->updates);
     }
     my_list_free (allocations.list);
+}
+
+void
+memory_debug_print_unfreed ()
+{
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, MEMORY_UNFREE_LOG_TITLE);
+    for (size_t i = 0; i < allocations.list.count; i++) {
+        malloc_node_s *node = (malloc_node_s *) my_list_get (allocations.list, i);
+        boolean is_alloc = hash_table_get (allocations.hash, (hash_input_u){.address = node->address}, 0).is_occupied;
+        if (is_alloc) {
+            logs_put (LOG_OUT_LOGS,
+                      LOG_LEVEL_DEBUG,
+                      MEMORY_UNFREE_LOG,
+                      node->address,
+                      node->new_addr,
+                      memory_log_gettype (node->last_update));
+
+            linked_list_s update_list = node->updates;
+            linked_list_node_s *node = update_list.root;
+
+            if (node != NULL) {
+                logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, MEMORY_UNFREE_LOG_UPDATES_TITLE);
+            }
+
+            while (node != NULL) {
+                malloc_update_s *update = (malloc_update_s *) node->data;
+
+                logs_put (LOG_OUT_LOGS,
+                          LOG_LEVEL_DEBUG,
+                          MEMORY_UNFREE_LOG_UPDATES,
+                          update->file_name,
+                          update->line_no,
+                          update->size,
+                          memory_log_gettype (update->type));
+
+                node = node->child;
+            }
+
+            logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, EMPTY_STRING);
+        }
+    }
 }
 
 #else

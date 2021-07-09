@@ -10,7 +10,7 @@
 #define LOG_DATE_FORMAT "%F %T"
 #define LOG_DATE_FORMAT_NS "%s [%.6ld]"
 #define LOG_FILE_NAME "%s/" APPLICATION_NAME " %s.log"
-#define LOG_FILE_NEWLINE "\r\n"
+#define LOG_FILE_NEWLINE "\n"
 #define LOG_FILE_OUTPUT "[" LOG_DATE_FORMAT ".%4d] %s "
 #define LOG_MAX_FILENAMELENGTH 256
 #define LOG_MAX_SPRINTFBUFFER 2048
@@ -33,7 +33,7 @@ enum logs_level {
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_WARN,
     LOG_LEVEL_ERROR,
-    LOG_LEVEL_CATASTROPHIC // The logging subsystem will kill the program
+    LOG_LEVEL_FATAL // The logging subsystem will kill the program
 };
 
 typedef struct {
@@ -45,6 +45,10 @@ logs_s
 logs_open (s3_log_settings_s settings);
 void
 logs_close ();
+void
+logs_enable_backtrace ();
+void
+logs_disable_backtrace ();
 char **
 get_backtrace (int *backtrace_count);
 char *

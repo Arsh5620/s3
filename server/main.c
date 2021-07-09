@@ -43,9 +43,55 @@ print_banner ()
     printf ("=====================================\n");
 }
 
+void
+sigint_interrupt_handler (int v)
+{
+    s3_exit_sigint_fired ();
+}
+
+void
+sigsegv_interrupt_handler (int v)
+{
+    logs_enable_backtrace ();
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, "Program has received SIGSEGV (Segmentation Fault)");
+    logs_close ();
+}
+
+void
+print_connection_banner (s3_protocol_s *protocol)
+{
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "=====================================");
+    char *hex;
+
+    if (protocol->sock_family == AF_INET) {
+        struct sockaddr_in sockaddr = protocol->server_sockv4;
+        hex = (char *) hexstring ((uchar *) &sockaddr, sizeof (struct sockaddr_in));
+    } else {
+        struct sockaddr_in6 sockaddr = protocol->server_sockv6;
+        hex = (char *) hexstring ((uchar *) &sockaddr, sizeof (struct sockaddr_in6));
+    }
+
+    struct sockaddr *sock = protocol->sock_family == AF_INET ? (struct sockaddr *) &protocol->server_sockv4
+                                                             : (struct sockaddr *) &protocol->server_sockv6;
+
+    const char *error = NULL;
+    char *hostname = network_gethostname (protocol->sock_family, sock, &error);
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_DEBUG, "Bound to address: %s", hostname);
+    m_free (hostname);
+
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Connection Key: %s", hex);
+    m_free (hex);
+
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "=====================================\n");
+}
+
 int
 main (int argc, char *argv[])
 {
+    // Handle signals so when debugging we can show all the memory that was not freed
+    signal (SIGINT, sigint_interrupt_handler);
+    signal (SIGSEGV, sigsegv_interrupt_handler);
+
     s3_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = FALSE};
     argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
 
@@ -54,6 +100,8 @@ main (int argc, char *argv[])
 
     boolean success;
     s3_protocol_s protocol = s3_connection_initialize_sync (NETWORK_PORT, settings, &success);
+    print_connection_banner (&protocol);
+
     if (success) {
         s3_connection_accept_loop_async (&protocol);
     }

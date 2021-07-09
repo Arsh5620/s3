@@ -37,11 +37,13 @@ typedef struct {
 void
 memory_cleanup ();
 char *
-memory_log_gettype (int i);
+memory_log_gettype (malloc_enum i);
 void
 memory_log_handle (malloc_enum type, malloc_node_s *node, malloc_update_s *update);
 long
 memory_get_allocation_size (malloc_node_s *node);
+void
+memory_debug_print_unfreed ();
 #endif
 
 void

@@ -9,15 +9,15 @@ import sys
 import inspect
 from packet_response_reader import PacketResponseReader
 from packet_response_writer import PacketResponseWriter
-
+commands_processed = 0
 
 def generic_func():
     sock = socket.socket()
-    hostname = "localhost"
+    hostname = "fe80::531d:f483:5173:7675%wlp2s0"
     noout = False
-    commands_processed = 0
+    global commands_processed
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM, 0)
     if len(sys.argv) > 1 and sys.argv[1] == "ssl":
         sock = ssl.wrap_socket(
             sock, ssl_version=ssl.PROTOCOL_TLS, ciphers="ADH-AES256-SHA")
@@ -30,12 +30,15 @@ def generic_func():
 
     if not noout:
         print("Trying to connect to a s3 server on " + str(hostname))
-    sock.connect((hostname, 4096))
+    
+    address = socket.getaddrinfo(hostname, 5665)
+    print(address[0][4])
+    sock.connect(address[0][4])
 
     if not noout:
         print("Client port number: " + str(sock.getsockname()[1]) + "\n")
 
-    file_name = "../../../root/Arshdeep.Jpeg"
+    file_name = "Arshdeep.Jpeg"
     username = "arshdeep"
     password = "SomeSecretKeyWhichIsReallyLong"
     # accept and send are not action types but response action types
@@ -101,7 +104,7 @@ def generic_func():
             selected_action = action_types[4]
         elif selection == "6":
             selected_action = action_types[5]
-            extra_headers = "dirname=root/"
+            extra_headers = "dirname="
         elif not noout:
             print("Not a valid option\n")
             continue
@@ -146,7 +149,7 @@ def generic_func():
 
 
 # try:
-#     generic_func(commands_processed)
+#     generic_func()
 # except:
 #     print("Total commands processed " + str(commands_processed))
 

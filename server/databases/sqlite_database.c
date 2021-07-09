@@ -7,7 +7,7 @@ sqlite3 *sqlite_connection;
 void
 database_print_sqlite_error (char *error_message)
 {
-    logs_put (LOG_OUT_BOTH, LOG_LEVEL_CATASTROPHIC, error_message, sqlite3_errmsg (sqlite_connection));
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, error_message, sqlite3_errmsg (sqlite_connection));
 }
 
 int

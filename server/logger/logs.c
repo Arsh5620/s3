@@ -107,12 +107,28 @@ logs_open (s3_log_settings_s settings)
     return (log);
 }
 
-char *log_levels[] = {" [INFO] -> ", " [DEBUG] -> ", " [WARN] -> ", " [ERROR] -> ", " [CATASTROPHIC] -> "};
+char *log_levels[] = {" [INFO] -> ", " [DEBUG] -> ", " [WARN] -> ", " [ERROR] -> ", " [FATAL] -> "};
+
+void
+logs_enable_backtrace ()
+{
+    log_settings.print_stack_frames = TRUE;
+}
+
+void
+logs_disable_backtrace ()
+{
+    log_settings.print_stack_frames = FALSE;
+}
 
 // this function returns TRUE for no error, and FALSE if an error occur
 boolean
 logs_write_internal (enum logs_level level, char *string, va_list args)
 {
+    if (logs.file_p == NULL){
+        return FALSE;
+    }
+
     if (log_settings.print_debug_logs == FALSE && level == LOG_LEVEL_DEBUG) {
         return TRUE;
     }
@@ -130,7 +146,7 @@ logs_write_internal (enum logs_level level, char *string, va_list args)
     free (date);
 
     char *log_level;
-    if (level >= LOG_LEVEL_INFO && level <= LOG_LEVEL_CATASTROPHIC) {
+    if (level >= LOG_LEVEL_INFO && level <= LOG_LEVEL_FATAL) {
         log_level = log_levels[level];
     } else {
         log_level = "LOG_LEVEL_NOT_KNOWN";
@@ -195,8 +211,8 @@ logs_put (enum log_types logs_type, enum logs_level level, char *format, ...)
         va_end (args);
     }
 
-    if (level == LOG_LEVEL_CATASTROPHIC) {
-        exit (LOG_LEVEL_CATASTROPHIC);
+    if (level == LOG_LEVEL_FATAL) {
+        exit (LOG_LEVEL_FATAL);
     }
 }
 

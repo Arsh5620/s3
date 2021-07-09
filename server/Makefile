@@ -22,7 +22,7 @@ EXECUTABLE=main
 all: build-file clean-logs update-revision-build
 
 $(OBJFILES): %.o: %.c $(HEADERFILES)
-	$(CC) -c $< -o $@ $(COMMONFLAGS) $(CFLAGS) -DS3
+	$(CC) -c $< -o $@ $(COMMONFLAGS) $(CFLAGS) -DS3 $(ADDITIONAL_FLAGS)
 
 build-file: $(OBJFILES)
 	$(CC) -pg -rdynamic  -o$(EXECUTABLE) $(OBJFILES) $(LINKFLAGS)
