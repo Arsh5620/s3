@@ -181,6 +181,11 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
 void
 s3_connection_abort (network_s *network, hash_table_s *client_table)
 {
+#ifndef DEBUG
+    SSL_shutdown (network->ssl_tls);
+    SSL_free (network->ssl_tls);
+#endif
+
     close (network->client);
     hash_table_remove (client_table, (hash_input_u){.number = network->client}, 0);
     m_free (network->data_read.address);
@@ -469,21 +474,25 @@ s3_connection_alloc (network_s *data)
 }
 
 void
-s3_connection_free (network_s *data)
+s3_connection_free (network_s *network)
 {
-    if (data->request != NULL) {
-        my_list_free (data->request->header_list);
-        hash_table_free (data->request->header_table);
-        m_free (data->request);
+    if (network->request != NULL) {
+        m_free_null_check (network->request->file_name.file_name.address);
+        m_free_null_check (network->request->file_name.temp_file_name.address);
+        m_free_null_check (network->request->file_name.real_file_name.address);
+
+        my_list_free (network->request->header_list);
+        hash_table_free (network->request->header_table);
+        m_free (network->request);
     }
 
-    if (data->response != NULL) {
-        my_list_free (data->response->header_list);
-        m_free (data->response);
+    if (network->response != NULL) {
+        my_list_free (network->response->header_list);
+        m_free (network->response);
     }
 
-    data->request = NULL;
-    data->response = NULL;
+    network->request = NULL;
+    network->response = NULL;
 }
 
 uchar *

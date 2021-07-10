@@ -1,6 +1,7 @@
 #include "hash_table.h"
 #include <assert.h>
 #include <string.h>
+#include "../memdbg/memory.h"
 
 /**
  * this function calculates a hash given the number and the modulus
@@ -34,6 +35,37 @@ hash_hash (hash_input_u value, size_t len, char is_str, size_t mod)
     return (hash);
 }
 
+hash_table_s
+hash_table_init_dbg (long count,
+                     char is_string
+#ifdef DEBUG
+                     ,
+                     int dbg
+#endif
+)
+{
+    hash_table_s table = {0};
+    table.capacity = count;
+    table.fill = count * HASH_FILL;
+    table.is_string = is_string;
+    size_t raw_size = count * sizeof (hash_table_bucket_s);
+
+#ifdef DEBUG
+    if (dbg) {
+        table.memory = (hash_table_bucket_s *) m_calloc (raw_size);
+    } else {
+        table.memory = (hash_table_bucket_s *) calloc (raw_size, 1);
+    }
+
+    table.debug = dbg;
+#else
+    table.memory = (hash_table_bucket_s *) calloc (raw_size, 1);
+#endif
+
+    assert (table.memory != NULL);
+    return table;
+}
+
 /*
  * hash_table_init inits a new hash_table_s structure
  * it allocates memory for HASH_TABLE_DEFAULT_SIZE buckets,
@@ -43,14 +75,11 @@ hash_hash (hash_input_u value, size_t len, char is_str, size_t mod)
 hash_table_s
 hash_table_init (long count, char is_string)
 {
-    hash_table_s table = {0};
-    table.size = count;
-    table.fill = count * HASH_FILL;
-    table.is_string = is_string;
-    size_t raw_size = count * sizeof (hash_table_bucket_s);
-    table.memory = (hash_table_bucket_s *) calloc (raw_size, 1);
-    assert (table.memory != NULL);
-    return (table);
+#ifdef DEBUG
+    return hash_table_init_dbg (count, is_string, 1);
+#else
+    return hash_table_init_dbg (count, is_string);
+#endif
 }
 
 long
@@ -67,7 +96,7 @@ hash_collision_count (hash_table_s table)
 void
 hash_table_add (hash_table_s *table, hash_table_bucket_s entry)
 {
-    size_t hash = hash_hash (entry.key, entry.key_len, table->is_string, table->size);
+    size_t hash = hash_hash (entry.key, entry.key_len, table->is_string, table->capacity);
 
     hash_table_bucket_s *dest = (table->memory + hash);
     if (dest->is_occupied)
@@ -75,7 +104,7 @@ hash_table_add (hash_table_s *table, hash_table_bucket_s entry)
 
     while (dest->is_occupied == HASH_OCCUPIED) {
         dest++;
-        if (dest >= (table->memory + table->size))
+        if (dest >= (table->memory + table->capacity))
             dest = table->memory;
     }
 
@@ -91,12 +120,12 @@ hash_table_add (hash_table_s *table, hash_table_bucket_s entry)
 void
 hash_table_remove (hash_table_s *table, hash_input_u key, size_t key_length)
 {
-    size_t hash = hash_hash (key, key_length, table->is_string, table->size);
+    size_t hash = hash_hash (key, key_length, table->is_string, table->capacity);
     hash_table_bucket_s *addr = (table->memory + hash);
 
     while (hash_compare (*addr, key, key_length, table->is_string)) {
         addr++;
-        if (addr >= table->memory + table->size)
+        if (addr >= table->memory + table->capacity)
             addr = table->memory;
     }
 
@@ -118,15 +147,25 @@ void
 hash_table_expand (hash_table_s *table)
 {
     table->collision_count = 0;
-    size_t size = table->size;
+    size_t size = table->capacity;
 
     table->count = 0;
-    table->size *= HASH_EXPAND;
-    table->fill = table->size * HASH_FILL;
+    table->capacity *= HASH_EXPAND;
+    table->fill = table->capacity * HASH_FILL;
 
-    size_t raw_size = table->size * sizeof (hash_table_bucket_s);
+    size_t raw_size = table->capacity * sizeof (hash_table_bucket_s);
     hash_table_bucket_s *src = table->memory, *src0 = src;
+
+#ifdef DEBUG
+    if (table->debug) {
+        table->memory = (hash_table_bucket_s *) m_calloc (raw_size);
+    } else {
+        table->memory = (hash_table_bucket_s *) calloc (raw_size, 1);
+    }
+#else
     table->memory = (hash_table_bucket_s *) calloc (raw_size, 1);
+#endif
+
     assert (table->memory != NULL);
 
     size_t i = size;
@@ -169,13 +208,13 @@ char inline hash_compare (hash_table_bucket_s bucket, hash_input_u key, size_t k
 hash_table_bucket_s
 hash_table_get (hash_table_s table, hash_input_u key, size_t key_length)
 {
-    size_t hash = hash_hash (key, key_length, table.is_string, table.size);
+    size_t hash = hash_hash (key, key_length, table.is_string, table.capacity);
     hash_table_bucket_s *addr = (table.memory + hash), result = {0};
 
     int i = 0;
     while (i = hash_compare (*addr, key, key_length, table.is_string), i) {
         addr++;
-        if (addr >= table.memory + table.size)
+        if (addr >= table.memory + table.capacity)
             addr = table.memory;
     }
 
@@ -189,7 +228,17 @@ void
 hash_table_free (hash_table_s table)
 {
     if (table.memory) {
+
+#ifdef DEBUG
+        if (table.debug) {
+            m_free (table.memory);
+        } else {
+            free (table.memory);
+        }
+#else
         free (table.memory);
+#endif
+
         table.memory = NULL;
     }
 }

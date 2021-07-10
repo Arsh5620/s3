@@ -125,7 +125,7 @@ logs_disable_backtrace ()
 boolean
 logs_write_internal (enum logs_level level, char *string, va_list args)
 {
-    if (logs.file_p == NULL){
+    if (logs.file_p == NULL) {
         return FALSE;
     }
 
@@ -182,7 +182,11 @@ logs_write_internal (enum logs_level level, char *string, va_list args)
         return (FALSE);
     }
 
-    fflush (logs.file_p);
+    logs.counter++;
+
+    if (logs.counter % 1000 == 0) {
+        fflush (logs.file_p);
+    }
     return (TRUE);
 }
 
@@ -216,16 +220,17 @@ logs_put (enum log_types logs_type, enum logs_level level, char *format, ...)
     }
 }
 
+// THIS FUNCTION'S MEMORY IS NOT MONITORED
 char **
 get_backtrace (int *backtrace_count)
 {
 #ifdef __linux__
     int backtrace_size = 256;
-    void *backtrace_memory = m_malloc (backtrace_size);
+    void *backtrace_memory = malloc (backtrace_size);
     *backtrace_count = backtrace ((void **) backtrace_memory, backtrace_size);
 
     char **symbols = backtrace_symbols (backtrace_memory, backtrace_size);
-    m_free (backtrace_memory);
+    free (backtrace_memory);
     return symbols;
 #else
     *backtrace_count = 0;

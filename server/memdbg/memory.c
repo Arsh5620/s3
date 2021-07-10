@@ -17,7 +17,7 @@ memory_track_add (void *address, long size, char *file_name, long line_no)
 {
     if (allocations.is_init == FALSE) {
         allocations.list = my_list_new (MEMORY_TABLE_SIZE, sizeof (malloc_node_s));
-        allocations.hash = hash_table_init (MEMORY_TABLE_SIZE, 0);
+        allocations.hash = hash_table_init_dbg (MEMORY_TABLE_SIZE, 0, 0);
         allocations.is_init = TRUE;
     }
 
@@ -144,7 +144,7 @@ memory_log_gettype (malloc_enum i)
 void
 memory_log_handle (malloc_enum type, malloc_node_s *node, malloc_update_s *update)
 {
-#ifdef MEMORY_DEBUG_LOG
+#ifdef MEMDBG
     logs_put (LOG_OUT_LOGS,
               LOG_LEVEL_DEBUG,
               MEMORY_ALLOCATION_LOG,

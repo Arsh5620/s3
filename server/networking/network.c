@@ -260,6 +260,7 @@ network_connect_accept_sync (network_s *connection,
 
         result = SSL_accept (connection->ssl_tls);
         if (result != SSL_SUCCESS) {
+            SSL_free(connection->ssl_tls);
             logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_SSL_PLAIN_CLIENT);
 
             close (connection->client);

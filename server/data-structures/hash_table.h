@@ -20,10 +20,13 @@ typedef struct {
 typedef struct hash_table_struct {
     hash_table_bucket_s *memory;
     size_t count;
-    size_t size;
+    size_t capacity;
     size_t fill;
     char is_string;
     long collision_count;
+#ifdef DEBUG
+    int debug;
+#endif
 } hash_table_s;
 
 #define HASH_EXPAND 2
@@ -50,5 +53,12 @@ void
 hash_table_free (hash_table_s table);
 char
 hash_compare (hash_table_bucket_s bucket, hash_input_u key, size_t key_len, char is_string);
-
+hash_table_s
+hash_table_init_dbg (long count,
+                     char is_string
+#ifdef DEBUG
+                     ,
+                     int dbg
+#endif
+);
 #endif

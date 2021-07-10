@@ -57,6 +57,41 @@ sigsegv_interrupt_handler (int v)
     logs_close ();
 }
 
+char *
+rle_string (char *string, int length)
+{
+    char *temp = m_calloc (length * 2);
+    short index = 0;
+
+    short last = -1;
+    uchar counter = 0;
+
+    for (size_t i = 0; i < length; i++) {
+        uchar current = *(uchar *) (string + i);
+        if ((current != last && last != -1) || counter >= 9) {
+            *(temp + index) = counter + '0';
+            *(temp + index + 1) = (uchar) last;
+            index += 2;
+            counter = 1;
+        } else {
+            counter++;
+        }
+
+        last = current;
+    }
+
+    if (counter > 0) {
+        *(temp + index) = counter + '0';
+        *(temp + index + 1) = (uchar) last;
+        index += 2;
+    }
+
+    index++; // For \0
+
+    temp = m_realloc (temp, index);
+    return temp;
+}
+
 void
 print_connection_banner (s3_protocol_s *protocol)
 {
@@ -76,13 +111,19 @@ print_connection_banner (s3_protocol_s *protocol)
 
     const char *error = NULL;
     char *hostname = network_gethostname (protocol->sock_family, sock, &error);
+
     logs_put (LOG_OUT_BOTH, LOG_LEVEL_DEBUG, "Bound to address: %s", hostname);
     m_free (hostname);
 
-    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Connection Key: %s", hex);
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Connection Key: 0-%s", hex);
+
+    char *rle_conn = rle_string (hex, strlen (hex));
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Alternate Key: 1-%s", rle_conn);
+
+    m_free(rle_conn);
     m_free (hex);
 
-    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "=====================================\n");
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "=====================================");
 }
 
 int
