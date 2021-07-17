@@ -9,20 +9,33 @@
 struct argp_option argument_options[] = {
   {"disable_debug_logs", 'd', NULL_ZERO, NULL_ZERO, "DO NOT print debug information in logs"},
   {"print_stack_logs", 's', NULL_ZERO, NULL_ZERO, "print stack frame information to the logs"},
+  {"ip", 'i', "[4,6]", NULL_ZERO, "Valid ip type values are '4' for ipv4 or '6' for ipv6"},
+  {"interface", 'f', "<interface name>", NULL_ZERO, "Interface to be bound to, defaults to 'loopback'. e.g. --interface=wlp2s0"},
   {0},
 };
 
 error_t
 argument_parser (int key, char *arg, struct argp_state *state)
 {
-    s3_log_settings_s *settings = (s3_log_settings_s *) state->input;
+    settings_s *settings = (settings_s *) state->input;
 
     switch (key) {
     case 'd':
-        settings->print_debug_logs = FALSE;
+        settings->log_settings.print_debug_logs = FALSE;
         break;
     case 's':
-        settings->print_stack_frames = TRUE;
+        settings->log_settings.print_stack_frames = TRUE;
+        break;
+    case 'i':
+        if (*arg == '4' || *arg == '6') {
+            settings->ip_settings.address_type = *arg == '4' ? AF_INET : AF_INET6;
+        } else {
+            printf ("Given value '%s' is unknown for option '-i', use '--help' or '--usage' option for help.\n", arg);
+            exit (EXIT_FAILURE);
+        }
+        break;
+    case 'f':
+        settings->ip_settings.interface = arg;
         break;
     case ARGP_KEY_ARG:
         return 0;
@@ -120,7 +133,7 @@ print_connection_banner (s3_protocol_s *protocol)
     char *rle_conn = rle_string (hex, strlen (hex));
     logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Alternate Key: 1-%s", rle_conn);
 
-    m_free(rle_conn);
+    m_free (rle_conn);
     m_free (hex);
 
     logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "=====================================");
@@ -133,7 +146,8 @@ main (int argc, char *argv[])
     signal (SIGINT, sigint_interrupt_handler);
     signal (SIGSEGV, sigsegv_interrupt_handler);
 
-    s3_log_settings_s settings = {.print_debug_logs = TRUE, .print_stack_frames = FALSE};
+    s3_log_settings_s log_settings = {.print_debug_logs = TRUE, .print_stack_frames = FALSE};
+    settings_s settings = {.log_settings = log_settings, .ip_settings.address_type = 0};
     argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
 
     sigaction (SIGPIPE, &(struct sigaction){{SIG_IGN}}, NULL);

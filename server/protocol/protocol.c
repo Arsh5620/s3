@@ -8,12 +8,12 @@ boolean sigint_action_flag = FALSE;
  * success is 'true' otherwise it should kill the app. (Unless ofcourse if we have a bug)
  */
 s3_protocol_s
-s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, boolean *success)
+s3_connection_initialize_sync (unsigned short port, settings_s settings, boolean *success)
 {
     *success = FALSE;
 
     s3_protocol_s protocol = {0};
-    protocol.logs = logs_open (settings);
+    protocol.logs = logs_open (settings.log_settings);
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
 
@@ -26,11 +26,19 @@ s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, 
                                &protocol.server_sockv6,
                                &protocol.sock_family,
                                &protocol.sock_size,
+                               settings.ip_settings.address_type,
+                               settings.ip_settings.interface,
                                &protocol.ssl_context,
                                &protocol.ssl_method);
 #else
-    network_connect_init_sync (
-      port, &protocol.server, &protocol.server_sockv4, &protocol.server_sockv6, &protocol.sock_family, &protocol.sock_size);
+    network_connect_init_sync (port,
+                               &protocol.server,
+                               &protocol.server_sockv4,
+                               &protocol.server_sockv6,
+                               &protocol.sock_family,
+                               &protocol.sock_size,
+                               settings.ip_settings.address_type,
+                               settings.ip_settings.interface);
 #endif
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);

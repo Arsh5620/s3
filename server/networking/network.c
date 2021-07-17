@@ -53,6 +53,7 @@ assert_ssl (int c1, int c2, char *fn, int err)
 // check `man 7 getifaddrs` for more details
 int
 network_iterate_all_available_ips (char *interface,
+                                   int addr_type,
                                    const char **error,
                                    struct sockaddr_in *socket_v4,
                                    struct sockaddr_in6 *socket_v6,
@@ -78,13 +79,14 @@ network_iterate_all_available_ips (char *interface,
 
         family = if_address->ifa_addr->sa_family;
 
-        if (family != AF_INET && family != AF_INET6) {
+        if ((addr_type != 0 && family != addr_type) || (family != AF_INET && family != AF_INET6)) {
             continue;
         }
 
         if (interface != NULL) {
-            if (strcmp (if_address->ifa_name, interface)) {
+            if (strcmp (if_address->ifa_name, interface) == 0) {
                 selected_address = if_address;
+                break;
             }
         } else {
             selected_address = if_address;
@@ -142,7 +144,9 @@ network_connect_init_sync (int port,
                            struct sockaddr_in *socket_v4,
                            struct sockaddr_in6 *socket_v6,
                            int *family,
-                           int *sock_size
+                           int *sock_size,
+                           int addr_type,
+                           char *interface
 #ifndef DEBUG
                            ,
                            SSL_CTX **ssl_context,
@@ -192,7 +196,11 @@ network_connect_init_sync (int port,
 #endif
     const char *error = NULL;
 
-    int errn = network_iterate_all_available_ips (NULL, &error, socket_v4, socket_v6, family, sock_size);
+    if (interface == NULL) {
+        interface = "lo";
+    }
+
+    int errn = network_iterate_all_available_ips (interface, addr_type, &error, socket_v4, socket_v6, family, sock_size);
 
     if (errn != SUCCESS) {
         logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, "Cannot get the IP addresses available on the local machine: %s", error);
@@ -260,7 +268,7 @@ network_connect_accept_sync (network_s *connection,
 
         result = SSL_accept (connection->ssl_tls);
         if (result != SSL_SUCCESS) {
-            SSL_free(connection->ssl_tls);
+            SSL_free (connection->ssl_tls);
             logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_SSL_PLAIN_CLIENT);
 
             close (connection->client);

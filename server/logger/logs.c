@@ -182,11 +182,7 @@ logs_write_internal (enum logs_level level, char *string, va_list args)
         return (FALSE);
     }
 
-    logs.counter++;
-
-    if (logs.counter % 1000 == 0) {
-        fflush (logs.file_p);
-    }
+    fflush (logs.file_p);
     return (TRUE);
 }
 

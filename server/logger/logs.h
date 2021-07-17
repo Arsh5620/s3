@@ -20,8 +20,6 @@ typedef struct logs {
     FILE *file_p;
     char *filename;
     boolean init;
-
-    size_t counter;
 } logs_s;
 
 enum log_types {

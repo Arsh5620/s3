@@ -66,10 +66,12 @@ typedef struct network_connection {
 void
 network_connect_init_sync (int port,
                            int *server,
-                           struct sockaddr_in *socket_v4, 
-                           struct sockaddr_in6 *socket_v6, 
-                           int *family, 
-                           int *sock_size
+                           struct sockaddr_in *socket_v4,
+                           struct sockaddr_in6 *socket_v6,
+                           int *family,
+                           int *sock_size,
+                           int addr_type, 
+                           char *interface
 #ifndef DEBUG
                            ,
                            SSL_CTX **ssl_context,

@@ -223,6 +223,14 @@ typedef struct {
     hash_table_s client_table;
 } s3_protocol_s;
 
+typedef struct settings {
+    s3_log_settings_s log_settings;
+    struct {
+        int address_type;
+        char *interface;
+    } ip_settings;
+} settings_s;
+
 void
 s3_print_counter ();
 
@@ -233,7 +241,7 @@ s3_handle_close (s3_request_s *request, s3_response_s *response);
 ulong
 s3_next_request (s3_protocol_s *protocol);
 s3_protocol_s
-s3_connection_initialize_sync (unsigned short port, s3_log_settings_s settings, boolean *success);
+s3_connection_initialize_sync (unsigned short port, settings_s settings, boolean *success);
 void
 s3_connection_accept_loop_async (s3_protocol_s *protocol);
 void
