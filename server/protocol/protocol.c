@@ -8,7 +8,7 @@ boolean sigint_action_flag = FALSE;
  * success is 'true' otherwise it should kill the app. (Unless ofcourse if we have a bug)
  */
 s3_protocol_s
-s3_connection_initialize_sync (unsigned short port, settings_s settings, boolean *success)
+s3_connection_initialize_sync (settings_s settings, boolean *success)
 {
     *success = FALSE;
 
@@ -20,7 +20,7 @@ s3_connection_initialize_sync (unsigned short port, settings_s settings, boolean
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
 
 #ifndef DEBUG
-    network_connect_init_sync (port,
+    network_connect_init_sync (settings.ip_settings.port,
                                &protocol.server,
                                &protocol.server_sockv4,
                                &protocol.server_sockv6,
@@ -31,7 +31,7 @@ s3_connection_initialize_sync (unsigned short port, settings_s settings, boolean
                                &protocol.ssl_context,
                                &protocol.ssl_method);
 #else
-    network_connect_init_sync (port,
+    network_connect_init_sync (settings.ip_settings.port,
                                &protocol.server,
                                &protocol.server_sockv4,
                                &protocol.server_sockv6,
@@ -280,11 +280,11 @@ boolean
 s3_connection_temp_file_required (enum s3_actions_enum action)
 {
     switch (action) {
-    case S3_ACTION_CREATE:
-    case S3_ACTION_UPDATE:
-        return TRUE;
-    default:
-        return FALSE;
+        case S3_ACTION_CREATE:
+        case S3_ACTION_UPDATE:
+            return TRUE;
+        default:
+            return FALSE;
     }
 }
 
@@ -511,7 +511,7 @@ hexstring (uchar *string, int string_length)
 
     for (size_t i = 0; i < string_length; i++) {
         memory[i * 2] = sha_uchar_to_hex (string[i] & 0xF);
-        memory[i * 2 + 1] = sha_uchar_to_hex (string[i] & 0xF0 >> 4);
+        memory[i * 2 + 1] = sha_uchar_to_hex ((string[i] & 0xF0) >> 4);
     }
 
     return memory;
@@ -627,12 +627,12 @@ s3_setup_environment (s3_request_s *request)
         }
 
         switch (request->action) {
-        case S3_ACTION_CREATE:
-        case S3_ACTION_UPDATE:
-            break;
+            case S3_ACTION_CREATE:
+            case S3_ACTION_UPDATE:
+                break;
 
-        default:
-            return SUCCESS;
+            default:
+                return SUCCESS;
         }
 
         error = filemgmt_mkdirs (&request->file_name);
@@ -653,18 +653,18 @@ s3_action_send (network_s *network)
     long (*writer) (network_s *) = NULL;
 
     switch (request->action) {
-    case S3_ACTION_REQUEST:
-        response->response_code = S3_RESPONSE_PACKET_DATA_READY;
-        writer = s3_action_request_writer;
-        break;
-    case S3_ACTION_DIR:
-        response->response_code = S3_RESPONSE_PACKET_DATA_READY;
-        writer = s3_action_dirlist_writer;
-        break;
+        case S3_ACTION_REQUEST:
+            response->response_code = S3_RESPONSE_PACKET_DATA_READY;
+            writer = s3_action_request_writer;
+            break;
+        case S3_ACTION_DIR:
+            response->response_code = S3_RESPONSE_PACKET_DATA_READY;
+            writer = s3_action_dirlist_writer;
+            break;
 
-    default:
-        result = SUCCESS;
-        break;
+        default:
+            result = SUCCESS;
+            break;
     }
 
     if (writer != NULL && s3_response_write (network, writer) != SUCCESS) {
@@ -688,30 +688,30 @@ s3_action_postprocess (network_s *network)
 
     int result = 0;
     switch (request->action) {
-    case S3_ACTION_NOTIFICATION:
-        result = s3_postprocess_notification (network);
-        break;
-    case S3_ACTION_CREATE:
-        result = s3_postprocess_create (network);
-        break;
-    case S3_ACTION_DIR:
-        result = SUCCESS;
-        break;
-    case S3_ACTION_UPDATE:
-        result = s3_postprocess_update (network);
-        break;
-    case S3_ACTION_DELETE:
-        result = s3_postprocess_delete (network);
-        break;
-    case S3_ACTION_REQUEST:
-        result = SUCCESS;
-        break;
-    case S3_ACTION_SERVER:
-        result = s3_postprocess_serverinfo (network);
-        break;
-    case S3_ACTION_INVALID:
-        result = S3_RESPONSE_SERVER_INTERNAL_ERROR;
-        break;
+        case S3_ACTION_NOTIFICATION:
+            result = s3_postprocess_notification (network);
+            break;
+        case S3_ACTION_CREATE:
+            result = s3_postprocess_create (network);
+            break;
+        case S3_ACTION_DIR:
+            result = SUCCESS;
+            break;
+        case S3_ACTION_UPDATE:
+            result = s3_postprocess_update (network);
+            break;
+        case S3_ACTION_DELETE:
+            result = s3_postprocess_delete (network);
+            break;
+        case S3_ACTION_REQUEST:
+            result = SUCCESS;
+            break;
+        case S3_ACTION_SERVER:
+            result = s3_postprocess_serverinfo (network);
+            break;
+        case S3_ACTION_INVALID:
+            result = S3_RESPONSE_SERVER_INTERNAL_ERROR;
+            break;
     }
 
     return result;
@@ -737,30 +737,30 @@ s3_action_preprocess (s3_request_s *request)
 {
     int result = 0;
     switch (request->action) {
-    case S3_ACTION_NOTIFICATION:
-        result = s3_preprocess_notification (request);
-        break;
-    case S3_ACTION_CREATE:
-        result = s3_preprocess_create (request);
-        break;
-    case S3_ACTION_DIR:
-        result = s3_preprocess_dirlist (request);
-        break;
-    case S3_ACTION_UPDATE:
-        result = s3_preprocess_update (request);
-        break;
-    case S3_ACTION_DELETE:
-        result = s3_preprocess_delete (request);
-        break;
-    case S3_ACTION_REQUEST:
-        result = s3_preprocess_request (request);
-        break;
-    case S3_ACTION_SERVER:
-        result = s3_preprocess_serverinfo (request);
-        break;
-    case S3_ACTION_INVALID:
-        result = S3_RESPONSE_SERVER_INTERNAL_ERROR;
-        break;
+        case S3_ACTION_NOTIFICATION:
+            result = s3_preprocess_notification (request);
+            break;
+        case S3_ACTION_CREATE:
+            result = s3_preprocess_create (request);
+            break;
+        case S3_ACTION_DIR:
+            result = s3_preprocess_dirlist (request);
+            break;
+        case S3_ACTION_UPDATE:
+            result = s3_preprocess_update (request);
+            break;
+        case S3_ACTION_DELETE:
+            result = s3_preprocess_delete (request);
+            break;
+        case S3_ACTION_REQUEST:
+            result = s3_preprocess_request (request);
+            break;
+        case S3_ACTION_SERVER:
+            result = s3_preprocess_serverinfo (request);
+            break;
+        case S3_ACTION_INVALID:
+            result = S3_RESPONSE_SERVER_INTERNAL_ERROR;
+            break;
     }
     return (result);
 }

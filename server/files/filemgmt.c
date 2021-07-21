@@ -140,33 +140,33 @@ void
 database_read_column_for_type (sqlite3_stmt *stmt, enum sqltypes type, int column, sqlite_result_s *result)
 {
     switch (type) {
-    case SQLTYPE_LONG: {
-        result->value._int64 = sqlite3_column_int64 (stmt, column);
-        result->size = sizeof (sqlite3_int64);
-    } break;
-    case SQLTYPE_TEXT: {
-        const unsigned char *sql_copy = sqlite3_column_text (stmt, column);
-        int size = sqlite3_column_bytes (stmt, column);
+        case SQLTYPE_LONG: {
+            result->value._int64 = sqlite3_column_int64 (stmt, column);
+            result->size = sizeof (sqlite3_int64);
+        } break;
+        case SQLTYPE_TEXT: {
+            const unsigned char *sql_copy = sqlite3_column_text (stmt, column);
+            int size = sqlite3_column_bytes (stmt, column);
 
-        result->value._char_p = m_malloc (size + 1); // For \0 terminator
-        memcpy (result->value._char_p, sql_copy, size);
-        result->value._char_p[size] = 0;
+            result->value._char_p = m_malloc (size + 1); // For \0 terminator
+            memcpy (result->value._char_p, sql_copy, size);
+            result->value._char_p[size] = 0;
 
-        result->size = size;
-    } break;
-    case SQLTYPE_BLOB: {
-        const void *sql_copy = sqlite3_column_blob (stmt, column);
-        int size = sqlite3_column_bytes (stmt, column);
+            result->size = size;
+        } break;
+        case SQLTYPE_BLOB: {
+            const void *sql_copy = sqlite3_column_blob (stmt, column);
+            int size = sqlite3_column_bytes (stmt, column);
 
-        result->value._void_p = m_malloc (size);
-        memcpy (result->value._void_p, sql_copy, size);
+            result->value._void_p = m_malloc (size);
+            memcpy (result->value._void_p, sql_copy, size);
 
-        result->size = size;
-    } break;
+            result->size = size;
+        } break;
 
-    default:
-        logs_put (LOG_OUT_BOTH, LOG_LEVEL_DEBUG, "Unknown sqltype %d", type);
-        break;
+        default:
+            logs_put (LOG_OUT_BOTH, LOG_LEVEL_DEBUG, "Unknown sqltype %d", type);
+            break;
     }
 }
 

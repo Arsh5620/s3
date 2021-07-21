@@ -118,8 +118,8 @@
 #define FILEMGMT_RECORD_EXISTS "file \"%.*s\" found"
 
 #define MEMORY_ALLOCATION_LOG                                                                                                    \
-    "{\n\tAddress:\"%p [%p]\"\n"                                                                                                        \
-    "\tRequest: \"%s (%d)\"\n"                                                                                                       \
+    "{\n\tAddress:\"%p [%p]\"\n"                                                                                                 \
+    "\tRequest: \"%s (%d)\"\n"                                                                                                   \
     "\tLocation: \"%s:%d\"\n}"
 
 #define MEMORY_UNFREE_LOG_TITLE "ADDRESS:REALLOC-ADDRESS [LAST-TYPE]"

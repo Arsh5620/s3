@@ -83,15 +83,15 @@ network_iterate_all_available_ips (char *interface,
             continue;
         }
 
-        if (interface != NULL) {
-            if (strcmp (if_address->ifa_name, interface) == 0) {
+        if (selected_address == NULL) {
+            if (interface != NULL) {
+                if (strcmp (if_address->ifa_name, interface) == 0) {
+                    selected_address = if_address;
+                }
+            } else {
                 selected_address = if_address;
-                break;
             }
-        } else {
-            selected_address = if_address;
         }
-
         char *family_str = family == AF_INET ? "AF_INET" : family == AF_INET6 ? "AF_INET6" : "UNKNOWN";
         char *host = network_gethostname (family, if_address->ifa_addr, error);
         logs_put (LOG_OUT_BOTH, LOG_LEVEL_DEBUG, NETWORK_IP_DEBUG, if_address->ifa_name, family_str, family, host);
@@ -100,16 +100,16 @@ network_iterate_all_available_ips (char *interface,
 
     if (selected_address != NULL) {
         switch (selected_address->ifa_addr->sa_family) {
-        case AF_INET:
-            *socket_v4 = *(struct sockaddr_in *) selected_address->ifa_addr;
-            *sock_family = AF_INET;
-            *sock_size = sizeof (struct sockaddr_in);
-            break;
-        case AF_INET6:
-            *socket_v6 = *(struct sockaddr_in6 *) selected_address->ifa_addr;
-            *sock_family = AF_INET6;
-            *sock_size = sizeof (struct sockaddr_in6);
-            break;
+            case AF_INET:
+                *socket_v4 = *(struct sockaddr_in *) selected_address->ifa_addr;
+                *sock_family = AF_INET;
+                *sock_size = sizeof (struct sockaddr_in);
+                break;
+            case AF_INET6:
+                *socket_v6 = *(struct sockaddr_in6 *) selected_address->ifa_addr;
+                *sock_family = AF_INET6;
+                *sock_size = sizeof (struct sockaddr_in6);
+                break;
         }
     }
 
@@ -322,18 +322,18 @@ network_read_stream (network_s *connection)
             break;
         } else if (length < 0) {
             switch (errno) {
-            case ECONNRESET:
-                read_info->error_code = NETWORK_ERROR_CONNRESET;
-                break;
-            case EAGAIN:
+                case ECONNRESET:
+                    read_info->error_code = NETWORK_ERROR_CONNRESET;
+                    break;
+                case EAGAIN:
 #if EWOULDBLOCK != EAGAIN
-            case EWOULDBLOCK:
+                case EWOULDBLOCK:
 #endif
-                read_info->error_code = NETWORK_ASYNC_WOULDBLOCK;
-                break;
-            default:
-                read_info->error_code = NETWORK_ERROR_READ_ERROR;
-                break;
+                    read_info->error_code = NETWORK_ASYNC_WOULDBLOCK;
+                    break;
+                default:
+                    read_info->error_code = NETWORK_ERROR_READ_ERROR;
+                    break;
             }
             break;
         } else {
@@ -384,13 +384,13 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
 
     if (bytes_written != buffer_length) {
         switch (errno) {
-        case ECONNRESET: {
-            return (NETWORK_ERROR_CONNRESET);
-        } break;
+            case ECONNRESET: {
+                return (NETWORK_ERROR_CONNRESET);
+            } break;
 
-        default: {
-            return (NETWORK_ERROR_READ_ERROR);
-        } break;
+            default: {
+                return (NETWORK_ERROR_READ_ERROR);
+            } break;
         }
     }
     return NETWORK_SUCCESS;

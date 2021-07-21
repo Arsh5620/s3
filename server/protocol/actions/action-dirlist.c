@@ -27,7 +27,7 @@ s3_action_dirlist_writer (network_s *network)
         serializer_free (*(serializer_t *) network->request->additional_data);
     }
 
-    m_free(network->request->additional_data);
+    m_free (network->request->additional_data);
     network->request->additional_data = NULL;
     return write_todo;
 }
@@ -77,14 +77,14 @@ void
 s3_dirlist_serialize_sqltype (enum sqltypes type, sqlite_result_s *result, serializer_t *serializer)
 {
     switch (type) {
-    case SQLTYPE_BLOB: {
-        serializer_add_blob (serializer, NULL, 0, result->value._char_p, result->size);
-    } break;
-    case SQLTYPE_TEXT: {
-        serializer_add_blob (serializer, NULL, 0, result->value._char_p, result->size + 1); // For \0 terminator
-    } break;
-    case SQLTYPE_LONG: {
-        serializer_add_long (serializer, NULL, 0, result->value._int64);
-    } break;
+        case SQLTYPE_BLOB: {
+            serializer_add_blob (serializer, NULL, 0, result->value._char_p, result->size);
+        } break;
+        case SQLTYPE_TEXT: {
+            serializer_add_blob (serializer, NULL, 0, result->value._char_p, result->size + 1); // For \0 terminator
+        } break;
+        case SQLTYPE_LONG: {
+            serializer_add_long (serializer, NULL, 0, result->value._int64);
+        } break;
     }
 }

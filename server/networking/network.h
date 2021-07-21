@@ -70,7 +70,7 @@ network_connect_init_sync (int port,
                            struct sockaddr_in6 *socket_v6,
                            int *family,
                            int *sock_size,
-                           int addr_type, 
+                           int addr_type,
                            char *interface
 #ifndef DEBUG
                            ,

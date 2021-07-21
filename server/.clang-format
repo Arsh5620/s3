@@ -46,3 +46,4 @@ AlignEscapedNewlines: Right
 AlignTrailingComments: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpaceBeforeParens: Always
+IndentCaseLabels: true

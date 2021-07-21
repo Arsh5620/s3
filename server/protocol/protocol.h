@@ -228,6 +228,7 @@ typedef struct settings {
     struct {
         int address_type;
         char *interface;
+        unsigned short port;
     } ip_settings;
 } settings_s;
 
@@ -241,7 +242,7 @@ s3_handle_close (s3_request_s *request, s3_response_s *response);
 ulong
 s3_next_request (s3_protocol_s *protocol);
 s3_protocol_s
-s3_connection_initialize_sync (unsigned short port, settings_s settings, boolean *success);
+s3_connection_initialize_sync (settings_s settings, boolean *success);
 void
 s3_connection_accept_loop_async (s3_protocol_s *protocol);
 void

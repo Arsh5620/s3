@@ -1,7 +1,7 @@
 #include "hash_table.h"
+#include "../memdbg/memory.h"
 #include <assert.h>
 #include <string.h>
-#include "../memdbg/memory.h"
 
 /**
  * this function calculates a hash given the number and the modulus
@@ -228,7 +228,6 @@ void
 hash_table_free (hash_table_s table)
 {
     if (table.memory) {
-
 #ifdef DEBUG
         if (table.debug) {
             m_free (table.memory);

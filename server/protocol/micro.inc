@@ -1,2 +1,2 @@
-#define __VERSION_MICRO__ 669
-#define __VERSION_GITHASH__ "8a75c6f166"
+#define __VERSION_MICRO__ 688
+#define __VERSION_GITHASH__ "97d45413a3"
