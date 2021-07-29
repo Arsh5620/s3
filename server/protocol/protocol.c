@@ -510,8 +510,8 @@ hexstring (uchar *string, int string_length)
     memory[string_length * 2] = 0;
 
     for (size_t i = 0; i < string_length; i++) {
-        memory[i * 2] = sha_uchar_to_hex (string[i] & 0xF);
-        memory[i * 2 + 1] = sha_uchar_to_hex ((string[i] & 0xF0) >> 4);
+        memory[i * 2] = sha_uchar_to_hex ((string[i] & 0xF0) >> 4);
+        memory[i * 2 + 1] = sha_uchar_to_hex (string[i] & 0xF);
     }
 
     return memory;
@@ -566,6 +566,8 @@ s3_handle_response (network_s *network, enum s3_response_code code)
 
     s3_response_s *response = network->response;
     response->response_code = code;
+
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, RESPONSE_CODE, code);
 
     if (s3_response_write (network, s3_handle_response_string) != SUCCESS) {
         return S3_RESPONSE_NETWORK_ERROR_WRITE;
@@ -709,6 +711,9 @@ s3_action_postprocess (network_s *network)
         case S3_ACTION_SERVER:
             result = s3_postprocess_serverinfo (network);
             break;
+        case S3_ACTION_LOGIN:
+            result = s3_postprocess_login (network);
+            break;
         case S3_ACTION_INVALID:
             result = S3_RESPONSE_SERVER_INTERNAL_ERROR;
             break;
@@ -757,6 +762,9 @@ s3_action_preprocess (s3_request_s *request)
             break;
         case S3_ACTION_SERVER:
             result = s3_preprocess_serverinfo (request);
+            break;
+        case S3_ACTION_LOGIN:
+            result = s3_preprocess_login (request);
             break;
         case S3_ACTION_INVALID:
             result = S3_RESPONSE_SERVER_INTERNAL_ERROR;

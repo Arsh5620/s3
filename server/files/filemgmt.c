@@ -178,13 +178,13 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
     if (result == SUCCESS) {
         logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, FILEMGMT_RECORD_EXISTS, file_name.length, file_name.address);
     } else {
-        return (FALSE);
+        return FALSE;
     }
 
     FILE *file = fopen (real_name.address, FILE_MODE_READBINARY);
 
     if (file == NULL) {
-        return (FALSE);
+        return FALSE;
     }
 
     if (file_stats != NULL) {
@@ -193,7 +193,7 @@ filemgmt_file_exists (string_s file_name, string_s real_name, struct stat *file_
     }
     fclose (file);
 
-    return (TRUE);
+    return TRUE;
 }
 
 int
@@ -213,9 +213,9 @@ filemgmt_rename_file (string_s dest, string_s src)
 {
     path_mkdir_recursive (FILEMGMT_FOLDER_NAME);
     if (file_rename (dest, src) == FAILED) {
-        return (FAILED);
+        return FAILED;
     }
-    return (SUCCESS);
+    return SUCCESS;
 }
 
 int

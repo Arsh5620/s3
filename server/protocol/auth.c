@@ -1,6 +1,11 @@
 #include "./auth.h"
 #include "../crypto/sha.h"
 
+// The way auth_transaction works is that it assumes that for any operation that requires authentication
+// we have already set the login username and secret as required in header key/value pairs. 
+// Then this function checks to confirms that both username/password are present or it will S3_RESPONSE_MIX_AUTH_ERROR.
+// If both are not present that is because that user wasn't required to provide them and thus 
+// wasn't asked to authenticate for the action that they are performing. 
 int
 s3_auth_transaction (s3_request_s *request)
 {

@@ -35,6 +35,7 @@
 #define S3_ATTRIBNAME_ACTION "action"
 #define S3_ATTRIBNAME_CRC "crc"
 #define S3_ATTRIBNAME_DIRNAME "dirname"
+#define S3_ATTRIBNAME_APPEND "append"
 #define S3_ATTRIBNAME_FILENAME "filename"
 #define S3_ATTRIBNAME_UPDATEAT "updateat"
 #define S3_ATTRIBNAME_UPDATETRIM "trim"
@@ -46,6 +47,7 @@ enum s3_actions_enum {
     S3_ACTION_CREATE = 0,
     S3_ACTION_DELETE,
     S3_ACTION_DIR,
+    S3_ACTION_LOGIN,
     S3_ACTION_NOTIFICATION,
     S3_ACTION_REQUEST,
     S3_ACTION_SERVER,
@@ -55,6 +57,7 @@ enum s3_actions_enum {
 
 enum s3_attribs_enum {
     S3_ATTRIB_ACTION = 0,
+    S3_ATTRIB_APPEND,
     S3_ATTRIB_CRC,
     S3_ATTRIB_DIRNAME,
     S3_ATTRIB_FILENAME,
@@ -282,6 +285,8 @@ int
 s3_postprocess_serverinfo (network_s *network);
 int
 s3_preprocess_dirlist (s3_request_s *request);
+int
+s3_preprocess_login (s3_request_s *request);
 
 int
 s3_preprocess_notification (s3_request_s *request);
@@ -297,6 +302,8 @@ int
 s3_preprocess_request (s3_request_s *request);
 int
 s3_preprocess_serverinfo (s3_request_s *request);
+int
+s3_postprocess_login (network_s *network);
 
 int
 s3_attribs_assert (hash_table_s table, char **match, int count);

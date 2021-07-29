@@ -97,7 +97,7 @@ sigsegv_interrupt_handler (int v)
 }
 
 char *
-rle_string (char *string, int length)
+rle_string (char *string, int length, int *out_len)
 {
     char *temp = m_calloc (length * 2);
     short index = 0;
@@ -126,6 +126,10 @@ rle_string (char *string, int length)
     }
 
     index++; // For \0
+
+    if (out_len != NULL) {
+        *out_len = index;
+    }
 
     temp = m_realloc (temp, index);
     return temp;
@@ -167,8 +171,13 @@ print_connection_banner (s3_protocol_s *protocol, int port)
 
     logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Connection Key: 0-%s", hex);
 
-    char *rle_conn = rle_string (hex, strlen (hex));
-    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Alternate Key: 1-%s", rle_conn);
+    int hex_length = strlen (hex);
+    int length;
+    char *rle_conn = rle_string (hex, hex_length, &length);
+
+    if (length + 2 < hex_length) {
+        logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, "Alternate Key: 1-%s", rle_conn);
+    }
 
     m_free (rle_conn);
     m_free (hex);

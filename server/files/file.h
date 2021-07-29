@@ -25,6 +25,7 @@ enum file_errors_enum {
 #define FILE_MODE_WRITEBINARY "wb"
 #define FILE_MODE_READBINARY "rb"
 #define FILE_MODE_WRITEEXISTING "rb+"
+#define FILE_MODE_APPENDBINARY "ab"
 
 #define FILE_NAME_LENGTH (256)
 #define FILE_BUFFER_LENGTH (MB (1))

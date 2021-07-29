@@ -55,6 +55,8 @@
 
 #define REQUEST_ACTION_TYPE "Packet requests action type: %d"
 
+#define RESPONSE_CODE "Packet response code: %d"
+
 #define PROTOCOL_SHUTDOWN_REASON_FLOW "expected as per program flow"
 
 #define PROTOCOL_SHUTDOWN_REASON_CORRUPT "packet corruption or out of order"
@@ -67,7 +69,7 @@
 
 #define DESERIALIZER_PRINT_HEADERS "found %d key value pairs after deserializing header : "
 
-#define DESERIALIZER_PRINT_HEADERS_ROW_STRING "\t\tkey, value: %.*s, %.*s"
+#define DESERIALIZER_PRINT_HEADERS_ROW_STRING "\t\tkey, value: %.*s, %.*s, %ld, %f, %lf"
 
 #define NOTIFICATION_GENERAL "client sent a notification: \"%.*s\""
 
