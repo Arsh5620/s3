@@ -109,13 +109,60 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
     s3_setup_epoll (protocol);
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_WAIT_CONNECT);
 
+    float average_ms[1000] = {0};
+    float average_wait[1000] = {0};
+    float average_data[1000] = {0};
+#define AVERAGE_SIZE (sizeof (average_ms) / sizeof (average_ms[0]))
+    long counter = 0;
+    struct timespec end_time;
+
     while (TRUE && sigint_action_flag == FALSE) {
-        int epoll_count = epoll_wait (protocol->epoll_fd, protocol->epoll_events, protocol->epoll_events_count, -1);
+        int epoll_count = epoll_wait (protocol->epoll_fd, protocol->epoll_events, protocol->epoll_events_count, 1000);
+
+        struct timespec start_time;
+        clock_gettime (CLOCK_REALTIME, &start_time);
+
+        if (counter == 0) {
+            printf ("Waiting for downloads...");
+            fflush (stdout);
+        } else {
+            int counter_mod = min (counter, AVERAGE_SIZE);
+
+            float average_time = 0;
+            float average_mbps = 0;
+            float average_idle = 0;
+
+            float average_time_max = 0;
+            float average_idle_max = 0;
+            for (size_t i = 0; i < counter_mod; i++) {
+                average_time += average_ms[i];
+                average_mbps += average_data[i];
+                average_idle += average_wait[i];
+
+                average_time_max = max (average_time_max, average_ms[i]);
+                average_idle_max = max (average_idle_max, average_wait[i]);
+            }
+
+            printf ("\33[2K\r[Last 1000] Avg DL: %.2f MB/s, Avg loop: %.2f ms (h: %.1f), Avg wait: %.2f ms (h: %.1f)",
+                    (average_time / (average_time + average_idle)) * ((average_mbps / (average_time / 1000)) / MB (1)),
+                    average_time / counter_mod,
+                    average_time_max,
+                    average_idle / counter_mod,
+                    average_idle_max);
+            fflush (stdout);
+
+            long seconds_consumed = start_time.tv_sec - end_time.tv_sec;
+            long ns_consumed = start_time.tv_nsec - end_time.tv_nsec;
+
+            average_wait[counter % AVERAGE_SIZE] = seconds_consumed * 1000 + (ns_consumed / 1000000.0f);
+        }
 
         if (epoll_count == -1) {
-            logs_put (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_EPOLL_WAIT_FAILED, strerror (errno));
+            logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_EPOLL_WAIT_FAILED, strerror (errno));
             continue;
         }
+
+        long total_data_read = 0;
 
         for (size_t i = 0; i < epoll_count; i++) {
             struct epoll_event epoll_event = protocol->epoll_events[i];
@@ -158,7 +205,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                     continue;
                 }
 
-                network_read_stream (client_network);
+                total_data_read += network_read_stream (client_network);
 
                 if (client_network->data_read.index == client_network->data_read.length &&
                     client_network->network_completed_action (client_network) != SUCCESS) {
@@ -170,7 +217,18 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                 }
             }
         }
+
+        average_data[counter % AVERAGE_SIZE] = total_data_read;
+
+        clock_gettime (CLOCK_REALTIME, &end_time);
+
+        long seconds_consumed = end_time.tv_sec - start_time.tv_sec;
+        long ns_consumed = end_time.tv_nsec - start_time.tv_nsec;
+
+        average_ms[counter % AVERAGE_SIZE] = seconds_consumed * 1000 + (ns_consumed / 1000000.0f);
+        counter++;
     }
+
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
 
 #ifdef DEBUG

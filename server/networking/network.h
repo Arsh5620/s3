@@ -90,7 +90,7 @@ void
 network_complete_async_read (network_read_s *read);
 network_read_s
 network_read_with_size (int size);
-void
+long
 network_read_stream (network_s *connection);
 void
 network_read_free (network_read_s data);

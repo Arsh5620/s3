@@ -284,23 +284,24 @@ network_connect_accept_sync (network_s *connection,
  * This function will perform memory allocation, and you will have to call
  * network_data_free when you are ready to release the memory
  */
-void
+long
 network_read_stream (network_s *connection)
 {
     network_read_s *read_info = &connection->data_read;
     if (read_info == NULL) {
         logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, NETWORK_INVALID_READ_ARGS);
-        return;
+        return -1;
     }
 
     if (read_info->length > NETWORK_READ_BUFFER && connection->temporary_file == NULL) {
         logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, NETWORK_READ_REQUEST_TOO_BIG);
-        return;
+        return -1;
     }
 
-    ulong buffer_index = 0;
+    ulong buffer_index = 0, temp_index = 0;
     if (connection->temporary_file != NULL) {
         buffer_index = read_info->index;
+        temp_index = read_info->index;
     }
 
     for (; read_info->index < read_info->length;) {
@@ -359,12 +360,13 @@ network_read_stream (network_s *connection)
             if (read_info->index == read_info->length) {
                 fflush (connection->temporary_file);
 
-                printf ("Flush operations are too expensive to be used frequently\n");
                 sha_256_finalize (&connection->sha256_context, connection->sha256_hex);
             }
         }
         buffer_index = read_info->index;
     }
+
+    return buffer_index - temp_index;
 }
 
 int
