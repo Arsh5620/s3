@@ -237,8 +237,10 @@ get_backtrace (int *backtrace_count)
 void
 logs_close ()
 {
-    free (logs.filename);
-    if (fclose (logs.file_p) != 0) {
+    if (logs.filename) {
+        free (logs.filename);
+    }
+    if (logs.file_p && fclose (logs.file_p) != 0) {
         printf ("Could not close the file open for logging.\n");
     }
 }

@@ -22,3 +22,26 @@ libfecc/main
 unit-testing/main
 meta/
 certificates
+s3
+
+# Rules to ignore the auto generated files for the autoconf/automake
+depcomp
+install-sh
+libtool
+ltmain.sh
+missing
+.libs/
+*.l[ao]
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+config.*
+configure
+m4/
+compile
+stamp-h?
+.deps/
+.dirstamp
+*.o
+*~

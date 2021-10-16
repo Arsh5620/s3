@@ -1,5 +1,7 @@
 #include "protocol.h"
 #include "../ssbs/deserializer.h"
+#include <unistd.h>
+#include <sys/ioctl.h>
 
 boolean sigint_action_flag = FALSE;
 
@@ -123,7 +125,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
         clock_gettime (CLOCK_REALTIME, &start_time);
 
         if (counter == 0) {
-            printf ("Waiting for downloads...");
+            printf ("Waiting to start...");
             fflush (stdout);
         } else {
             int counter_mod = min (counter, AVERAGE_SIZE);
@@ -143,12 +145,10 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                 average_idle_max = max (average_idle_max, average_wait[i]);
             }
 
-            printf ("\33[2K\r[Last 1000] Avg DL: %.2f MB/s, Avg loop: %.2f ms (h: %.1f), Avg wait: %.2f ms (h: %.1f)",
+            printf ("\33[2K\r[Last 1000rq] Avg DL: %.2f MB/s, Avg loop: %.2f ms, Avg load: %.2f %%",
                     (average_time / (average_time + average_idle)) * ((average_mbps / (average_time / 1000)) / MB (1)),
                     average_time / counter_mod,
-                    average_time_max,
-                    average_idle / counter_mod,
-                    average_idle_max);
+                    average_time / average_idle);
             fflush (stdout);
 
             long seconds_consumed = start_time.tv_sec - end_time.tv_sec;

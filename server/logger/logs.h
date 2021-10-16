@@ -5,7 +5,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#if DEBUG
 #define LOG_DIR_NAME "logs/"
+#else
+#define LOG_DIR_NAME "/var/logs/s3/"
+#endif
+
 // DD-MM-YYYY HH:MM:SS.msms
 #define LOG_DATE_FORMAT "%F %T"
 #define LOG_DATE_FORMAT_NS "%s [%.6ld]"
