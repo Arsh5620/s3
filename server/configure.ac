@@ -1,4 +1,4 @@
-AC_INIT([s3],[0.1],[https://github.com/Arsh5620/s3])
+AC_INIT([s3],[0.2],[https://github.com/Arsh5620/s3])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_PROG_CC
 LT_INIT
@@ -15,6 +15,11 @@ LT_INIT
 # AC_TYPE_SIZE_T 
 # AC_TYPE_UINT32_T
 # AC_TYPE_UINT64_T
+
+USERID=`id -un`
+
+AC_CONFIG_COMMANDS_POST([cp s3d.service.in s3d.service])
+AC_CONFIG_COMMANDS_POST([sed -i "s/@@USERID@@/${USERID}/g" s3d.service])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([

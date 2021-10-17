@@ -23,6 +23,7 @@ meta/
 certificates
 contents
 s3
+s3d.service
 
 # Rules to ignore the auto generated files for the autoconf/automake
 depcomp

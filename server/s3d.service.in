@@ -2,7 +2,8 @@
 Description=s3 - Simple Android notification server
 
 [Service]
-ExecStart=/usr/local/bin/s3
+User=@@USERID@@
+ExecStart=/usr/local/bin/s3 -iwlan0 -d -t4
 Type=simple
 PIDFile=/run/s3.pid
 Restart=on-failure
