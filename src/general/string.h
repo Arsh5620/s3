@@ -1,7 +1,7 @@
 #ifndef STRING_INCLUDE_GAURD
 #define STRING_INCLUDE_GAURD
 
-#include "../general/define.h"
+#include "../general/common.h"
 #include <stdarg.h>
 
 typedef struct string {

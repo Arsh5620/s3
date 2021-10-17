@@ -15,9 +15,9 @@ database_get_sqlite3 ();
 int
 database_init (const char *database_filename);
 int
-database_make_schema (int number_tables, ...);
+database_run_query_noresult (char *query, long query_length);
 sqlite3_stmt *
-database_get_stmt (const char *query, int query_length, int *error);
+database_get_stmt (const char *query, int query_length);
 int
 database_rows_affected (sqlite3_stmt *stmt, int response_type, char *error_message);
 int

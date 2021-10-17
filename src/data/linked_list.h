@@ -1,5 +1,5 @@
-#ifndef LINKED_LIST_INCLUDE_GAURD
-#define LINKED_LIST_INCLUDE_GAURD
+#ifndef DATA_LINKED_LIST_
+#define DATA_LINKED_LIST_
 
 typedef struct linked_list_node {
     struct linked_list_node *child;
@@ -21,4 +21,4 @@ linked_list_remove (linked_list_s *root, long index);
 void
 linked_list_free (linked_list_s *root);
 
-#endif // LINKED_LIST_INCLUDE_GAURD
+#endif // DATA_LINKED_LIST_

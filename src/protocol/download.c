@@ -1,4 +1,3 @@
-#include "../crypto/sha.h"
 #include "protocol.h"
 #include <openssl/sha.h>
 
@@ -93,10 +92,7 @@ s3_file_hash_write (char *file_name, file_hash_s hash)
     my_list_s hash_list = hash.hash_list;
     for (ulong i = 0; i < hash_list.count; ++i) {
         unsigned char *digest = (unsigned char *) my_list_get (hash_list, i);
-        for (size_t j = 0; j < hash.hash_compute_length; j++) {
-            hash_string[j * 2 + 1] = sha_uchar_to_hex (digest[j] & 0xF);
-            hash_string[j * 2] = sha_uchar_to_hex ((digest[j] >> 4) & 0xF);
-        }
+        string_hexify ((uchar *) hash_string, digest, hash.hash_compute_length);
 
         if (fwrite (hash_string, sizeof (char), allocation_length, file) != allocation_length) {
             return (FAILED);

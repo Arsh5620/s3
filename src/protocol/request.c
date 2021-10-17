@@ -1,5 +1,6 @@
 #include "../ssbs/deserializer.h"
 #include "protocol.h"
+#include <string.h>
 
 int
 s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size)
@@ -125,11 +126,16 @@ s3_request_read_action (s3_request_s *request)
     }
 
     if (kvpair != NULL) {
-        request->action = binary_search (
-          (char *) actions, sizeof (char *), actions_count, kvpair->value_pointer, kvpair->value_long, data_string_compare);
-        return (SUCCESS);
+        request->action = -1;
+        for (int i = 0; i < actions_count; i++) {
+            if (strcmp (actions[i], kvpair->value_pointer)) {
+                request->action = i;
+                break;
+            }
+        }
+        return SUCCESS;
     } else {
-        return (S3_RESPONSE_ACTION_INVALID);
+        return S3_RESPONSE_ACTION_INVALID;
     }
 }
 

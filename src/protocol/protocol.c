@@ -72,8 +72,8 @@ s3_verify_db ()
     char *schema_full_path = path_get_absolute_from_home (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME);
 
     if (database_init (schema_full_path) == SUCCESS) {
-        if (database_make_schema (1, AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE)) == SUCCESS &&
-            database_make_schema (1, FILEMGMT_TABLE_CREATE, sizeof (FILEMGMT_TABLE_CREATE)) == SUCCESS) {
+        if (database_run_query_noresult (AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE)) == SUCCESS &&
+            database_run_query_noresult (FILEMGMT_TABLE_CREATE, sizeof (FILEMGMT_TABLE_CREATE)) == SUCCESS) {
             return_value = TRUE;
         }
     } else {
@@ -99,7 +99,7 @@ s3_epollctl_add_epollin (int epoll_fd, int socket_fd)
 void
 s3_setup_epoll (s3_protocol_s *protocol)
 {
-    protocol->epoll_fd = epoll_create1 (NULL_ZERO);
+    protocol->epoll_fd = epoll_create1 (ZERO);
     if (protocol->epoll_fd == -1) {
         logs_put (LOG_OUT_LOGS, LOG_LEVEL_FATAL, PROTOCOL_EPOLL_CREATE_FAILED, strerror (errno));
     }
@@ -506,7 +506,7 @@ s3_attrib_contains (hash_table_s table, char *attrib)
         return FALSE;
     }
 
-    hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = attrib}, NULL_ZERO);
+    hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = attrib}, ZERO);
     // this is intentional for clarity on the return values
     return bucket.is_occupied ? TRUE : FALSE;
 }
@@ -585,9 +585,9 @@ void
 s3_connection_free (network_s *network)
 {
     if (network->request != NULL) {
-        m_free_null_check (network->request->file_name.file_name.address);
-        m_free_null_check (network->request->file_name.temp_file_name.address);
-        m_free_null_check (network->request->file_name.real_file_name.address);
+        m_free2 (network->request->file_name.file_name.address);
+        m_free2 (network->request->file_name.temp_file_name.address);
+        m_free2 (network->request->file_name.real_file_name.address);
 
         my_list_free (network->request->header_list);
         hash_table_free (network->request->header_table);
@@ -603,20 +603,6 @@ s3_connection_free (network_s *network)
     network->response = NULL;
 }
 
-uchar *
-hexstring (uchar *string, int string_length)
-{
-    uchar *memory = m_malloc (string_length * 2 + 1);
-    memory[string_length * 2] = 0;
-
-    for (size_t i = 0; i < string_length; i++) {
-        memory[i * 2] = sha_uchar_to_hex ((string[i] & 0xF0) >> 4);
-        memory[i * 2 + 1] = sha_uchar_to_hex (string[i] & 0xF);
-    }
-
-    return memory;
-}
-
 void
 hexdump (char *string, int string_length, int line_width)
 {
@@ -628,22 +614,6 @@ hexdump (char *string, int string_length, int line_width)
     }
     printf ("\n");
 }
-
-// void
-// s3_handle_close (s3_request_s *request, s3_response_s *response)
-// {
-//     m_free (request->header_raw);
-//     my_list_free (request->header_list);
-//     my_list_free (response->header_list);
-//     hash_table_free (request->header_table);
-//     if (request->additional_data) {
-//         m_free (request->additional_data);
-//         request->additional_data = NULL_ZERO;
-//     }
-//     m_free_null_check (request->file_name.file_name.address);
-//     m_free_null_check (request->file_name.real_file_name.address);
-//     m_free_null_check (request->file_name.temp_file_name.address);
-// }
 
 long
 s3_handle_response_string (network_s *network)

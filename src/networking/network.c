@@ -30,7 +30,7 @@
 void
 assert (int c1, char *fn, int err)
 {
-    if (c1 == GENERAL_ERROR) {
+    if (c1 == -1) {
         logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, NETWORK_ASSERT_MESSAGE, fn, strerror (errno), errno);
     }
 }
@@ -169,32 +169,32 @@ network_connect_init_sync_ssl (int port,
     if (ssl_context != NULL && ssl_method != NULL) {
         // check for certificate and private-key should already be done.
         result = SSL_library_init ();
-        assert_ssl (result, NULL_ZERO, "SSL_library_init", SERVER_TLS_LIB_INIT_FAILED);
+        assert_ssl (result, ZERO, "SSL_library_init", EXIT_FAILURE);
 
         result = SSL_load_error_strings ();
-        assert_ssl (result, NULL_ZERO, "SSL_load_error_strings", SERVER_TLS_LIB_INIT_FAILED);
+        assert_ssl (result, ZERO, "SSL_load_error_strings", EXIT_FAILURE);
 
         *ssl_method = (SSL_METHOD *) TLS_server_method ();
         *ssl_context = SSL_CTX_new (*ssl_method);
 
-        assert_ssl (result, NULL_ZERO, "SSL_library_init", SERVER_TLS_LIB_INIT_FAILED);
+        assert_ssl (result, ZERO, "SSL_library_init", EXIT_FAILURE);
 
         char *full_server_cert_path = path_get_absolute_from_home (RSA_SERVER_CERT);
         char *full_server_rsa_key_path = path_get_absolute_from_home (RSA_SERVER_KEY);
 
         if (SSL_CTX_use_certificate_file (*ssl_context, full_server_cert_path, SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-            assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_certificate_file", SERVER_TLS_LOAD_CERT_FAILED);
+            assert_ssl (ZERO, ZERO, "SSL_CTX_use_certificate_file", EXIT_FAILURE);
         }
 
         if (SSL_CTX_use_PrivateKey_file (*ssl_context, full_server_rsa_key_path, SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-            assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_PrivateKey_file", SERVER_TLS_LOAD_KEY_FAILED);
+            assert_ssl (ZERO, ZERO, "SSL_CTX_use_PrivateKey_file", EXIT_FAILURE);
         }
 
         m_free (full_server_cert_path);
         m_free (full_server_rsa_key_path);
 
         if (SSL_CTX_check_private_key (*ssl_context) != SSL_SUCCESS) {
-            assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key", SERVER_TLS_CERT_KEY_CHK_FAILED);
+            assert_ssl (ZERO, ZERO, "SSL_CTX_check_private_key", EXIT_FAILURE);
         }
 
         logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
@@ -222,23 +222,23 @@ network_connect_init_sync_ssl (int port,
         socket_v6->sin6_port = htons (port);
     }
 
-    assert (*server, "socket", SERVER_SOCK_INIT_FAILED);
+    assert (*server, "socket", EXIT_FAILURE);
 
 #ifndef RELEASE_BUILD
     int enable = 1;
     result = setsockopt (*server, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof (int));
-    assert (result, "setsockopt", SERVER_SET_SOCKOPT_FAILED);
+    assert (result, "setsockopt", EXIT_FAILURE);
 
     result = setsockopt (*server, IPPROTO_TCP, TCP_NODELAY, (char *) &enable, sizeof (int));
-    assert (result, "setsockopt", SERVER_SET_SOCKOPT_FAILED);
+    assert (result, "setsockopt", EXIT_FAILURE);
 #endif
 
     const struct sockaddr *address = *family == AF_INET ? (struct sockaddr *) socket_v4 : (struct sockaddr *) socket_v6;
     result = bind (*server, (const struct sockaddr *) address, *sock_size);
-    assert (result, "bind", SERVER_BIND_FAILED);
+    assert (result, "bind", EXIT_FAILURE);
 
     result = listen (*server, NETWORK_QUEQUE);
-    assert (result, "listen", SERVER_LISTEN_FAILED);
+    assert (result, "listen", EXIT_FAILURE);
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
 }
@@ -260,17 +260,17 @@ network_connect_accept_sync_ssl (network_s *connection, int server, SSL_CTX *ssl
 
     socklen_t len = sizeof (struct sockaddr_in);
     connection->client = accept (server, (struct sockaddr *) &connection->client_socket, &len);
-    assert (connection->client, "accept", SERVER_ACCEPT_FAILED);
+    assert (connection->client, "accept", EXIT_FAILURE);
 
     connected = TRUE;
     if (ssl_context != NULL) {
         connection->ssl_tls = SSL_new (ssl_context);
         if (connection->ssl_tls == NULL) {
-            assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_new", SERVER_TLS_SSL_NEW_FAILED);
+            assert_ssl (ZERO, ZERO, "SSL_new", EXIT_FAILURE);
         }
 
         int result = SSL_set_fd (connection->ssl_tls, connection->client);
-        assert_ssl (result, NULL_ZERO, "SSL_set_fd", SERVER_TLS_SET_FILE_DESCRIPTOR_FAILED);
+        assert_ssl (result, ZERO, "SSL_set_fd", EXIT_FAILURE);
 
         result = SSL_accept (connection->ssl_tls);
         if (result != SSL_SUCCESS) {
@@ -356,12 +356,12 @@ network_read_stream (network_s *connection)
 
         if (connection->temporary_file != NULL && read_info->index - buffer_index) {
             if (buffer_index == 0) {
-                sha_256_init (&connection->sha256_context);
+                SHA256_Init (&connection->sha256_context);
             }
 
             fwrite (read_info->address, sizeof (char), read_info->index - buffer_index, connection->temporary_file);
 
-            sha_256_update (&connection->sha256_context, (uchar *) read_info->address, read_info->index - buffer_index);
+            SHA256_Update (&connection->sha256_context, (uchar *) read_info->address, read_info->index - buffer_index);
 
             /*
              * Only flush when the entire file has been downloaded.
@@ -373,7 +373,9 @@ network_read_stream (network_s *connection)
             if (read_info->index == read_info->length) {
                 fflush (connection->temporary_file);
 
-                sha_256_finalize (&connection->sha256_context, connection->sha256_hex);
+                uchar sha256[SHA256_LENGTH];
+                SHA256_Final (sha256, &connection->sha256_context);
+                string_hexify (connection->sha256_hex, sha256, sizeof (sha256));
             }
         }
         buffer_index = read_info->index;

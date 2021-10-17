@@ -1,28 +1,29 @@
-#include "general/define.h"
+#include "general/common.h"
 #include "protocol/build.h"
 #include "protocol/protocol.h"
 #include <argp.h>
 #include <curses.h>
+#include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 struct argp_option argument_options[] = {
-  {"disable_debug_logs", 'd', NULL_ZERO, NULL_ZERO, "DO NOT print debug information in logs"},
-  {"print_stack_logs", 's', NULL_ZERO, NULL_ZERO, "print stack frame information to the logs"},
-  {"ip", 't', "[4,6]", NULL_ZERO, "Valid ip type values are '4' for ipv4 or '6' for ipv6"},
-  {"interface", 'i', "<interface name>", NULL_ZERO, "Interface to be bound to, defaults to 'loopback'. e.g. --interface=wlp2s0"},
-  {"port", 'p', "<port number>", NULL_ZERO, "Port number to use, defaults to 5665"},
+  {"disable_debug_logs", 'd', ZERO, ZERO, "DO NOT print debug information in logs"},
+  {"print_stack_logs", 's', ZERO, ZERO, "print stack frame information to the logs"},
+  {"ip", 't', "[4,6]", ZERO, "Valid ip type values are '4' for ipv4 or '6' for ipv6"},
+  {"interface", 'i', "<interface name>", ZERO, "Interface to be bound to, defaults to 'loopback'. e.g. --interface=wlp2s0"},
+  {"port", 'p', "<port number>", ZERO, "Port number to use, defaults to 5665"},
   {"initialize",
    1,
-   NULL_ZERO,
-   NULL_ZERO,
+   ZERO,
+   ZERO,
    "Go through an initial interactive setup of the program to add users and create ssl certificates"},
   {"plain-mode",
    2,
-   NULL_ZERO,
-   NULL_ZERO,
+   ZERO,
+   ZERO,
    "Run the server in plain mode, **DO NOT** use unless you know what you are doing. Any passphrases are visible on the network "
    "to anyone who can read traffic"},
   {0},
@@ -47,7 +48,7 @@ generate_ssl_certs ();
 error_t
 argument_parser (int key, char *arg, struct argp_state *state);
 
-struct argp argp = {argument_options, argument_parser, APPLICATION_NAME " server v" __SERVER_VERSION__, NULL, NULL, NULL};
+struct argp argp = {argument_options, argument_parser, APP_NAME " server v" __SERVER_VERSION__, NULL, NULL, NULL};
 boolean connection_initialized = FALSE;
 
 error_t
@@ -256,7 +257,9 @@ print_connection_banner (s3_protocol_s *protocol, int port)
         *(in_addr_t *) (temp) = sockaddr.sin_addr.s_addr;
         *(in_port_t *) (temp + sizeof (in_addr_t)) = sockaddr.sin_port;
 
-        hex = (char *) hexstring ((uchar *) temp, sizeof (in_addr_t) + sizeof (in_port_t));
+        int size = sizeof (in_addr_t) + sizeof (in_port_t);
+        hex = m_malloc (size * 2);
+        string_hexify ((uchar *) hex, (uchar *) temp, size);
     } else {
         struct sockaddr_in6 sockaddr = protocol->server_sockv6;
 
@@ -264,7 +267,9 @@ print_connection_banner (s3_protocol_s *protocol, int port)
         memcpy (temp, &sockaddr.sin6_addr.__in6_u, ip6addr_size);
         *(in_port_t *) (temp + ip6addr_size) = sockaddr.sin6_port;
 
-        hex = (char *) hexstring ((uchar *) temp, ip6addr_size + sizeof (in_port_t));
+        int size = ip6addr_size + sizeof (in_port_t);
+        hex = m_malloc (size * 2);
+        string_hexify ((uchar *) hex, (uchar *) temp, size);
     }
 
     m_free (temp);
@@ -315,7 +320,7 @@ main (int argc, char *argv[])
         },
     };
 
-    argp_parse (&argp, argc, argv, NULL_ZERO, NULL_ZERO, &settings);
+    argp_parse (&argp, argc, argv, ZERO, ZERO, &settings);
 
     sigaction (SIGPIPE, &(struct sigaction){{SIG_IGN}}, NULL);
     print_banner ();

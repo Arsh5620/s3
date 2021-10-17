@@ -1,7 +1,7 @@
 #ifndef MESSAGES_INCLUDE_GAURD
 #define MESSAGES_INCLUDE_GAURD
 
-#include "../general/define.h"
+#include "../general/common.h"
 #include "../logger/logs.h"
 #include "../protocol/build.h"
 #include <sqlite3.h>

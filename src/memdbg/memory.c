@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../general/define.h"
+#include "../general/common.h"
 #include "../logger/messages.h"
 #include "./memory.h"
 

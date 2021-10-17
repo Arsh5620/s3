@@ -1,5 +1,5 @@
 #include "string.h"
-#include "../general/define.h"
+#include "../general/common.h"
 #include "../memdbg/memory.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,7 +98,7 @@ string_new_copy (char *data, ulong length)
 
     string.address = m_malloc (allocation_size);
     memcpy (string.address, data, length);
-    *(string.address + length) = NULL_ZERO;
+    *(string.address + length) = ZERO;
     string.length = length;
 
     return (string);

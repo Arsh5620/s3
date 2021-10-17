@@ -1,8 +1,8 @@
 #ifndef MEMORY_INCLUDE_GAURD
 #define MEMORY_INCLUDE_GAURD
 
-#include "../data-structures/hash_table.h"
-#include "../data-structures/linked_list.h"
+#include "../data/hash_table.h"
+#include "../data/linked_list.h"
 #include "../ssbs/list.h"
 #include <stddef.h>
 
@@ -59,4 +59,8 @@ __realloc (void *address, long size, char *file_name, long line_no);
 #define m_malloc(size) __malloc (size, MEMORY_FILE_LINE)
 #define m_realloc(pointer, new_size) __realloc (pointer, new_size, MEMORY_FILE_LINE)
 #define m_free(pointer) __free (pointer, MEMORY_FILE_LINE)
+#define m_free2(pointer)                                                                                                         \
+    if (pointer) {                                                                                                               \
+        m_free (pointer);                                                                                                        \
+    }
 #endif

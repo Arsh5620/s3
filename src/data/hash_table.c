@@ -1,5 +1,5 @@
 #include "hash_table.h"
-#include "../memdbg/memory.h"
+
 #include <assert.h>
 #include <string.h>
 
@@ -35,37 +35,6 @@ hash_hash (hash_input_u value, size_t len, char is_str, size_t mod)
     return (hash);
 }
 
-hash_table_s
-hash_table_init_dbg (long count,
-                     char is_string
-#ifdef DEBUG
-                     ,
-                     int dbg
-#endif
-)
-{
-    hash_table_s table = {0};
-    table.capacity = count;
-    table.fill = count * HASH_FILL;
-    table.is_string = is_string;
-    size_t raw_size = count * sizeof (hash_table_bucket_s);
-
-#ifdef DEBUG
-    if (dbg) {
-        table.memory = (hash_table_bucket_s *) m_calloc (raw_size);
-    } else {
-        table.memory = (hash_table_bucket_s *) calloc (raw_size, 1);
-    }
-
-    table.debug = dbg;
-#else
-    table.memory = (hash_table_bucket_s *) calloc (raw_size, 1);
-#endif
-
-    assert (table.memory != NULL);
-    return table;
-}
-
 /*
  * hash_table_init inits a new hash_table_s structure
  * it allocates memory for HASH_TABLE_DEFAULT_SIZE buckets,
@@ -75,11 +44,14 @@ hash_table_init_dbg (long count,
 hash_table_s
 hash_table_init (long count, char is_string)
 {
-#ifdef DEBUG
-    return hash_table_init_dbg (count, is_string, 1);
-#else
-    return hash_table_init_dbg (count, is_string);
-#endif
+    hash_table_s table = {0};
+    table.capacity = count;
+    table.fill = count * HASH_FILL;
+    table.is_string = is_string;
+    size_t raw_size = count * sizeof (hash_table_bucket_s);
+    table.memory = (hash_table_bucket_s *) calloc (raw_size, 1);
+    assert (table.memory != NULL);
+    return table;
 }
 
 long
@@ -156,15 +128,7 @@ hash_table_expand (hash_table_s *table)
     size_t raw_size = table->capacity * sizeof (hash_table_bucket_s);
     hash_table_bucket_s *src = table->memory, *src0 = src;
 
-#ifdef DEBUG
-    if (table->debug) {
-        table->memory = (hash_table_bucket_s *) m_calloc (raw_size);
-    } else {
-        table->memory = (hash_table_bucket_s *) calloc (raw_size, 1);
-    }
-#else
     table->memory = (hash_table_bucket_s *) calloc (raw_size, 1);
-#endif
 
     assert (table->memory != NULL);
 
@@ -228,16 +192,7 @@ void
 hash_table_free (hash_table_s table)
 {
     if (table.memory) {
-#ifdef DEBUG
-        if (table.debug) {
-            m_free (table.memory);
-        } else {
-            free (table.memory);
-        }
-#else
         free (table.memory);
-#endif
-
         table.memory = NULL;
     }
 }

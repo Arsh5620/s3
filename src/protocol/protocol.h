@@ -1,14 +1,12 @@
 #ifndef PROTOCOL_INCLUDE_GAURD
 #define PROTOCOL_INCLUDE_GAURD
 
-#include "../data-structures/hash_table.h"
-#include "../data/data.h"
+#include "../data/hash_table.h"
 #include "../databases/database.h"
 #include "../files/file.h"
 #include "../files/filemgmt.h"
 #include "../files/path.h"
-#include "../general/binarysearch.h"
-#include "../general/define.h"
+#include "../general/common.h"
 #include "../general/string.h"
 #include "../logger/messages.h"
 #include "../memdbg/memory.h"
@@ -380,11 +378,6 @@ s3_auth_insert_sqlite3 (char *username, int username_length, char *password, int
 
 int
 s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);
-
-void
-hexdump (char *string, int string_length, int line_width);
-uchar *
-hexstring (uchar *string, int string_length);
 
 int
 s3_connection_magic_read (network_s *data);

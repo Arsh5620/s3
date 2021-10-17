@@ -3,7 +3,7 @@
 #define __VERSION_MAJOR__ 0
 #define __VERSION_MINOR__ 2
 
-#include "micro.inc"
+#include "build.inc"
 #define __BUILT_BY__ "Arsh"
 
 #define __SERVER_VERSION__                                                                                                       \

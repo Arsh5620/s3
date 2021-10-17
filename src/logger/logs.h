@@ -1,7 +1,7 @@
 #ifndef LOGS_INCLUDE_GAURD
 #define LOGS_INCLUDE_GAURD
 
-#include "../general/define.h"
+#include "../general/common.h"
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -14,7 +14,7 @@
 // DD-MM-YYYY HH:MM:SS.msms
 #define LOG_DATE_FORMAT "%F %T"
 #define LOG_DATE_FORMAT_NS "%s [%.6ld]"
-#define LOG_FILE_NAME "%s/" APPLICATION_NAME " %s.log"
+#define LOG_FILE_NAME "%s/" APP_NAME " %s.log"
 #define LOG_FILE_NEWLINE "\n"
 #define LOG_FILE_OUTPUT "[" LOG_DATE_FORMAT ".%4d] %s "
 #define LOG_MAX_FILENAMELENGTH 256

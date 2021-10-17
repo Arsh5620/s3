@@ -8,8 +8,7 @@
 #include <openssl/ssl.h>
 #include <sys/socket.h>
 
-#include "../crypto/sha.h"
-#include "../general/define.h"
+#include "../general/common.h"
 
 #define NETWORK_READ_BUFFER KB (4)
 #define NETWORK_WRITE_BUFFER KB (4)

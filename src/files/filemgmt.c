@@ -15,12 +15,9 @@ enum sqltypes filemgmt_record_types[] = {
 int
 filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length)
 {
-    int error;
-    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_EQUALS, sizeof (FILEMGMT_QUERY_SELECT_EQUALS), &error);
-
-    if (error != SUCCESS) {
-        sqlite3_finalize (stmt);
-        return error;
+    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_EQUALS, sizeof (FILEMGMT_QUERY_SELECT_EQUALS));
+    if (stmt == NULL) {
+        return FAILED;
     }
 
     sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
@@ -31,12 +28,9 @@ filemgmt_file_exists_sqlite3 (char *file_name, int file_name_length)
 int
 filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length)
 {
-    int error;
-    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_DELETE, sizeof (FILEMGMT_QUERY_DELETE), &error);
-
-    if (error != SUCCESS) {
-        sqlite3_finalize (stmt);
-        return error;
+    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_DELETE, sizeof (FILEMGMT_QUERY_DELETE));
+    if (stmt == NULL) {
+        return FAILED;
     }
 
     sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
@@ -47,12 +41,9 @@ filemgmt_file_delete_sqlite3 (char *file_name, int file_name_length)
 int
 filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, char *hash, int hash_length, int file_length)
 {
-    int error;
-    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_INSERT, sizeof (FILEMGMT_QUERY_INSERT), &error);
-
-    if (error != SUCCESS) {
-        sqlite3_finalize (stmt);
-        return error;
+    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_INSERT, sizeof (FILEMGMT_QUERY_INSERT));
+    if (stmt == NULL) {
+        return FAILED;
     }
 
     sqlite3_bind_text (stmt, 1, file_name, file_name_length, SQLITE_TRANSIENT);
@@ -66,12 +57,9 @@ filemgmt_file_add_sqlite3 (char *file_name, int file_name_length, char *hash, in
 int
 filemgmt_folder_exists_sqlite3 (string_s folder_name)
 {
-    int error;
-    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_LIKE_COUNT, sizeof (FILEMGMT_QUERY_SELECT_LIKE_COUNT), &error);
-
-    if (error != SUCCESS) {
-        sqlite3_finalize (stmt);
-        return error;
+    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_LIKE_COUNT, sizeof (FILEMGMT_QUERY_SELECT_LIKE_COUNT));
+    if (stmt == NULL) {
+        return FAILED;
     }
 
     APPEND_STRING (my_string, folder_name, "%");
@@ -84,11 +72,8 @@ filemgmt_folder_exists_sqlite3 (string_s folder_name)
 my_list_s *
 filemgmt_folder_files (string_s folder_name)
 {
-    int error;
-    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_LIKE, sizeof (FILEMGMT_QUERY_SELECT_LIKE), &error);
-
-    if (error != SUCCESS) {
-        sqlite3_finalize (stmt);
+    sqlite3_stmt *stmt = database_get_stmt (FILEMGMT_QUERY_SELECT_LIKE, sizeof (FILEMGMT_QUERY_SELECT_LIKE));
+    if (stmt == NULL) {
         return NULL;
     }
 

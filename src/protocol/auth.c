@@ -1,5 +1,4 @@
 #include "./auth.h"
-#include "../crypto/sha.h"
 #include "protocol.h"
 #include <string.h>
 
@@ -33,18 +32,18 @@ s3_auth_query (s3_request_s *request)
         return S3_RESPONSE_SERVER_ERROR_NOAUTH;
     }
 
-    size_t secret_length = 0;
-    char *password = s3_attrib_get (request->header_table, S3_ATTRIBNAME_SECRET, &secret_length, NULL);
+    size_t passphrase_length = 0;
+    char *passphrase = s3_attrib_get (request->header_table, S3_ATTRIBNAME_SECRET, &passphrase_length, NULL);
 
-    if (password == NULL) {
+    if (passphrase == NULL) {
         return S3_RESPONSE_SERVER_ERROR_NOAUTH;
     }
 
     uchar sha_hash[SHA256_LENGTH] = {0};
     uchar sha_hash_hex[SHA256_HEXLENGTH] = {0};
 
-    sha_256 (sha_hash, (uchar *) password, secret_length);
-    sha_256_hex (sha_hash_hex, sha_hash);
+    SHA256 ((uchar *) passphrase, passphrase_length, sha_hash);
+    string_hexify (sha_hash_hex, sha_hash, SHA256_LENGTH);
 
     int error = s3_auth_query_sqlite3 (username, username_length, (char *) sha_hash_hex, sizeof (sha_hash_hex));
     return error == SUCCESS ? SUCCESS : S3_RESPONSE_FAILED_AUTHENTICATION;
@@ -56,8 +55,8 @@ s3_auth_add_user (char *username, char *passphrase, int username_length, int pas
     uchar sha_hash[SHA256_LENGTH] = {0};
     uchar sha_hash_hex[SHA256_HEXLENGTH] = {0};
 
-    sha_256 (sha_hash, (uchar *) passphrase, passphrase_length);
-    sha_256_hex (sha_hash_hex, sha_hash);
+    SHA256 ((uchar *) passphrase, passphrase_length, sha_hash);
+    string_hexify (sha_hash_hex, sha_hash, SHA256_LENGTH);
 
     return s3_auth_insert_sqlite3 (username, username_length, (char *) sha_hash_hex, sizeof (sha_hash_hex));
 }
@@ -65,11 +64,9 @@ s3_auth_add_user (char *username, char *passphrase, int username_length, int pas
 int
 s3_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length)
 {
-    int error;
-    sqlite3_stmt *stmt = database_get_stmt (AUTH_QUERY, sizeof (AUTH_QUERY), &error);
-
-    if (error != SUCCESS) {
-        return error;
+    sqlite3_stmt *stmt = database_get_stmt (AUTH_QUERY, sizeof (AUTH_QUERY));
+    if (stmt == NULL) {
+        return FAILED;
     }
 
     sqlite3_bind_text (stmt, 1, username, username_length, SQLITE_TRANSIENT);
@@ -80,11 +77,10 @@ s3_auth_query_sqlite3 (char *username, int username_length, char *password, int 
 int
 s3_auth_insert_sqlite3 (char *username, int username_length, char *password, int password_length)
 {
-    int error;
-    sqlite3_stmt *stmt = database_get_stmt (AUTH_INSERT, sizeof (AUTH_INSERT), &error);
+    sqlite3_stmt *stmt = database_get_stmt (AUTH_INSERT, sizeof (AUTH_INSERT));
 
-    if (error != SUCCESS) {
-        return error;
+    if (stmt == NULL) {
+        return FAILED;
     }
 
     sqlite3_bind_text (stmt, 1, username, username_length, SQLITE_TRANSIENT);
