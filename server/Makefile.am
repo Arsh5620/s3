@@ -28,9 +28,7 @@ s3_SOURCES = \
 ./protocol/notification.c\
 ./protocol/protocol.c\
 ./protocol/request.c\
-./protocol/response.c
-
-include_HEADERS = \
+./protocol/response.c \
 ./crypto/sha.h\
 ./data-structures/hash_table.h\
 ./data-structures/linked_list.h\
@@ -54,3 +52,7 @@ include_HEADERS = \
 ./ssbs/serializer.h
 
 s3_LDADD = -lssl -lcrypto -lsqlite3 ssbs/ssbs.a
+
+## https://stackoverflow.com/a/58028204
+systemdsysdir = `pkg-config systemd --variable=systemdsystemunitdir`
+systemdsys_DATA = s3d.service

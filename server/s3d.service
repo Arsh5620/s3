@@ -1,0 +1,11 @@
+[Unit]
+Description=s3 - Simple Android notification server
+
+[Service]
+ExecStart=/usr/local/bin/s3
+Type=simple
+PIDFile=/run/s3.pid
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
