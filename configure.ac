@@ -18,8 +18,8 @@ LT_INIT
 
 USERID=`id -un`
 
-AC_CONFIG_COMMANDS_POST([cp s3d.service.in s3d.service])
-AC_CONFIG_COMMANDS_POST([sed -i "s/@@USERID@@/${USERID}/g" s3d.service])
+AC_CONFIG_COMMANDS_POST([cp services/s3d.service.in services/s3d.service])
+AC_CONFIG_COMMANDS_POST([sed -i "s/@@USERID@@/${USERID}/g" services/s3d.service])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([

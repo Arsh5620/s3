@@ -1,5 +1,5 @@
 [Unit]
-Description=s3 - Simple Android notification server
+Description=Android notification server
 
 [Service]
 User=@@USERID@@
