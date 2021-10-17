@@ -211,7 +211,6 @@ filemgmt_file_add (string_s file_name, string_s hash, long file_size)
 int
 filemgmt_rename_file (string_s dest, string_s src)
 {
-    path_mkdir_recursive (FILEMGMT_FOLDER_NAME);
     if (file_rename (dest, src) == FAILED) {
         return FAILED;
     }
@@ -233,24 +232,28 @@ filemgmt_mkdirs (filemgmt_file_name_s *file_info)
 int
 filemgmt_set_real_path (string_s filename, filemgmt_file_name_s *file)
 {
-    if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS) {
+    char *full_path = path_get_absolute_from_home (FILEMGMT_FOLDER_NAME);
+    if (path_mkdir_recursive (full_path) != SUCCESS) {
+        m_free (full_path);
         return FAILED;
     }
 
     my_list_s path_list = path_parse (filename).path_list;
-    string_s file_name = path_construct (path_list);
+    string_s file_name = path_construct (path_list, FALSE);
     my_list_free (path_list);
 
     if (file_name.address == NULL) {
-        return (FAILED);
+        m_free (full_path);
+        return FAILED;
     }
 
-    string_s real_file_name = file_path_concat (STRING (FILEMGMT_FOLDER_NAME), file_name);
+    string_s real_file_name = file_path_concat (STRING2 (full_path, strlen (full_path)), file_name);
 
     file->file_name = file_name;
     file->real_file_name = real_file_name;
 
-    return (SUCCESS);
+    m_free (full_path);
+    return SUCCESS;
 }
 
 int
@@ -263,7 +266,9 @@ filemgmt_set_tmp_path (filemgmt_file_name_s *file_info)
     temp_file_counter++;
 
     long length;
-    char *temp = string_sprintf (FILEMGMT_TEMP_FORMAT, &length, FILEMGMT_TEMP_DIR, temp_file_counter);
+    char *full_temp_path = path_get_absolute_from_home (FILEMGMT_TEMP_DIR);
+    char *temp = string_sprintf (FILEMGMT_TEMP_FORMAT, &length, full_temp_path, temp_file_counter);
+    m_free (full_temp_path);
 
     if (temp == NULL) {
         return (FAILED);

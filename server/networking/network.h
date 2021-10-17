@@ -13,8 +13,8 @@
 
 #define NETWORK_READ_BUFFER KB (4)
 #define NETWORK_WRITE_BUFFER KB (4)
-#define RSA_SERVER_KEY "certificates/CA-key.pem"
-#define RSA_SERVER_CERT "certificates/CA-cert.pem"
+#define RSA_SERVER_KEY "~/s3/certificates/CA-key.pem"
+#define RSA_SERVER_CERT "~/s3/certificates/CA-cert.pem"
 #define SSL_SUCCESS 1
 #define N_READ_SET(x) ({0, x})
 #define NETWORK_HOST_MAXLENGTH 256
@@ -42,16 +42,13 @@ typedef struct {
 typedef struct network_connection {
     int client;
     struct sockaddr_in client_socket;
-
-#ifndef DEBUG
     SSL *ssl_tls;
-#endif
-
     // We prioritize writing to temporary files over writing to in-memory buffer to save memory
     // This is necessary as we are not going to allocate any more than 4K memory per client.
     network_read_s data_read;
 
     SHA256_CTX sha256_context;
+    boolean plain_mode;
     uchar sha256_hex[SHA256_HEXLENGTH];
     FILE *temporary_file;
 
@@ -71,21 +68,25 @@ network_connect_init_sync (int port,
                            int *family,
                            int *sock_size,
                            int addr_type,
-                           char *interface
-#ifndef DEBUG
-                           ,
-                           SSL_CTX **ssl_context,
-                           SSL_METHOD **ssl_method
-#endif
-);
+                           char *interface);
+
 void
-network_connect_accept_sync (network_s *connection,
-                             int server
-#ifndef DEBUG
-                             ,
-                             SSL_CTX *ssl_context
-#endif
-);
+network_connect_init_sync_ssl (int port,
+                               int *server,
+                               struct sockaddr_in *socket_v4,
+                               struct sockaddr_in6 *socket_v6,
+                               int *family,
+                               int *sock_size,
+                               int addr_type,
+                               char *interface,
+                               SSL_CTX **ssl_context,
+                               SSL_METHOD **ssl_method);
+
+boolean
+network_connect_accept_sync (network_s *connection, int server);
+boolean
+network_connect_accept_sync_ssl (network_s *connection, int server, SSL_CTX *ssl_context);
+
 void
 network_complete_async_read (network_read_s *read);
 network_read_s

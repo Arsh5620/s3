@@ -1,6 +1,8 @@
+#include "general/define.h"
 #include "protocol/build.h"
 #include "protocol/protocol.h"
 #include <argp.h>
+#include <curses.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,11 +14,41 @@ struct argp_option argument_options[] = {
   {"ip", 't', "[4,6]", NULL_ZERO, "Valid ip type values are '4' for ipv4 or '6' for ipv6"},
   {"interface", 'i', "<interface name>", NULL_ZERO, "Interface to be bound to, defaults to 'loopback'. e.g. --interface=wlp2s0"},
   {"port", 'p', "<port number>", NULL_ZERO, "Port number to use, defaults to 5665"},
+  {"initialize",
+   1,
+   NULL_ZERO,
+   NULL_ZERO,
+   "Go through an initial interactive setup of the program to add users and create ssl certificates"},
+  {"plain-mode",
+   2,
+   NULL_ZERO,
+   NULL_ZERO,
+   "Run the server in plain mode, **DO NOT** use unless you know what you are doing. Any passphrases are visible on the network "
+   "to anyone who can read traffic"},
   {0},
 };
 
+#define GENERATE_CERTS                                                                                                           \
+    "CERTIFICATE_DIR=~/s3/certificates && mkdir $CERTIFICATE_DIR -p && cd $CERTIFICATE_DIR && openssl req -nodes -x509 "         \
+    "-newkey rsa:4096 "                                                                                                          \
+    "-keyout CA-key.pem -out CA-cert.pem -days 365"
+
 #define INVAL_VAL(__x, __arg)                                                                                                    \
     "Given value '%s' is unknown for option '" __x "', use '--help' or '--usage' option for help.\n", __arg
+
+void
+print_banner ();
+void
+interactive_setup ();
+void
+add_user_to_credentials_db (char *username, char *passphrase, int username_length, int passphrase_length);
+void
+generate_ssl_certs ();
+error_t
+argument_parser (int key, char *arg, struct argp_state *state);
+
+struct argp argp = {argument_options, argument_parser, APPLICATION_NAME " server v" __SERVER_VERSION__, NULL, NULL, NULL};
+boolean connection_initialized = FALSE;
 
 error_t
 argument_parser (int key, char *arg, struct argp_state *state)
@@ -24,6 +56,15 @@ argument_parser (int key, char *arg, struct argp_state *state)
     settings_s *settings = (settings_s *) state->input;
 
     switch (key) {
+        case '\1': {
+            interactive_setup ();
+            exit (EXIT_SUCCESS);
+            break;
+        }
+        case '\2': {
+            settings->plain_mode = TRUE;
+            break;
+        }
         case 'd': {
             settings->log_settings.print_debug_logs = FALSE;
             break;
@@ -71,7 +112,71 @@ argument_parser (int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-struct argp argp = {argument_options, argument_parser, APPLICATION_NAME " server v" __SERVER_VERSION__, NULL, NULL, NULL};
+void
+interactive_setup ()
+{
+    print_banner ();
+
+    char username[64];
+    char passphrase[64];
+    puts ("Starting intial setup, if you would like to cancel anytime before committing press ctrl+c");
+    char *username_value;
+    char *passphrase_value;
+
+    do {
+        puts ("Enter username: ");
+        username_value = fgets (username, sizeof (username), stdin);
+    } while (username_value == NULL || username_value[0] == '\0');
+
+    do {
+        puts ("Enter passphrase: ");
+        passphrase_value = fgets (passphrase, sizeof (passphrase), stdin);
+    } while (passphrase_value == NULL || passphrase_value[0] == '\0');
+
+    puts ("Commiting now.");
+    // -1 is for the new line terminators
+    add_user_to_credentials_db (username, passphrase, strlen (username_value) - 1, strlen (passphrase_value) - 1);
+
+    char response[2];
+    puts ("Would you like to also generate SSL certificates? Please note that without SSL certificates you cannot connect to s3d "
+          "securely");
+    fgets (response, sizeof (response), stdin);
+
+    if (response[0] == 'y') {
+        puts ("Generating SSL certs, If you want you can leave all the certificate fields empty");
+        generate_ssl_certs ();
+    }
+
+    puts ("Initial setup finished, if you have not already enabled the s3d daemon you can do so by following the steps: ");
+    puts ("\t* systemctl enable s3d.service");
+    puts ("\t* systemctl start s3d.service");
+    puts ("");
+    puts ("Goodbye!!");
+}
+
+void
+add_user_to_credentials_db (char *username, char *passphrase, int username_length, int passphrase_length)
+{
+    if (s3_verify_db ()) {
+        if (s3_auth_add_user (username, passphrase, username_length, passphrase_length)) {
+            puts ("User successfully added to auth database");
+            return;
+        } else {
+            fprintf (stderr, "Failed adding user to auth database. Exiting.");
+        }
+    } else {
+        fprintf (stderr, "Could not verify the integrity of \'" S3_DATABASE_FILENAME "\'. Exiting.");
+    }
+
+    fflush (stderr);
+    exit (EXIT_FAILURE);
+}
+
+void
+generate_ssl_certs ()
+{
+    system (GENERATE_CERTS);
+}
 
 void
 print_banner ()
@@ -85,6 +190,10 @@ print_banner ()
 void
 sigint_interrupt_handler (int v)
 {
+    if (connection_initialized == FALSE) {
+        puts ("Exiting with signal interrupt handler when main loop is not running");
+        exit (EXIT_FAILURE);
+    }
     s3_exit_sigint_fired ();
 }
 
@@ -215,6 +324,7 @@ main (int argc, char *argv[])
     s3_protocol_s protocol = s3_connection_initialize_sync (settings, &success);
     print_connection_banner (&protocol, settings.ip_settings.port);
 
+    connection_initialized = TRUE;
     if (success) {
         s3_connection_accept_loop_async (&protocol);
     }

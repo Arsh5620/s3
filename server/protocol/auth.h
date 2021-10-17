@@ -1,7 +1,6 @@
 #ifndef AUTH_INCLUDE_GAURD
 #define AUTH_INCLUDE_GAURD
 #include "../databases/database.h"
-#include "protocol.h"
 
 #define AUTH_TABLE_NAME "authentication"
 
@@ -15,5 +14,7 @@
     "SELECT COUNT(*), 'Hello world!' FROM " AUTH_TABLE_NAME " WHERE"                                                             \
     " " AUTH_COLUMN_USERNAME " = ? AND"                                                                                          \
     " " AUTH_COLUMN_SECRET " = ? LIMIT 1;"
+
+#define AUTH_INSERT "INSERT INTO " AUTH_TABLE_NAME " VALUES(?,?);"
 
 #endif // AUTH_INCLUDE_GAURD

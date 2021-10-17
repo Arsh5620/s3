@@ -1,6 +1,9 @@
 #include "path.h"
 #include "file.h"
+#include <pwd.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 my_list_s
 path_lex (string_s path, boolean *is_absolute)
@@ -72,10 +75,14 @@ path_parse (string_s path)
 }
 
 string_s
-path_construct (my_list_s path_list)
+path_construct (my_list_s path_list, boolean absolute)
 {
     char *buffer = m_malloc (513);
     ulong index = 0;
+    if (absolute) {
+        buffer[index++] = '/';
+    }
+
     for (size_t i = 0; i < path_list.count; i++) {
         file_path_node_s path = *(file_path_node_s *) my_list_get (path_list, i);
 
@@ -103,6 +110,27 @@ path_construct (my_list_s path_list)
     return (file);
 }
 
+char *
+path_get_absolute_from_home (char *path)
+{
+    char *path_abs = m_malloc (KB (1));
+
+    if (path != NULL && path[0] == '~') {
+        const char *homedir;
+
+        if ((homedir = getenv ("HOME")) == NULL) {
+            homedir = getpwuid (getuid ())->pw_dir;
+        }
+
+        path_abs = strcpy (path_abs, homedir);
+        path_abs = strcat (path_abs, path + 1);
+    } else {
+        path_abs = strcpy (path_abs, path);
+    }
+
+    return path_abs;
+}
+
 /**
  * this function requires that all directory names end will a forward slash /
  * otherwise the last part of the path is interpreted as a file instead
@@ -110,19 +138,24 @@ path_construct (my_list_s path_list)
 int
 path_mkdir_recursive (char *path)
 {
+    char *full_path = path_get_absolute_from_home (path);
+
     long index = 0;
     char *next = 0;
     boolean success = TRUE;
-    while (next = strchr (path + index, '/'), next != NULL) {
-        long length = next - path;
-        string_s p1 = string_new_copy (path, length);
-        if (file_dir_mkine (p1.address) != FILE_DIR_EXISTS) {
+    while (next = strchr (full_path + index, '/'), next != NULL) {
+        long length = next - full_path;
+        string_s p1 = string_new_copy (full_path, length);
+        fflush (stdout);
+        if (length > 0 && file_dir_mkine (p1.address) != FILE_DIR_EXISTS) {
             success = FALSE;
             break;
         }
         string_free (p1);
         index = length + 1;
     }
+
+    m_free (full_path);
     return (success ? SUCCESS : FAILED);
 }
 

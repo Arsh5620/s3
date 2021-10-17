@@ -8,7 +8,7 @@
 #if DEBUG
 #define LOG_DIR_NAME "logs/"
 #else
-#define LOG_DIR_NAME "/var/logs/s3/"
+#define LOG_DIR_NAME "~/s3/logs/"
 #endif
 
 // DD-MM-YYYY HH:MM:SS.msms

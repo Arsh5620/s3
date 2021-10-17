@@ -25,7 +25,7 @@
 
 #define PROTOCOL_MYSQL_FAILED_CONNECT "failed to connect to mysql server, program will now exit"
 
-#define PROTOCOL_BACKUP_FOLDER_NOT_CREATED "the folders to upload backup files could not be created"
+#define PROTOCOL_BACKUP_FOLDER_NOT_CREATED "failed while creating required directories for application data"
 
 #define PROTOCOL_EPOLL_CREATE_FAILED "error trying to create epoll, %s"
 
@@ -91,7 +91,7 @@
     "network initialization complete on port number (%d), "                                                                      \
     "server now listening with a queque length of (%d)"
 
-#define NETWORK_MODE_INFORMATION "network is running in %s mode"
+#define NETWORK_MODE_PLAIN_INITED "network successfully initialized Plain mode"
 
 #define NETWORK_MODE_SSL_INITED "network successfully initialized SSL mode"
 

@@ -161,7 +161,7 @@ file_path_concat (string_s path1, string_s path2)
     path_s.length = length;
 
     file_path_s normalized_path = path_parse (path_s);
-    string_s result = path_construct (normalized_path.path_list);
+    string_s result = path_construct (normalized_path.path_list, normalized_path.is_absolute);
     m_free (path);
     path_free (normalized_path);
 

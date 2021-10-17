@@ -69,7 +69,7 @@ typedef struct {
 } file_reader_s;
 
 int
-file_dir_mkine (char *dir);
+file_dir_mkine (char *dir_name);
 int
 file_delete (char *file);
 int

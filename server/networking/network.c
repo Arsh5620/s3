@@ -18,6 +18,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
+#include "../files/path.h"
 #include "../logger/logs.h"
 #include "../logger/messages.h"
 #include "../memdbg/memory.h"
@@ -134,10 +135,6 @@ network_gethostname (int family, struct sockaddr *sock, const char **error)
     return host;
 }
 
-/*
- * This function will initialize a new socket, bind it, and then
- * setup listening on the port, it will not accept a connection.
- */
 void
 network_connect_init_sync (int port,
                            int *server,
@@ -146,54 +143,65 @@ network_connect_init_sync (int port,
                            int *family,
                            int *sock_size,
                            int addr_type,
-                           char *interface
-#ifndef DEBUG
-                           ,
-                           SSL_CTX **ssl_context,
-                           SSL_METHOD **ssl_method
-#endif
-)
+                           char *interface)
+{
+    network_connect_init_sync_ssl (port, server, socket_v4, socket_v6, family, sock_size, addr_type, interface, NULL, NULL);
+}
+
+/*
+ * This function will initialize a new socket, bind it, and then
+ * setup listening on the port, it will not accept a connection.
+ */
+void
+network_connect_init_sync_ssl (int port,
+                               int *server,
+                               struct sockaddr_in *socket_v4,
+                               struct sockaddr_in6 *socket_v6,
+                               int *family,
+                               int *sock_size,
+                               int addr_type,
+                               char *interface,
+                               SSL_CTX **ssl_context,
+                               SSL_METHOD **ssl_method)
 {
     int result = 0;
 
-    logs_put (LOG_OUT_LOGS,
-              LOG_LEVEL_DEBUG,
-              NETWORK_MODE_INFORMATION,
-#ifdef DEBUG
-              "Plain"
-#else
-              "SSL"
-#endif
-    );
+    if (ssl_context != NULL && ssl_method != NULL) {
+        // check for certificate and private-key should already be done.
+        result = SSL_library_init ();
+        assert_ssl (result, NULL_ZERO, "SSL_library_init", SERVER_TLS_LIB_INIT_FAILED);
 
-#ifndef DEBUG
+        result = SSL_load_error_strings ();
+        assert_ssl (result, NULL_ZERO, "SSL_load_error_strings", SERVER_TLS_LIB_INIT_FAILED);
 
-    // check for certificate and private-key should already be done.
-    result = SSL_library_init ();
-    assert_ssl (result, NULL_ZERO, "SSL_library_init", SERVER_TLS_LIB_INIT_FAILED);
+        *ssl_method = (SSL_METHOD *) TLS_server_method ();
+        *ssl_context = SSL_CTX_new (*ssl_method);
 
-    result = SSL_load_error_strings ();
-    assert_ssl (result, NULL_ZERO, "SSL_load_error_strings", SERVER_TLS_LIB_INIT_FAILED);
+        assert_ssl (result, NULL_ZERO, "SSL_library_init", SERVER_TLS_LIB_INIT_FAILED);
 
-    *ssl_method = (SSL_METHOD *) TLS_server_method ();
-    *ssl_context = SSL_CTX_new (*ssl_method);
+        char *full_server_cert_path = path_get_absolute_from_home (RSA_SERVER_CERT);
+        char *full_server_rsa_key_path = path_get_absolute_from_home (RSA_SERVER_KEY);
 
-    assert_ssl (result, NULL_ZERO, "SSL_library_init", SERVER_TLS_LIB_INIT_FAILED);
+        if (SSL_CTX_use_certificate_file (*ssl_context, full_server_cert_path, SSL_FILETYPE_PEM) != SSL_SUCCESS) {
+            assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_certificate_file", SERVER_TLS_LOAD_CERT_FAILED);
+        }
 
-    if (SSL_CTX_use_certificate_file (*ssl_context, RSA_SERVER_CERT, SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-        assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_certificate_file", SERVER_TLS_LOAD_CERT_FAILED);
+        if (SSL_CTX_use_PrivateKey_file (*ssl_context, full_server_rsa_key_path, SSL_FILETYPE_PEM) != SSL_SUCCESS) {
+            assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_PrivateKey_file", SERVER_TLS_LOAD_KEY_FAILED);
+        }
+
+        m_free (full_server_cert_path);
+        m_free (full_server_rsa_key_path);
+
+        if (SSL_CTX_check_private_key (*ssl_context) != SSL_SUCCESS) {
+            assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key", SERVER_TLS_CERT_KEY_CHK_FAILED);
+        }
+
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
+    } else {
+        logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_PLAIN_INITED);
     }
 
-    if (SSL_CTX_use_PrivateKey_file (*ssl_context, RSA_SERVER_KEY, SSL_FILETYPE_PEM) != SSL_SUCCESS) {
-        assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_use_PrivateKey_file", SERVER_TLS_LOAD_KEY_FAILED);
-    }
-
-    if (SSL_CTX_check_private_key (*ssl_context) != SSL_SUCCESS) {
-        assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_CTX_check_private_key", SERVER_TLS_CERT_KEY_CHK_FAILED);
-    }
-
-    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, NETWORK_MODE_SSL_INITED);
-#endif
     const char *error = NULL;
 
     if (interface == NULL) {
@@ -235,29 +243,27 @@ network_connect_init_sync (int port,
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_PORT_LISTENING, port, NETWORK_QUEQUE);
 }
 
+boolean
+network_connect_accept_sync (network_s *connection, int server)
+{
+    return network_connect_accept_sync_ssl (connection, server, NULL);
+}
+
 /*
  * On any unrecoverable failure exit() will be called
  * this function is sync and will block until a client connects.
  */
-void
-network_connect_accept_sync (network_s *connection,
-                             int server
-#ifndef DEBUG
-                             ,
-                             SSL_CTX *ssl_context
-#endif
-)
+boolean
+network_connect_accept_sync_ssl (network_s *connection, int server, SSL_CTX *ssl_context)
 {
     boolean connected = FALSE;
 
-    do {
-        socklen_t len = sizeof (struct sockaddr_in);
-        connection->client = accept (server, (struct sockaddr *) &connection->client_socket, &len);
-        assert (connection->client, "accept", SERVER_ACCEPT_FAILED);
+    socklen_t len = sizeof (struct sockaddr_in);
+    connection->client = accept (server, (struct sockaddr *) &connection->client_socket, &len);
+    assert (connection->client, "accept", SERVER_ACCEPT_FAILED);
 
-        connected = TRUE;
-#ifndef DEBUG
-
+    connected = TRUE;
+    if (ssl_context != NULL) {
         connection->ssl_tls = SSL_new (ssl_context);
         if (connection->ssl_tls == NULL) {
             assert_ssl (NULL_ZERO, NULL_ZERO, "SSL_new", SERVER_TLS_SSL_NEW_FAILED);
@@ -276,8 +282,8 @@ network_connect_accept_sync (network_s *connection,
         } else {
             logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NETWORK_ASSERT_SSL_LEVEL_MESSAGE, SSL_get_cipher (connection->ssl_tls));
         }
-#endif
-    } while (!connected);
+    }
+    return connected;
 }
 
 /*
@@ -308,11 +314,18 @@ network_read_stream (network_s *connection)
         int read_amount = min (read_info->length - read_info->index, NETWORK_READ_BUFFER);
         char *buffer_offset = read_info->address + read_info->index - buffer_index;
 
-#ifndef DEBUG
-        long length = SSL_read (connection->ssl_tls, buffer_offset, read_amount);
+#ifdef DEBUG
+        boolean debug = TRUE;
 #else
-        long length = read (connection->client, buffer_offset, read_amount);
+        boolean debug = FALSE;
 #endif
+
+        long length = 0;
+        if (debug || connection->plain_mode) {
+            length = read (connection->client, buffer_offset, read_amount);
+        } else {
+            length = SSL_read (connection->ssl_tls, buffer_offset, read_amount);
+        }
 
         if (length == 0) {
             if (read_info->index != read_info->length) {
@@ -374,11 +387,18 @@ network_write_stream (network_s *network, char *buffer, ulong buffer_length)
 {
     ulong bytes_written = 0;
     for (long length = 0; bytes_written < buffer_length;) {
-#ifndef DEBUG
-        length = SSL_write (network->ssl_tls, buffer + bytes_written, buffer_length - bytes_written);
+#ifdef DEBUG
+        boolean debug = TRUE;
 #else
-        length = write (network->client, buffer + bytes_written, buffer_length - bytes_written);
+        boolean debug = FALSE;
 #endif
+
+        if (debug || network->plain_mode) {
+            length = write (network->client, buffer + bytes_written, buffer_length - bytes_written);
+        } else {
+            length = SSL_write (network->ssl_tls, buffer + bytes_written, buffer_length - bytes_written);
+        }
+
         if (length > 0) {
             bytes_written += length;
         }

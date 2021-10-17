@@ -69,7 +69,9 @@ logs_open_file (logs_s *log)
     long length = 0;
     char *dateformat = logs_gettime_s (LOG_DATE_FORMAT, FALSE, &length);
 
-    log->filename = string_sprintf2 (LOG_FILE_NAME, NULL, LOG_DIR_NAME, dateformat);
+    char *full_path = path_get_absolute_from_home (LOG_DIR_NAME);
+    log->filename = string_sprintf2 (LOG_FILE_NAME, NULL, full_path, dateformat);
+    m_free (full_path);
 
     free (dateformat);
 
@@ -125,18 +127,18 @@ logs_disable_backtrace ()
 boolean
 logs_write_internal (enum logs_level level, char *string, va_list args)
 {
+    if (logs.init == FALSE && level >= LOG_LEVEL_WARN) {
+        vprintf (string, args); // prints to the console output
+        puts ("\n<---->");      // adds a new line
+        return (FALSE);
+    }
+
     if (logs.file_p == NULL) {
         return FALSE;
     }
 
     if (log_settings.print_debug_logs == FALSE && level == LOG_LEVEL_DEBUG) {
         return TRUE;
-    }
-
-    if (logs.init == FALSE && level >= LOG_LEVEL_WARN) {
-        vprintf (string, args); // prints to the console output
-        puts ("<---->");        // adds a new line
-        return (FALSE);
     }
 
     boolean error = 0;

@@ -1,7 +1,9 @@
 #include "protocol.h"
 #include "../ssbs/deserializer.h"
-#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 boolean sigint_action_flag = FALSE;
 
@@ -15,51 +17,71 @@ s3_connection_initialize_sync (settings_s settings, boolean *success)
     *success = FALSE;
 
     s3_protocol_s protocol = {0};
+    protocol.plain_mode = settings.plain_mode;
     protocol.logs = logs_open (settings.log_settings);
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_LOG_INIT_COMPLETE);
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_NETWORK_SBS_INIT);
 
-#ifndef DEBUG
-    network_connect_init_sync (settings.ip_settings.port,
-                               &protocol.server,
-                               &protocol.server_sockv4,
-                               &protocol.server_sockv6,
-                               &protocol.sock_family,
-                               &protocol.sock_size,
-                               settings.ip_settings.address_type,
-                               settings.ip_settings.interface,
-                               &protocol.ssl_context,
-                               &protocol.ssl_method);
+#ifdef DEBUG
+    boolean debug = TRUE;
 #else
-    network_connect_init_sync (settings.ip_settings.port,
-                               &protocol.server,
-                               &protocol.server_sockv4,
-                               &protocol.server_sockv6,
-                               &protocol.sock_family,
-                               &protocol.sock_size,
-                               settings.ip_settings.address_type,
-                               settings.ip_settings.interface);
+    boolean debug = FALSE;
 #endif
+
+    if (debug || settings.plain_mode) {
+        network_connect_init_sync (settings.ip_settings.port,
+                                   &protocol.server,
+                                   &protocol.server_sockv4,
+                                   &protocol.server_sockv6,
+                                   &protocol.sock_family,
+                                   &protocol.sock_size,
+                                   settings.ip_settings.address_type,
+                                   settings.ip_settings.interface);
+    } else {
+        network_connect_init_sync_ssl (settings.ip_settings.port,
+                                       &protocol.server,
+                                       &protocol.server_sockv4,
+                                       &protocol.server_sockv6,
+                                       &protocol.sock_family,
+                                       &protocol.sock_size,
+                                       settings.ip_settings.address_type,
+                                       settings.ip_settings.interface,
+                                       &protocol.ssl_context,
+                                       &protocol.ssl_method);
+    }
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
     protocol.client_table = hash_table_init (100, FALSE);
 
+    *success = s3_verify_db ();
+
+    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_SETUP_FINISH);
+    return (protocol);
+}
+
+boolean
+s3_verify_db ()
+{
     if (path_mkdir_recursive (FILEMGMT_FOLDER_NAME) != SUCCESS) {
         logs_put (LOG_OUT_LOGS, LOG_LEVEL_FATAL, PROTOCOL_BACKUP_FOLDER_NOT_CREATED);
     }
 
-    if (database_init (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME) == SUCCESS &&
-        database_make_schema (
-          2, AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE), FILEMGMT_TABLE_CREATE, sizeof (FILEMGMT_TABLE_CREATE)) == SUCCESS) {
-        *success = TRUE;
+    boolean return_value = FALSE;
+    char *schema_full_path = path_get_absolute_from_home (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME);
+
+    if (database_init (schema_full_path) == SUCCESS) {
+        if (database_make_schema (1, AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE)) == SUCCESS &&
+            database_make_schema (1, FILEMGMT_TABLE_CREATE, sizeof (FILEMGMT_TABLE_CREATE)) == SUCCESS) {
+            return_value = TRUE;
+        }
     } else {
         logs_put (LOG_OUT_LOGS, LOG_LEVEL_FATAL, PROTOCOL_MYSQL_FAILED_CONNECT);
     }
 
-    logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_SETUP_FINISH);
-    return (protocol);
+    m_free (schema_full_path);
+    return return_value;
 }
 
 void
@@ -169,11 +191,25 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
 
             if (epoll_event.data.fd == protocol->server) {
                 network_s *new_connection = m_calloc (sizeof (network_s));
-#ifndef DEBUG
-                network_connect_accept_sync (new_connection, protocol->server, protocol->ssl_context);
+
+#ifdef DEBUG
+                boolean debug = TRUE;
 #else
-                network_connect_accept_sync (new_connection, protocol->server);
+                boolean debug = FALSE;
 #endif
+
+                boolean connected;
+                if (debug || protocol->plain_mode) {
+                    connected = network_connect_accept_sync (new_connection, protocol->server);
+                } else {
+                    connected = network_connect_accept_sync_ssl (new_connection, protocol->server, protocol->ssl_context);
+                }
+
+                if (connected != TRUE) {
+                    continue;
+                }
+
+                new_connection->plain_mode = protocol->plain_mode;
 
                 s3_make_connection_async (protocol->epoll_fd, new_connection->client);
                 struct sockaddr_in client = new_connection->client_socket;
@@ -247,10 +283,16 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
 void
 s3_connection_abort (network_s *network, hash_table_s *client_table)
 {
-#ifndef DEBUG
-    SSL_shutdown (network->ssl_tls);
-    SSL_free (network->ssl_tls);
+#ifdef DEBUG
+    boolean debug = TRUE;
+#else
+    boolean debug = FALSE;
 #endif
+
+    if (!(debug || network->plain_mode)) {
+        SSL_shutdown (network->ssl_tls);
+        SSL_free (network->ssl_tls);
+    }
 
     close (network->client);
     hash_table_remove (client_table, (hash_input_u){.number = network->client}, 0);

@@ -76,9 +76,9 @@ s3_print_headers (my_list_s list)
                   pair->key_length,
                   pair->key,
                   pair->value_long,
-                  pair->value_pointer, 
-                  pair->value_long, 
-                  pair->value_float, 
+                  pair->value_pointer,
+                  pair->value_long,
+                  pair->value_float,
                   pair->value_double);
     }
 }

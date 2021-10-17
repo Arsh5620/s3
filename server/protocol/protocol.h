@@ -214,13 +214,12 @@ typedef struct {
     int sock_family;
     int sock_size;
 
-// These variables are only required when using SSL, so they are not included in debug builds
-#ifndef DEBUG
+    // These variables are only required when using SSL, so they are not included in debug builds
     SSL_CTX *ssl_context;
 
     SSL_METHOD *ssl_method;
     X509 *ssl_certificate;
-#endif
+    boolean plain_mode;
 
     logs_s logs;
     hash_table_s client_table;
@@ -233,11 +232,16 @@ typedef struct settings {
         char *interface;
         unsigned short port;
     } ip_settings;
+    boolean plain_mode;
 } settings_s;
 
 void
 s3_print_counter ();
 
+boolean
+s3_verify_db ();
+void
+s3_generate_directories (char **folder_path, char **schema_path);
 void
 s3_close (s3_protocol_s protocol);
 void
@@ -368,7 +372,11 @@ s3_auth_query (s3_request_s *request);
 int
 s3_auth_transaction (s3_request_s *request);
 int
+s3_auth_add_user (char *username, char *passphrase, int username_length, int passphrase_length);
+int
 s3_auth_query_sqlite3 (char *username, int username_length, char *password, int password_length);
+int
+s3_auth_insert_sqlite3 (char *username, int username_length, char *password, int password_length);
 
 int
 s3_copy_keyvaluepairs (my_list_s source_list, my_list_s *dest_list);

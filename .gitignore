@@ -2,7 +2,7 @@
 *.gch
 schema.db
 server/main
-server/logs/*
+logs/*
 server/temp/*
 build
 tests
@@ -10,8 +10,7 @@ tests
 !/uml/chat.vpp
 client/*
 !client/*py
-server/backup
-server/backup-sha1
+backup
 server/profiler
 .~*
 gmon.out
@@ -22,6 +21,7 @@ libfecc/main
 unit-testing/main
 meta/
 certificates
+contents
 s3
 
 # Rules to ignore the auto generated files for the autoconf/automake
