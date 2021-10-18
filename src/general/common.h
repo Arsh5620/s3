@@ -18,11 +18,7 @@
 #define SHA256_HEXLENGTH 64
 #define SHA256_LENGTH 32
 
-#if DEBUG
-#define LOG_DIR_NAME "logs/"
-#else
 #define LOG_DIR_NAME "~/s3/logs/"
-#endif
 
 // DD-MM-YYYY HH:MM:SS.msms
 #define LOG_DATE_FORMAT "%F %T"
