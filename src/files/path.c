@@ -1,5 +1,7 @@
 #include "path.h"
 #include "file.h"
+#include "memdbg/memory.h"
+
 #include <pwd.h>
 #include <stdio.h>
 #include <string.h>

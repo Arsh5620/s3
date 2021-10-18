@@ -1,5 +1,5 @@
-#ifndef DATA_LINKED_LIST_
-#define DATA_LINKED_LIST_
+#ifndef SRC_DATA_LINKED_LIST_
+#define SRC_DATA_LINKED_LIST_
 
 typedef struct linked_list_node {
     struct linked_list_node *child;
@@ -21,4 +21,4 @@ linked_list_remove (linked_list_s *root, long index);
 void
 linked_list_free (linked_list_s *root);
 
-#endif // DATA_LINKED_LIST_
+#endif // SRC_DATA_LINKED_LIST_

@@ -18,6 +18,22 @@
 #define SHA256_HEXLENGTH 64
 #define SHA256_LENGTH 32
 
+#if DEBUG
+#define LOG_DIR_NAME "logs/"
+#else
+#define LOG_DIR_NAME "~/s3/logs/"
+#endif
+
+// DD-MM-YYYY HH:MM:SS.msms
+#define LOG_DATE_FORMAT "%F %T"
+#define LOG_DATE_FORMAT_NS "%s [%.6ld]"
+#define LOG_FILE_NAME "%s/" APP_NAME " %s.log"
+#define LOG_FILE_NEWLINE "\n"
+#define LOG_FILE_OUTPUT "[" LOG_DATE_FORMAT ".%4d] %s "
+#define LOG_MAX_FILENAMELENGTH 256
+#define LOG_MAX_SPRINTFBUFFER 2048
+#define LOG_MAX_TIMESTRINGL 64
+
 #define max(x, y) x > y ? x : y
 #define min(x, y) x < y ? x : y
 

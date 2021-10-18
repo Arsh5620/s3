@@ -1,19 +1,21 @@
-#ifndef PROTOCOL_INCLUDE_GAURD
-#define PROTOCOL_INCLUDE_GAURD
+#ifndef SRC_PROTOCOL_PROTOCOL_
+#define SRC_PROTOCOL_PROTOCOL_
 
-#include "../data/hash_table.h"
-#include "../databases/database.h"
-#include "../files/file.h"
-#include "../files/filemgmt.h"
-#include "../files/path.h"
-#include "../general/common.h"
-#include "../general/string.h"
-#include "../logger/messages.h"
-#include "../memdbg/memory.h"
-#include "../networking/network.h"
-#include "../ssbs/list.h"
-#include "../ssbs/serializer.h"
-#include "./auth.h"
+#include "auth.h"
+#include "data/hash_table.h"
+#include "database/database.h"
+#include "files/file.h"
+#include "files/filemgmt.h"
+#include "files/path.h"
+#include "general/common.h"
+#include "general/messages.h"
+#include "general/string.h"
+#include "logger/logs.h"
+#include "memdbg/memory.h"
+#include "networking/network.h"
+#include "ssbs/list.h"
+#include "ssbs/serializer.h"
+
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -398,4 +400,4 @@ boolean
 s3_connection_temp_file_required (enum s3_actions_enum action);
 void
 s3_exit_sigint_fired ();
-#endif // PROTOCOL_INCLUDE_GAURD
+#endif // SRC_PROTOCOL_PROTOCOL_

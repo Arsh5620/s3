@@ -1,8 +1,7 @@
-#ifndef DATABASE_INCLUDE_GAURD
-#define DATABASE_INCLUDE_GAURD
+#ifndef SRC_DATABASE_DATABASE_
+#define SRC_DATABASE_DATABASE_
 
 #include <sqlite3.h>
-#include <stddef.h>
 
 enum sqltypes {
     SQLTYPE_LONG,
@@ -22,4 +21,4 @@ int
 database_rows_affected (sqlite3_stmt *stmt, int response_type, char *error_message);
 int
 database_iterate_all_rows (sqlite3_stmt *stmt, void *memory, int (*row_callback) (void *, sqlite3_stmt *), char *error_message);
-#endif
+#endif // SRC_DATABASE_DATABASE_

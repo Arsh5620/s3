@@ -1,5 +1,5 @@
-#ifndef DATA_HASH_TABLE_
-#define DATA_HASH_TABLE_
+#ifndef SRC_DATA_HASH_TABLE_
+#define SRC_DATA_HASH_TABLE_
 
 #include <stdlib.h>
 
@@ -50,4 +50,4 @@ void
 hash_table_free (hash_table_s table);
 char
 hash_compare (hash_table_bucket_s bucket, hash_input_u key, size_t key_len, char is_string);
-#endif // DATA_HASH_TABLE_
+#endif // SRC_DATA_HASH_TABLE_

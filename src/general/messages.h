@@ -1,12 +1,5 @@
-#ifndef MESSAGES_INCLUDE_GAURD
-#define MESSAGES_INCLUDE_GAURD
-
-#include "../general/common.h"
-#include "../logger/logs.h"
-#include "../protocol/build.h"
-#include <sqlite3.h>
-
-#define EMPTY_STRING ""
+#ifndef SRC_GENERAL_MESSAGES_
+#define SRC_GENERAL_MESSAGES_
 
 #define PROTOCOL_LOG_INIT_COMPLETE "logging sub-system has been started"
 
@@ -138,7 +131,7 @@
 
 #define S3_CONNECTION_SHUTDOWN_CLEANUP "closing sockets / closing logging sub-system"
 
-// RESPONSE STRINGS
+// response strings
 
 #define S3_RESPONSE_STRING_ACTION_INVALID "Invalid action type."
 
@@ -173,4 +166,4 @@
 #define S3_RESPONSE_STRING_UNEXPECTED_DATA_FROM_CLIENT "Unexpected data from client for the requested action type."
 
 #define S3_RESPONSE_STRING_FAILED_AUTHENTICATION "Failed authentication."
-#endif
+#endif // SRC_GENERAL_MESSAGES_

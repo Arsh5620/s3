@@ -1,7 +1,9 @@
-#include "../general/common.h"
-#include "../general/string.h"
-#include "../memdbg/memory.h"
-#include "./file.h"
+#ifndef SRC_FILES_PATH_
+#define SRC_FILES_PATH_
+
+#include "general/common.h"
+#include "general/string.h"
+#include "ssbs/list.h"
 
 typedef struct {
     boolean is_file;
@@ -27,3 +29,4 @@ char *
 path_get_absolute_from_home (char *path);
 string_s
 path_construct (my_list_s path_list, boolean absolute);
+#endif // SRC_FILES_PATH_

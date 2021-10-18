@@ -1,4 +1,4 @@
-#include "../protocol.h"
+#include "protocol/protocol.h"
 
 // this function does not delete the actual file, but only removes link in db
 // so the file is still recoverable, unless an overwrite to the same name

@@ -1,4 +1,4 @@
-#include "../protocol.h"
+#include "protocol/protocol.h"
 
 long
 s3_action_request_writer (network_s *network)

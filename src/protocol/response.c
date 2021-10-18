@@ -1,5 +1,5 @@
-#include "../ssbs/serializer.h"
 #include "protocol.h"
+#include "ssbs/serializer.h"
 
 int
 s3_response_writer_update (s3_response_s *response, string_s write)

@@ -1,5 +1,5 @@
-#include "../../ssbs/serializer.h"
-#include "../protocol.h"
+#include "protocol/protocol.h"
+#include "ssbs/serializer.h"
 
 long
 s3_action_dirlist_writer (network_s *network)

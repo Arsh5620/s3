@@ -1,6 +1,10 @@
-#include "./filemgmt.h"
-#include "../files/path.h"
-#include "../logger/messages.h"
+#include "filemgmt.h"
+#include "files/file.h"
+#include "files/path.h"
+#include "general/messages.h"
+#include "logger/logs.h"
+#include "memdbg/memory.h"
+
 #include <string.h>
 
 static long temp_file_counter = 0;

@@ -1,7 +1,8 @@
-#ifndef STRING_INCLUDE_GAURD
-#define STRING_INCLUDE_GAURD
+#ifndef SRC_GENERAL_STRING_
+#define SRC_GENERAL_STRING_
 
-#include "../general/common.h"
+#include "general/common.h"
+
 #include <stdarg.h>
 
 typedef struct string {
@@ -45,4 +46,4 @@ string_sprintf2 (char *string, long *length, ...);
 
 void
 string_tolower (char *memory, ulong length);
-#endif
+#endif // SRC_GENERAL_STRING_

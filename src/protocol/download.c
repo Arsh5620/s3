@@ -1,4 +1,5 @@
 #include "protocol.h"
+
 #include <openssl/sha.h>
 
 int

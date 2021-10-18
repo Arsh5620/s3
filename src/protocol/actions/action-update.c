@@ -1,4 +1,5 @@
-#include "../protocol.h"
+#include "protocol/protocol.h"
+
 #include <sys/types.h>
 
 int

@@ -1,7 +1,8 @@
-#include "./file.h"
-#include "../general/string.h"
-#include "../memdbg/memory.h"
-#include "./path.h"
+#include "file.h"
+#include "general/string.h"
+#include "memdbg/memory.h"
+#include "path.h"
+
 #include <dirent.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -56,47 +57,6 @@ file_delete (char *filename)
     return (unlink (filename));
 }
 
-int
-file_download (FILE *file, network_s *network, network_read_s *data_read, file_hash_s *hash)
-{
-    // network_data_s data = network_read_stream (network, data_read);
-
-    // if (data.error_code != NETWORK_SUCCESS && data.error_code != NETWORK_ASYNC_WOULDBLOCK)
-    // {
-    //     network_data_free (data);
-    //     return (FILE_NETWORK_ERROR);
-    // }
-
-    // if (fwrite (data.data_address, sizeof (char), data.data_length, file) != data.data_length)
-    // {
-    //     return (FILE_WRITE_ERROR);
-    // }
-
-    // if (hashing_function != NULL)
-    // {
-    //     hashing_function (hash, data, FALSE);
-    // }
-
-    // network_data_free (data);
-
-    // if (data_read->read_completed == data_read->total_read && hashing_function != NULL)
-    // {
-    //     hashing_function (hash, (network_data_s){0}, TRUE);
-    // }
-
-    // fflush (file);
-
-    // if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
-    // {
-    //     return FILE_NETWORK_ASYNC_WOULBLOCK;
-    // }
-    // else
-    // {
-    //     return (FILE_SUCCESS);
-    // }
-    return 0;
-}
-
 struct stat
 file_stat (FILE *file)
 {
@@ -105,8 +65,6 @@ file_stat (FILE *file)
     return (file_stat);
 }
 
-// this function initializes file_reader_s so that files can be
-// read as stream without having to read the entire file into memory.
 file_reader_s
 file_reader_init (FILE *file)
 {
@@ -130,7 +88,6 @@ file_reader_close (file_reader_s *reader)
     }
 }
 
-// fills the buffer at index location with size bytes
 int
 file_reader_next (file_reader_s *reader, long index, long size)
 {

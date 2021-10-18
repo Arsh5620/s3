@@ -1,6 +1,6 @@
-#ifndef AUTH_INCLUDE_GAURD
-#define AUTH_INCLUDE_GAURD
-#include "../databases/database.h"
+#ifndef SRC_PROTOCOL_AUTH_
+#define SRC_PROTOCOL_AUTH_
+#include "database/database.h"
 
 #define AUTH_TABLE_NAME "authentication"
 
@@ -17,4 +17,4 @@
 
 #define AUTH_INSERT "INSERT INTO " AUTH_TABLE_NAME " VALUES(?,?);"
 
-#endif // AUTH_INCLUDE_GAURD
+#endif // SRC_PROTOCOL_AUTH_

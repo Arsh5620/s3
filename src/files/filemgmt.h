@@ -1,9 +1,12 @@
-#ifndef FILEMGMT_INCLUDE_GAURD
-#define FILEMGMT_INCLUDE_GAURD
+#ifndef SRC_FILES_FILEMGMT_
+#define SRC_FILES_FILEMGMT_
 
-#include "../databases/database.h"
-#include "../files/file.h"
-#include "../general/string.h"
+#include "database/database.h"
+#include "general/string.h"
+#include "ssbs/list.h"
+
+#include <sqlite3.h>
+#include <sys/stat.h>
 
 enum filemgmt_errors_enum { FILEMGMT_EXISTS = 1, FILEMGMT_NOT_FOUND, FILEMGMT_SQL_COULD_NOT_BIND };
 
@@ -103,4 +106,4 @@ int
 filemgmt_set_tmp_path (filemgmt_file_name_s *file_info);
 int
 filemgmt_mkdirs (filemgmt_file_name_s *file_info);
-#endif
+#endif // SRC_FILES_FILEMGMT_

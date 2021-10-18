@@ -1,12 +1,12 @@
+#include "memory.h"
+#include "general/common.h"
+#include "general/messages.h"
+
 #include <assert.h>
 #include <malloc.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "../general/common.h"
-#include "../logger/messages.h"
-#include "./memory.h"
 
 #ifdef DEBUG
 

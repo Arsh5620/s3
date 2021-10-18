@@ -1,25 +1,10 @@
-#ifndef LOGS_INCLUDE_GAURD
-#define LOGS_INCLUDE_GAURD
+#ifndef SRC_LOGGER_LOGS_
+#define SRC_LOGGER_LOGS_
 
-#include "../general/common.h"
+#include "general/common.h"
+
 #include <stdarg.h>
 #include <stdio.h>
-
-#if DEBUG
-#define LOG_DIR_NAME "logs/"
-#else
-#define LOG_DIR_NAME "~/s3/logs/"
-#endif
-
-// DD-MM-YYYY HH:MM:SS.msms
-#define LOG_DATE_FORMAT "%F %T"
-#define LOG_DATE_FORMAT_NS "%s [%.6ld]"
-#define LOG_FILE_NAME "%s/" APP_NAME " %s.log"
-#define LOG_FILE_NEWLINE "\n"
-#define LOG_FILE_OUTPUT "[" LOG_DATE_FORMAT ".%4d] %s "
-#define LOG_MAX_FILENAMELENGTH 256
-#define LOG_MAX_SPRINTFBUFFER 2048
-#define LOG_MAX_TIMESTRINGL 64
 
 typedef struct logs {
     FILE *file_p;
@@ -62,4 +47,4 @@ boolean
 logs_write_internal (enum logs_level level, char *string, va_list args);
 void
 logs_put (enum log_types logs_type, enum logs_level log_level, char *format, ...);
-#endif
+#endif // SRC_LOGGER_LOGS_

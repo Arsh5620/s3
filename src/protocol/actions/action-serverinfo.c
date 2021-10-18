@@ -1,5 +1,5 @@
-#include "../build.h"
-#include "../protocol.h"
+#include "protocol/build.h"
+#include "protocol/protocol.h"
 
 #define SERVER_INFO_CONST_RESPONSE STRING ("S3 server version " __SERVER_VERSION__ ", " __SERVER_INFO__)
 

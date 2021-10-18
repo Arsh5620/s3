@@ -1,5 +1,6 @@
-#include "../ssbs/deserializer.h"
 #include "protocol.h"
+#include "ssbs/deserializer.h"
+
 #include <string.h>
 
 int

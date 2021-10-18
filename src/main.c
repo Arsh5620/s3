@@ -1,6 +1,7 @@
 #include "general/common.h"
 #include "protocol/build.h"
 #include "protocol/protocol.h"
+
 #include <argp.h>
 #include <curses.h>
 #include <netinet/in.h>

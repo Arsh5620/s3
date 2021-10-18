@@ -1,15 +1,15 @@
-#include <stdio.h>
-#include <time.h>
+#include "logs.h"
+#include "files/file.h"
+#include "files/path.h"
+#include "general/string.h"
+#include "memdbg/memory.h"
 
 #include <execinfo.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "../files/path.h"
-#include "../general/string.h"
-#include "../memdbg/memory.h"
-#include "./logs.h"
+#include <time.h>
 
 // In c static means that the variables are only available in the same translation unit
 static logs_s logs = {0};
@@ -218,7 +218,6 @@ logs_put (enum log_types logs_type, enum logs_level level, char *format, ...)
     }
 }
 
-// THIS FUNCTION'S MEMORY IS NOT MONITORED
 char **
 get_backtrace (int *backtrace_count)
 {

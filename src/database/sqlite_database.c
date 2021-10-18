@@ -1,5 +1,7 @@
-#include "../logger/messages.h"
 #include "database.h"
+#include "general/messages.h"
+#include "logger/logs.h"
+
 #include <stdarg.h>
 
 sqlite3 *sqlite_connection;

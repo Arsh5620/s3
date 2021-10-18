@@ -1,12 +1,12 @@
-#ifndef FILE_INCLUDE_GAURD
-#define FILE_INCLUDE_GAURD
+#ifndef SRC_FILES_FILE_
+#define SRC_FILES_FILE_
+
+#include "general/string.h"
+#include "networking/network.h"
+#include "ssbs/list.h"
 
 #include <stdio.h>
 #include <sys/stat.h>
-
-#include "../general/string.h"
-#include "../networking/network.h"
-#include "../ssbs/list.h"
 
 enum file_errors_enum {
     FILE_SUCCESS,
@@ -91,4 +91,4 @@ file_download (FILE *file, network_s *network, network_read_s *data_read, file_h
 string_s
 file_path_concat (string_s path1, string_s path2);
 
-#endif
+#endif // SRC_FILES_FILE_

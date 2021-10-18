@@ -1,4 +1,5 @@
-#include "./auth.h"
+#include "auth.h"
+
 #include "protocol.h"
 #include <string.h>
 

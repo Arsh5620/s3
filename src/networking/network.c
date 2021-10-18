@@ -3,26 +3,24 @@
  * communication with the client.
  */
 
+#include "network.h"
+#include "files/path.h"
+#include "general/messages.h"
+#include "logger/logs.h"
+#include "memdbg/memory.h"
+
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <linux/if_link.h>
 #include <netdb.h>
 #include <sys/socket.h>
-
-#include "../files/path.h"
-#include "../logger/logs.h"
-#include "../logger/messages.h"
-#include "../memdbg/memory.h"
-#include "./network.h"
 
 /*
  * On any unrecoverable failure exit() will be called

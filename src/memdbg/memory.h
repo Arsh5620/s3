@@ -1,9 +1,9 @@
-#ifndef MEMORY_INCLUDE_GAURD
-#define MEMORY_INCLUDE_GAURD
+#ifndef SRC_MEMDBG_MEMORY_
+#define SRC_MEMDBG_MEMORY_
 
-#include "../data/hash_table.h"
-#include "../data/linked_list.h"
-#include "../ssbs/list.h"
+#include "data/hash_table.h"
+#include "data/linked_list.h"
+#include "ssbs/list.h"
 #include <stddef.h>
 
 #define MEMORY_FILE_LINE __BASE_FILE__, __LINE__
@@ -63,4 +63,5 @@ __realloc (void *address, long size, char *file_name, long line_no);
     if (pointer) {                                                                                                               \
         m_free (pointer);                                                                                                        \
     }
-#endif
+
+#endif // SRC_MEMDBG_MEMORY_

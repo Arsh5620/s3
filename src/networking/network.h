@@ -1,5 +1,7 @@
-#ifndef NETWORK_INCLUDE_GAURD
-#define NETWORK_INCLUDE_GAURD
+#ifndef SRC_NETWORKING_NETWORK_
+#define SRC_NETWORKING_NETWORK_
+
+#include "general/common.h"
 
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
@@ -7,8 +9,6 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <sys/socket.h>
-
-#include "../general/common.h"
 
 #define NETWORK_READ_BUFFER KB (4)
 #define NETWORK_WRITE_BUFFER KB (4)
@@ -99,4 +99,5 @@ network_gethostname (int family, struct sockaddr *sock, const char **error);
 
 int
 network_write_stream (network_s *network, char *buffer, ulong buffer_length);
-#endif
+
+#endif // SRC_NETWORKING_NETWORK_
