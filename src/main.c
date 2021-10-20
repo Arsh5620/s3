@@ -190,16 +190,6 @@ print_banner ()
 }
 
 void
-sigint_interrupt_handler (int v)
-{
-    if (connection_initialized == FALSE) {
-        puts ("Exiting with signal interrupt handler when main loop is not running");
-        exit (EXIT_FAILURE);
-    }
-    s3_exit_sigint_fired ();
-}
-
-void
 sigsegv_interrupt_handler (int v)
 {
     logs_enable_backtrace ();
@@ -304,7 +294,6 @@ int
 main (int argc, char *argv[])
 {
     // Handle signals so when debugging we can show all the memory that was not freed
-    signal (SIGINT, sigint_interrupt_handler);
     signal (SIGSEGV, sigsegv_interrupt_handler);
 
     settings_s settings = {

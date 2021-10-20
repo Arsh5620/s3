@@ -394,6 +394,4 @@ void
 s3_dirlist_serialize_sqltype (enum sqltypes type, sqlite_result_s *result, serializer_t *serializer);
 boolean
 s3_connection_temp_file_required (enum s3_actions_enum action);
-void
-s3_exit_sigint_fired ();
 #endif // SRC_PROTOCOL_PROTOCOL_

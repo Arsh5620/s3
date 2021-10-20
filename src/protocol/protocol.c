@@ -7,8 +7,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-boolean sigint_action_flag = FALSE;
-
 /**
  * This is the main functions that sets up everything, and this functions should only return when
  * success is 'true' otherwise it should kill the app. (Unless ofcourse if we have a bug)
@@ -121,12 +119,6 @@ s3_make_connection_async (int epoll_fd, int client_fd)
     s3_epollctl_add_epollin (epoll_fd, client_fd);
 }
 
-void
-s3_exit_sigint_fired ()
-{
-    sigint_action_flag = TRUE;
-}
-
 // This is the main loop of the application, everything happens here, after exiting this function
 // the program will exit
 void
@@ -142,7 +134,7 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
     long counter = 0;
     struct timespec end_time;
 
-    while (TRUE && sigint_action_flag == FALSE) {
+    while (TRUE) {
         int epoll_count = epoll_wait (protocol->epoll_fd, protocol->epoll_events, protocol->epoll_events_count, 1000);
 
         struct timespec start_time;
