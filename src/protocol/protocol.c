@@ -1,4 +1,5 @@
 #include "protocol.h"
+#include "data/hash_table.h"
 #include "ssbs/deserializer.h"
 
 #include <stdlib.h>
@@ -54,7 +55,7 @@ s3_connection_initialize_sync (settings_s settings, boolean *success)
     }
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_DEBUG, PROTOCOL_DATABASE_SETUP);
-    protocol.client_table = hash_table_init (100, FALSE);
+    protocol.client_table = hash_table_alloc (100, 0.85f, 2, 0);
 
     *success = s3_verify_db ();
 
@@ -223,16 +224,15 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
                 new_connection->data_read.length = S3_PROTOCOL_MAGIC_LEN;
                 new_connection->network_completed_action = s3_connection_magic_read;
 
-                hash_table_bucket_s bucket;
-                bucket.key.number = new_connection->client;
-                bucket.key_len = 0;
-                bucket.value.address = (char *) new_connection;
-                bucket.value_len = sizeof (*new_connection);
-                hash_table_add (&protocol->client_table, bucket);
+                hash_table_add (&protocol->client_table,
+                                (char *) &new_connection->client,
+                                sizeof (new_connection->client),
+                                (char *) new_connection,
+                                sizeof *new_connection);
             } else {
-                hash_input_u key = {.number = epoll_event.data.fd};
-                hash_table_bucket_s bucket = hash_table_get (protocol->client_table, key, 0);
-                network_s *client_network = (network_s *) bucket.value.address;
+                hash_table_bucket_s bucket =
+                  hash_table_get (protocol->client_table, (char *) &epoll_event.data.fd, sizeof epoll_event.data.fd);
+                network_s *client_network = (network_s *) bucket.value;
 
                 if (epoll_event.events & EPOLLERR || epoll_event.events & EPOLLHUP || epoll_event.events & EPOLLRDHUP) {
                     logs_put (LOG_OUT_LOGS, LOG_LEVEL_WARN, "A remote client hung up");
@@ -296,7 +296,7 @@ s3_connection_abort (network_s *network, hash_table_s *client_table)
     }
 
     close (network->client);
-    hash_table_remove (client_table, (hash_input_u){.number = network->client}, 0);
+    hash_table_remove (client_table, (char *) &network->client, sizeof (network->client));
     m_free (network->data_read.address);
     m_free (network);
 }
@@ -507,9 +507,9 @@ s3_attrib_contains (hash_table_s table, char *attrib)
         return FALSE;
     }
 
-    hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = attrib}, ZERO);
+    hash_table_bucket_s bucket = hash_table_get (table, attrib, strlen (attrib));
     // this is intentional for clarity on the return values
-    return bucket.is_occupied ? TRUE : FALSE;
+    return bucket.occupied ? TRUE : FALSE;
 }
 
 /**
@@ -534,16 +534,16 @@ s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length, boolean *is
         return NULL;
     }
 
-    hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = attrib}, strlen (attrib));
+    hash_table_bucket_s bucket = hash_table_get (table, attrib, strlen (attrib));
 
-    if (bucket.is_occupied) {
+    if (bucket.occupied) {
         if (out_length != NULL) {
-            *out_length = bucket.value_len;
+            *out_length = bucket.value_length;
         }
         if (is_valid != NULL) {
             *is_valid = TRUE;
         }
-        return bucket.value.address;
+        return bucket.value;
     }
 
     return NULL;
@@ -552,25 +552,18 @@ s3_attrib_get (hash_table_s table, char *attrib, size_t *out_length, boolean *is
 hash_table_s
 make_hash_table (my_list_s list)
 {
-    hash_table_s table = hash_table_init (10, TRUE);
+    hash_table_s table = hash_table_alloc (16, 0.85, 2, 0);
 
     for (long i = 0; i < list.count; ++i) {
         deserializer_value_t pair = *(deserializer_value_t *) my_list_get (list, i);
-        hash_table_bucket_s bucket = hash_table_get (table, (hash_input_u){.address = pair.key}, pair.key_length);
+        hash_table_bucket_s bucket = hash_table_get (table, pair.key, pair.key_length);
 
-        if (bucket.is_occupied) {
+        if (bucket.occupied) {
             // This means that a same key has already been added, ignore and continue
             continue;
         }
 
-        hash_table_bucket_s new_item = (hash_table_bucket_s){
-          .key.address = (char *) pair.key,
-          .key_len = pair.key_length,
-          .value.address = pair.value_pointer,
-          .value_len = pair.value_long,
-        };
-
-        hash_table_add (&table, new_item);
+        hash_table_add (&table, pair.key, pair.key_length, pair.value_pointer, pair.value_long);
     }
     return (table);
 }
@@ -647,34 +640,9 @@ s3_handle_response (network_s *network, enum s3_response_code code)
     return SUCCESS;
 }
 
-// void
-// s3_connection_shutdown (s3_protocol_s protocol, enum s3_shutdown_enum type)
-// {
-//     if (shutdown (protocol.connection.client, SHUT_RDWR) == 0)
-//     {
-//         char *reason;
-//         switch (type)
-//         {
-//         case S3_SHUTDOWN_CLOSE:
-//             reason = PROTOCOL_SHUTDOWN_REASON_FLOW;
-//             break;
-//         case S3_SHUTDOWN_INVALID:
-//             reason = PROTOCOL_SHUTDOWN_REASON_CORRUPT;
-//             break;
-//         default:
-//             reason = PROTOCOL_SHUTDOWN_REASON_UNKNOWN;
-//             break;
-//         }
-//         logs_put (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, PROTOCOL_CLIENT_CONNECT_ABORTED, reason);
-//     }
-// }
-
 void
 s3_close (s3_protocol_s protocol)
 {
-    // close (protocol.connection.client);
-    // close (protocol.connection.server);
-    // logs_put (MESSAGE_OUT_LOGS, LOGS_LEVEL_INFO, S3_CONNECTION_SHUTDOWN_CLEANUP);
     logs_close ();
 }
 

@@ -355,10 +355,6 @@ s3_connection_free (network_s *data);
 hash_table_s
 make_hash_table (my_list_s list);
 int
-s3_request_data (s3_protocol_s *protocol, s3_request_s *request);
-int
-s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request);
-int
 s3_connection_confirm_upload (network_s *network);
 int
 s3_connection_upload (network_s *network);

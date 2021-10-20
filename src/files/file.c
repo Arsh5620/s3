@@ -37,24 +37,10 @@ file_dir_mkine (char *dir_name)
     return (FILE_DIR_ERROR_OPEN);
 }
 
-FILE *
-file_open (string_s name, char *mode)
-{
-    if (name.length > FILE_NAME_LENGTH) {
-        return (NULL);
-    }
-
-    string_s name_null = string_new_copy (name.address, name.length);
-    FILE *file = fopen (name_null.address, mode);
-    string_free (name_null);
-
-    return (file);
-}
-
 int
 file_delete (char *filename)
 {
-    return (unlink (filename));
+    return unlink (filename);
 }
 
 struct stat
@@ -62,7 +48,7 @@ file_stat (FILE *file)
 {
     struct stat file_stat = {0};
     fstat (file->_fileno, &file_stat);
-    return (file_stat);
+    return file_stat;
 }
 
 file_reader_s
@@ -128,7 +114,7 @@ file_path_concat (string_s path1, string_s path2)
 int
 file_rename (string_s dest, string_s src)
 {
-    return (rename (src.address, dest.address));
+    return rename (src.address, dest.address);
 }
 
 int

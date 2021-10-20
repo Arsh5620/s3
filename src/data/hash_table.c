@@ -1,11 +1,18 @@
 #include "hash_table.h"
+#include "general/common.h"
 
 #include <assert.h>
+#include <stddef.h>
 #include <string.h>
 
+void
+hash_table_expand (hash_table_s *table);
+int
+hash_compare (hash_table_bucket_s bucket, char *key, long key_length);
+
 /**
- * this function calculates a hash given the number and the modulus
- * the modulus must be a power of 2
+ * This function calculates a hash given the number and the modulus
+ * The modulus must be a power of 2
  */
 size_t
 hash_long (size_t number, size_t modulus)
@@ -29,92 +36,89 @@ hash_string (char *memory, long len, unsigned long modulus)
 }
 
 size_t
-hash_hash (hash_input_u value, size_t len, char is_str, size_t mod)
+hash_hash (char *key, long length, long modulus)
 {
-    size_t hash = is_str ? hash_string (value.address, len, mod) : hash_long (value.number, mod);
-    return (hash);
+    if (length == 8) {
+        return hash_long (*(size_t *) key, modulus);
+    } else {
+        return hash_string (key, length, modulus);
+    }
 }
 
 /*
- * hash_table_init inits a new hash_table_s structure
- * it allocates memory for HASH_TABLE_DEFAULT_SIZE buckets,
- * and returns the structure which can later be used to fill the
- * table and make use of it.
+ * Creates a new hash_table_s structure, allocates memory for intial_count buckets
  */
 hash_table_s
-hash_table_init (long count, char is_string)
+hash_table_alloc (long initial_count, float fill_percentage, float expand_multiply, short expand_add)
 {
     hash_table_s table = {0};
-    table.capacity = count;
-    table.fill = count * HASH_FILL;
-    table.is_string = is_string;
-    size_t raw_size = count * sizeof (hash_table_bucket_s);
-    table.memory = (hash_table_bucket_s *) calloc (raw_size, 1);
+    table.capacity = initial_count;
+    table.capacity_max_fill = initial_count * fill_percentage;
+    table.hash_fill_multiply = fill_percentage;
+    table.expand_multiply = expand_multiply;
+    table.expand_add = expand_add;
+
+    size_t raw_size = initial_count * sizeof (hash_table_bucket_s);
+    table.memory = calloc (raw_size, 1);
     assert (table.memory != NULL);
+
     return table;
 }
 
-long
-hash_collision_count (hash_table_s table)
-{
-    return (table.collision_count);
-}
-
-/*
- * as first parameter this functions expects handle returned by
- * hash_table_init(), and then it tries to add the "entry" to the
- * hash table using open address hashing.
- */
 void
-hash_table_add (hash_table_s *table, hash_table_bucket_s entry)
+hash_table_add (hash_table_s *table, char *key, long key_length, char *value, long value_length)
 {
-    size_t hash = hash_hash (entry.key, entry.key_len, table->is_string, table->capacity);
+    size_t hash = hash_hash (key, key_length, table->capacity);
+    hash_table_bucket_s *table_buckets = table->memory + hash;
 
-    hash_table_bucket_s *dest = (table->memory + hash);
-    if (dest->is_occupied)
+    if (table_buckets->occupied) {
         table->collision_count++;
-
-    while (dest->is_occupied == HASH_OCCUPIED) {
-        dest++;
-        if (dest >= (table->memory + table->capacity))
-            dest = table->memory;
     }
 
-    entry.is_occupied = HASH_OCCUPIED;
-    *dest = entry;
+    // Find first place that isn't occupied, this will use the first place that is tombstoned
+    // or the first place that is empty
+    while (table_buckets->occupied == HASH_OCCUPIED) {
+        table_buckets++;
+        if (table_buckets >= table->memory + table->capacity) {
+            table_buckets = table->memory;
+        }
+    }
+
+    hash_table_bucket_s *bucket = table_buckets;
+
+    bucket->occupied = HASH_OCCUPIED;
+    bucket->key = key;
+    bucket->value = value;
+    bucket->key_length = key_length;
+    bucket->value_length = value_length;
+
     table->count++;
 
-    if (table->count >= table->fill)
+    if (table->count > table->capacity_max_fill) {
         hash_table_expand (table);
+    }
 }
 
 // https://research.cs.vt.edu/AVresearch/hashing/deletion.php
 void
-hash_table_remove (hash_table_s *table, hash_input_u key, size_t key_length)
+hash_table_remove (hash_table_s *table, char *key, long key_length)
 {
-    size_t hash = hash_hash (key, key_length, table->is_string, table->capacity);
-    hash_table_bucket_s *addr = (table->memory + hash);
+    size_t hash = hash_hash (key, key_length, table->capacity);
+    hash_table_bucket_s *table_buckets = table->memory + hash;
 
-    while (hash_compare (*addr, key, key_length, table->is_string)) {
-        addr++;
-        if (addr >= table->memory + table->capacity)
-            addr = table->memory;
+    while (hash_compare (*table_buckets, key, key_length)) {
+        table_buckets++;
+        if (table_buckets >= table->memory + table->capacity) {
+            table_buckets = table->memory;
+        }
     }
 
-    memset (addr, 0, sizeof (*addr));
-    addr->is_occupied = HASH_TOMBSTONE;
+    memset (table_buckets, 0, sizeof *table_buckets);
+    table_buckets->occupied = HASH_TOMBSTONE;
 }
 
-/*
- * hash_table_expand should not be called by the user,
- * it will already be called automatically by hash_table_add
- * if the threshold for the entries exceed a certain limit.
- * this function will then allocate memory for more elements,
- * and will move and reassign elements from previous memory
- * location to the new location.
- * this function will release the previously allocated memory
- * if needs to.
- */
+// This function is extremely expensive as it copies over all of the memory
+// when expanding the size of the hash table
 void
 hash_table_expand (hash_table_s *table)
 {
@@ -122,47 +126,54 @@ hash_table_expand (hash_table_s *table)
     size_t size = table->capacity;
 
     table->count = 0;
-    table->capacity *= HASH_EXPAND;
-    table->fill = table->capacity * HASH_FILL;
+    table->capacity = (table->capacity * table->expand_multiply) + table->expand_add;
+    table->capacity_max_fill = table->capacity * table->hash_fill_multiply;
 
     size_t raw_size = table->capacity * sizeof (hash_table_bucket_s);
-    hash_table_bucket_s *src = table->memory, *src0 = src;
+    hash_table_bucket_s *source_memory = table->memory, *source_memory_cpy = source_memory;
 
-    table->memory = (hash_table_bucket_s *) calloc (raw_size, 1);
-
+    table->memory = calloc (raw_size, 1);
     assert (table->memory != NULL);
 
     size_t i = size;
     while (i--) {
-        // we don't want to copy tombstoned buckets
-        if (src->is_occupied == HASH_OCCUPIED)
-            hash_table_add (table, *src);
-        src++;
+        // Copy all of the buckets except tombstoned
+        if (source_memory->occupied == HASH_OCCUPIED) {
+            hash_table_bucket_s bucket = *source_memory;
+            hash_table_add (table, bucket.key, bucket.key_length, bucket.value, bucket.value_length);
+        }
+        source_memory++;
     }
 
-    if (src0 != NULL)
-        free (src0);
+    if (source_memory_cpy) {
+        free (source_memory_cpy);
+    }
 }
 
 /*
- * this function will check if we should continue looking into next bucket
- * when performing linear search
+ * @return boolean bucket != key AND no more values to iterate
  */
-char inline hash_compare (hash_table_bucket_s bucket, hash_input_u key, size_t key_len, char is_string)
+int
+hash_compare (hash_table_bucket_s bucket, char *key, long key_length)
 {
-    if (is_string == 0) {
-        if (bucket.key.number == key.number)
-            return (0);
-    } else if (is_string == 1) {
-        if (bucket.key.address == NULL || memcmp (bucket.key.address, key.address, key_len) == 0)
-            return (0);
-    } else
-        return (0);
+    if (bucket.occupied == 0) {
+        return FALSE;
+    }
 
-    // we can continue searching if the bucket is full or has a tombstone
-    if (!bucket.is_occupied)
-        return (0);
-    return (1);
+    if (bucket.occupied == HASH_TOMBSTONE) {
+        return TRUE;
+    }
+
+    if (bucket.key_length != key_length) {
+        return TRUE;
+    }
+
+    int cmp = memcmp (bucket.key, key, key_length);
+    if (cmp == 0) { // bucket == key
+        return FALSE;
+    }
+
+    return FALSE;
 }
 
 /*
@@ -170,20 +181,21 @@ char inline hash_compare (hash_table_bucket_s bucket, hash_input_u key, size_t k
  * returns: hash_table_bucket_s
  */
 hash_table_bucket_s
-hash_table_get (hash_table_s table, hash_input_u key, size_t key_length)
+hash_table_get (hash_table_s table, char *key, long key_length)
 {
-    size_t hash = hash_hash (key, key_length, table.is_string, table.capacity);
-    hash_table_bucket_s *addr = (table.memory + hash), result = {0};
+    size_t hash = hash_hash (key, key_length, table.capacity);
+    hash_table_bucket_s *table_buckets = table.memory + hash, result = {0};
 
-    int i = 0;
-    while (i = hash_compare (*addr, key, key_length, table.is_string), i) {
-        addr++;
-        if (addr >= table.memory + table.capacity)
-            addr = table.memory;
+    while (hash_compare (*table_buckets, key, key_length)) {
+        table_buckets++;
+        if (table_buckets >= table.memory + table.capacity) {
+            table_buckets = table.memory;
+        }
     }
 
-    if (addr->is_occupied)
-        result = *addr;
+    if (table_buckets->occupied) {
+        result = *table_buckets;
+    }
 
     return result;
 }

@@ -18,7 +18,8 @@ uchar inline uchar_to_hex (uchar digit)
     if (digit < 10) {
         return (digit + '0');
     } else if (digit < 16) {
-        return (digit - 10 + 'a');
+        return digit - 10 + 'a';
     }
-    return ('0');
+    
+    return '0';
 }

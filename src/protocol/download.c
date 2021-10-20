@@ -2,37 +2,6 @@
 
 #include <openssl/sha.h>
 
-int
-s3_request_data (s3_protocol_s *protocol, s3_request_s *request)
-{
-    if (s3_request_data_headers (protocol, request) == SUCCESS) {
-        if (s3_file_download (request) == SUCCESS) {
-            return (SUCCESS);
-        } else {
-            return S3_RESPONSE_SERVER_INTERNAL_ERROR;
-        }
-    } else {
-        return (S3_RESPONSE_CORRUPTED_DATA_HEADERS);
-    }
-}
-
-int
-s3_request_data_headers (s3_protocol_s *protocol, s3_request_s *request)
-{
-    // long number;
-    // int error = s3_network_read_stream_async (protocol, (char *) &number, sizeof (int));
-    // if (error != SUCCESS || protocol->current.read_status == STATUS_ASYNC_MORE)
-    // {
-    //     return error;
-    // }
-
-    // if (number != 0x41544144) // DATA in ascii
-    // {
-    //     return (S3_RESPONSE_INVALID_COMMUNICATION);
-    // }
-    return SUCCESS;
-}
-
 void
 s3_file_hash (file_hash_s *hash, network_read_s data, boolean fin)
 {
@@ -101,55 +70,5 @@ s3_file_hash_write (char *file_name, file_hash_s hash)
     }
 
     fflush (file);
-    return (SUCCESS);
-}
-
-int
-s3_file_download (s3_request_s *request)
-{
-    // file_hash_s hash = {0};
-    // hash.hash_compute_length = 20; // Length of SHA1 hash
-    // hash.hash_function = s3_file_hash_sha1;
-
-    // char *temp_file = request->file_name.temp_file_name.address;
-
-    // FILE *temp = fopen (temp_file, FILE_MODE_WRITEBINARY);
-
-    // if (temp == NULL)
-    // {
-    //     logs_put (LOG_OUT_LOGS, LOG_LEVEL_ERROR, PROTOCOL_DOWNLOAD_FILE_NOOPEN);
-    //     return (FAILED);
-    // }
-
-    // clock_t start_time = clock ();
-
-    // s3_protocol_s *protocol = (s3_protocol_s *) request->instance;
-    // network_init_async_read (&protocol->current.read_info, request->header_info.data_length);
-    // int error = file_download (
-    //   temp, &protocol->connection, &protocol->current.read_info, &hash, s3_file_hash);
-
-    // if (error != SUCCESS || protocol->current.read_status != STATUS_ASYNC_COMPLETED)
-    // {
-    //     return error;
-    // }
-
-    // s3_file_hash_write (request->file_name.temp_hash_file_name.address, hash);
-
-    // m_free (hash.hash_buffer);
-
-    // clock_t endtime = clock ();
-
-    // long time_elapsed = (endtime - start_time) / (CLOCKS_PER_SEC / 1000);
-
-    // logs_put (
-    //   MESSAGE_OUT_LOGS,
-    //   LOGS_LEVEL_INFO,
-    //   PROTOCOL_DOWNLOAD_COMPLETE,
-    //   request->file_name.file_name.length,
-    //   request->file_name.file_name.address,
-    //   request->header_info.data_length,
-    //   time_elapsed);
-
-    // fclose (temp);
     return (SUCCESS);
 }
