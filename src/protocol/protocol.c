@@ -365,6 +365,7 @@ s3_connection_temp_file_required (enum s3_actions_enum action)
     switch (action) {
         case S3_ACTION_CREATE:
         case S3_ACTION_UPDATE:
+        case S3_ACTION_NOTIFICATION:
             return TRUE;
         default:
             return FALSE;

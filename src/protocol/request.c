@@ -83,7 +83,7 @@ s3_request_read_action (s3_request_s *request)
     if (kvpair != NULL) {
         request->action = -1;
         for (int i = 0; i < actions_count; i++) {
-            if (strcmp (actions[i], kvpair->value_pointer)) {
+            if (memcmp (actions[i], kvpair->value_pointer, kvpair->value_length) == 0) {
                 request->action = i;
                 break;
             }

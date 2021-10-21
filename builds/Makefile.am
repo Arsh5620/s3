@@ -30,6 +30,7 @@ config.h\
 ../src/protocol/actions/action-delete.c\
 ../src/protocol/actions/action-dirlist.c\
 ../src/protocol/actions/action-login.c\
+../src/protocol/actions/action-notification.c\
 ../src/protocol/actions/action-request.c\
 ../src/protocol/actions/action-serverinfo.c\
 ../src/protocol/actions/action-update.c\
@@ -38,14 +39,14 @@ config.h\
 ../src/protocol/build.h\
 ../src/protocol/constants.c\
 ../src/protocol/download.c\
-../src/protocol/notification.c\
 ../src/protocol/protocol.c\
 ../src/protocol/protocol.h\
 ../src/protocol/request.c\
 ../src/protocol/response.c
 
-s3_CFLAGS = -I../src -Wall -Werror -Os
-s3_LDADD = -lssl -lcrypto -lsqlite3 ../src/ssbs/ssbs.a
+DBUS_FLAGS = `pkg-config --cflags libnotify`
+s3_CFLAGS = -I../src ${DBUS_FLAGS} -Wall -Werror
+s3_LDADD = -lssl -lcrypto -lsqlite3 -lpthread -lnotify -lgdk_pixbuf-2.0 -lgio-2.0 -lgobject-2.0 -lglib-2.0 ../src/ssbs/ssbs.a
 
 ## https://stackoverflow.com/a/58028204
 systemdsysdir = `pkg-config systemd --variable=systemdsystemunitdir`
