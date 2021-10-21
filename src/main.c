@@ -1,3 +1,4 @@
+#include "files/path.h"
 #include "general/common.h"
 #include "protocol/build.h"
 #include "protocol/protocol.h"

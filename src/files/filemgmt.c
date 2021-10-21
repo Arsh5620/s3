@@ -2,6 +2,7 @@
 #include "files/file.h"
 #include "files/path.h"
 #include "general/messages.h"
+#include "general/string.h"
 #include "logging/logs.h"
 #include "memdbg/memory.h"
 
@@ -221,25 +222,25 @@ filemgmt_mkdirs (filemgmt_file_name_s *file_info)
 int
 filemgmt_set_real_path (string_s filename, filemgmt_file_name_s *file)
 {
-    char *full_path = path_get_absolute_from_home (FILEMGMT_FOLDER_NAME);
+    char *full_path = path_validate_and_expand (FILEMGMT_FOLDER_NAME);
     if (path_mkdir_recursive (full_path) != SUCCESS) {
         m_free (full_path);
         return FAILED;
     }
 
-    my_list_s path_list = path_parse (filename).path_list;
-    string_s file_name = path_construct (path_list, FALSE);
-    my_list_free (path_list);
+    // Write a 0 as string delimiter, restore after
+    char value = filename.address[filename.length];
+    filename.address[filename.length] = 0;
+    char *orig_filename = path_validate_and_expand (filename.address);
+    filename.address[filename.length] = value;
 
-    if (file_name.address == NULL) {
-        m_free (full_path);
-        return FAILED;
-    }
+    string_s filename_string = STRING2 (orig_filename, strlen (orig_filename));
 
-    string_s real_file_name = file_path_concat (STRING2 (full_path, strlen (full_path)), file_name);
+    char *real_filename = path_concat_and_validate (full_path, filename.address, strlen (full_path), filename.length);
+    string_s real_filename_string = STRING2 (real_filename, strlen (real_filename));
 
-    file->file_name = file_name;
-    file->real_file_name = real_file_name;
+    file->file_name = filename_string;
+    file->real_file_name = real_filename_string;
 
     m_free (full_path);
     return SUCCESS;
@@ -255,14 +256,15 @@ filemgmt_set_tmp_path (filemgmt_file_name_s *file_info)
     temp_file_counter++;
 
     long length;
-    char *full_temp_path = path_get_absolute_from_home (FILEMGMT_TEMP_DIR);
-    char *temp = string_sprintf (FILEMGMT_TEMP_FORMAT, &length, full_temp_path, temp_file_counter);
-    m_free (full_temp_path);
+    char *temp = string_sprintf (FILEMGMT_TEMP_FORMAT, &length, FILEMGMT_TEMP_DIR, temp_file_counter);
+    char *filename = path_validate_and_expand (temp);
 
     if (temp == NULL) {
-        return (FAILED);
+        return FAILED;
     }
 
-    file_info->temp_file_name = (string_s){.address = temp, .length = length};
-    return (SUCCESS);
+    m_free (temp);
+
+    file_info->temp_file_name = STRING2 (filename, length);
+    return SUCCESS;
 }

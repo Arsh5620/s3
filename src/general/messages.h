@@ -64,7 +64,7 @@
 
 #define DESERIALIZER_PRINT_HEADERS_ROW_STRING "\t\tkey, value: %.*s, %.*s, %ld, %f, %lf"
 
-#define NOTIFICATION_GENERAL "client sent a notification: \"%.*s\""
+#define NOTIFICATION_GENERAL "client sent a notification"
 
 #define NETWORK_ASSERT_MESSAGE "network function \"%s\" error: %s, errno: %d"
 

@@ -177,8 +177,8 @@ network_connect_init_sync_ssl (int port,
 
         assert_ssl (result, ZERO, "SSL_library_init", EXIT_FAILURE);
 
-        char *full_server_cert_path = path_get_absolute_from_home (RSA_SERVER_CERT);
-        char *full_server_rsa_key_path = path_get_absolute_from_home (RSA_SERVER_KEY);
+        char *full_server_cert_path = path_validate_and_expand (RSA_SERVER_CERT);
+        char *full_server_rsa_key_path = path_validate_and_expand (RSA_SERVER_KEY);
 
         if (SSL_CTX_use_certificate_file (*ssl_context, full_server_cert_path, SSL_FILETYPE_PEM) != SSL_SUCCESS) {
             assert_ssl (ZERO, ZERO, "SSL_CTX_use_certificate_file", EXIT_FAILURE);

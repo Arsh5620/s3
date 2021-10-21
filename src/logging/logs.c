@@ -69,10 +69,11 @@ logs_open_file (logs_s *log)
     long length = 0;
     char *dateformat = logs_gettime_s (LOG_DATE_FORMAT, FALSE, &length);
 
-    char *full_path = path_get_absolute_from_home (LOG_DIR_NAME);
-    log->filename = string_sprintf2 (LOG_FILE_NAME, NULL, full_path, dateformat);
-    m_free (full_path);
+    char *temp = string_sprintf2 (LOG_FILE_NAME, NULL, LOG_DIR_NAME, dateformat);
+    char *full_path = path_validate_and_expand (temp);
+    log->filename = full_path;
 
+    m_free (temp);
     free (dateformat);
 
     log->file_p = fopen (log->filename, FILE_MODE_WRITEBINARY);

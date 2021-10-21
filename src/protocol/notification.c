@@ -13,14 +13,8 @@ s3_preprocess_notification (s3_request_s *request)
 int
 s3_postprocess_notification (network_s *network)
 {
-    s3_request_s *request = network->request;
-    FILE *file = fopen (request->file_name.temp_file_name.address, FILE_MODE_READBINARY);
-
-    file_reader_s reader = file_reader_init (file);
-    file_reader_next (&reader, 0, request->header_info.data_length);
-
-    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, NOTIFICATION_GENERAL, (int) reader.readlength, (char *) reader.buffer);
-
-    file_reader_close (&reader);
+    // s3_request_s *request = network->request;
+    // TODO: fix this
+    logs_put (LOG_OUT_BOTH, LOG_LEVEL_INFO, NOTIFICATION_GENERAL);
     return (SUCCESS);
 }

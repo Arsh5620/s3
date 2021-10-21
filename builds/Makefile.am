@@ -44,7 +44,7 @@ config.h\
 ../src/protocol/request.c\
 ../src/protocol/response.c
 
-s3_CFLAGS=-I../src -Wall -Werror -Os
+s3_CFLAGS = -I../src -Wall -Werror -Os
 s3_LDADD = -lssl -lcrypto -lsqlite3 ../src/ssbs/ssbs.a
 
 ## https://stackoverflow.com/a/58028204

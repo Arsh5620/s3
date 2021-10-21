@@ -8,9 +8,10 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-enum file_errors_enum {
+typedef enum file_errors_enum {
     FILE_SUCCESS,
     FILE_ERROR,
+    FILE_EOF,
     FILE_DIR_EXISTS,
     FILE_DIR_CREATE_FAILED,
     FILE_DIR_ERROR_OPEN,
@@ -20,7 +21,7 @@ enum file_errors_enum {
     FILE_NETWORK_ASYNC_WOULBLOCK,
     FILE_WRITE_ERROR,
     FILE_READ_ERROR
-};
+} file_errors_e;
 
 #define FILE_MODE_WRITEBINARY "wb"
 #define FILE_MODE_READBINARY "rb"
@@ -28,7 +29,7 @@ enum file_errors_enum {
 #define FILE_MODE_APPENDBINARY "ab"
 
 #define FILE_NAME_LENGTH (256)
-#define FILE_BUFFER_LENGTH (MB (1))
+#define FILE_BUFFER_LENGTH (KB (16))
 #define FILE_SHA1_SIZE (160 / 8)
 
 typedef struct file_hash {
@@ -62,14 +63,13 @@ typedef struct {
     struct stat stats;
 
     char *buffer;
-    long index;
-    long readlength;
-    long maxlength;
+    long read;
+    long buffer_length;
     boolean eof;
 } file_reader_s;
 
-int
-file_dir_mkine (char *dir_name);
+file_errors_e
+file_dir_create (char *dir_name);
 int
 file_delete (char *file);
 int
@@ -77,18 +77,7 @@ file_rename (string_s dest, string_s src);
 struct stat
 file_stat (FILE *file);
 
-void
-file_reader_close (file_reader_s *reader);
-file_reader_s
-file_reader_init (FILE *file);
-int
-file_reader_next (file_reader_s *reader, long index, long size);
-
 int
 file_append (char *dest, char *src, ulong index, ulong size);
-int
-file_download (FILE *file, network_s *network, network_read_s *data_read, file_hash_s *hash);
-string_s
-file_path_concat (string_s path1, string_s path2);
 
 #endif // SRC_FILES_FILE_

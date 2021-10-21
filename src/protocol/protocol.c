@@ -1,5 +1,6 @@
 #include "protocol.h"
 #include "data/hash_table.h"
+#include "files/path.h"
 #include "memdbg/memory.h"
 #include "ssbs/deserializer.h"
 
@@ -70,7 +71,7 @@ s3_verify_db ()
     }
 
     boolean return_value = FALSE;
-    char *schema_full_path = path_get_absolute_from_home (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME);
+    char *schema_full_path = path_validate_and_expand (FILEMGMT_ROOT_FOLDER_NAME S3_DATABASE_FILENAME);
 
     if (database_init (schema_full_path) == SUCCESS) {
         if (database_run_query_noresult (AUTH_TABLE_CREATE, sizeof (AUTH_TABLE_CREATE)) == SUCCESS &&
