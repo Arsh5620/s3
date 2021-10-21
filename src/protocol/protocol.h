@@ -10,7 +10,7 @@
 #include "general/common.h"
 #include "general/messages.h"
 #include "general/string.h"
-#include "logger/logs.h"
+#include "logging/logs.h"
 #include "memdbg/memory.h"
 #include "networking/network.h"
 #include "ssbs/list.h"

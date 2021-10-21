@@ -1,6 +1,6 @@
 #include "database.h"
 #include "general/messages.h"
-#include "logger/logs.h"
+#include "logging/logs.h"
 
 #include <stdarg.h>
 

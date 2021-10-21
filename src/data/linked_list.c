@@ -3,51 +3,66 @@
 #include <malloc.h>
 #include <string.h>
 
-void
-linked_list_push (linked_list_s *list, char *data, long length)
+linked_list_s
+linked_list_new (long item_size)
 {
-    linked_list_node_s *node = calloc (1, sizeof (linked_list_node_s));
-    if (list->root == NULL) {
-        list->root = node;
-    }
-    node->parent = list->last;
-    if (list->last != NULL)
-        list->last->child = node;
+    linked_list_s list = {0};
+    list.item_size = item_size;
+    return list;
+}
 
-    if (length) {
-        node->data = malloc (length);
-        memcpy (node->data, data, length);
+void
+linked_list_add (linked_list_s *list, void *data)
+{
+    linked_list_node_s *node = malloc (sizeof (linked_list_node_s) + list->item_size);
+
+    if (list->first == NULL) {
+        list->first = node;
     }
-    node->length = length;
+
+    node->next = NULL;
+    node->prev = list->last;
+
+    if (list->last != NULL) {
+        list->last->next = node;
+    }
+
+    node->data = ((void *) node) + sizeof (linked_list_node_s);
+    memcpy (node->data, data, list->item_size);
+
     list->last = node;
 }
 
 void
 linked_list_remove (linked_list_s *list, long index)
 {
-    linked_list_node_s *node = list->root;
+    linked_list_node_s *node = list->first;
+
     for (long i = 0; i < index && node != NULL; ++i) {
-        node = (linked_list_node_s *) node->child;
+        node = node->next;
     }
-    if (node != NULL && node->parent != NULL) {
-        node->parent = node->child;
+
+    if (node != NULL) {
+        linked_list_node_s *prev = node->prev;
+        linked_list_node_s *next = node->next;
+
+        prev->next = next;
+        next->prev = prev;
     }
-    if (node->data != NULL)
-        free (node->data);
-    if (node != NULL)
+
+    if (node != NULL) {
         free (node);
+    }
 }
 
 void
-linked_list_free (linked_list_s *list)
+linked_list_free (linked_list_s list)
 {
-    linked_list_node_s *node = list->root;
-    while (node != NULL) {
-        if (node->data != NULL)
-            free (node->data);
+    linked_list_node_s *node = list.first;
 
-        linked_list_node_s *n1 = node;
-        node = (linked_list_node_s *) node->child;
-        free (n1);
+    while (node != NULL) {
+        linked_list_node_s *temp = node;
+        node = (linked_list_node_s *) node->next;
+        free (temp);
     }
 }

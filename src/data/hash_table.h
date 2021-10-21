@@ -39,5 +39,7 @@ hash_table_remove (hash_table_s *table, char *key, long key_length);
 
 hash_table_bucket_s
 hash_table_get (hash_table_s table, char *key, long key_length);
+hash_table_bucket_s
+hash_table_get_n (hash_table_s table, long index);
 
 #endif // SRC_DATA_HASH_TABLE_

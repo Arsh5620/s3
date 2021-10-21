@@ -51,6 +51,7 @@ argument_parser (int key, char *arg, struct argp_state *state);
 
 struct argp argp = {argument_options, argument_parser, APP_NAME " server v" __SERVER_VERSION__, NULL, NULL, NULL};
 boolean connection_initialized = FALSE;
+void (*original_sigint_handler) (int) = NULL;
 
 error_t
 argument_parser (int key, char *arg, struct argp_state *state)
@@ -190,11 +191,30 @@ print_banner ()
 }
 
 void
-sigsegv_interrupt_handler (int v)
+sigsegv_interrupt_handler (int value)
 {
     logs_enable_backtrace ();
     logs_put (LOG_OUT_BOTH, LOG_LEVEL_FATAL, "Program has received SIGSEGV (Segmentation Fault)");
     logs_close ();
+}
+
+void
+sigint_interrupt_handler (int value)
+{
+#ifdef DEBUG
+    printf ("\n\n*************************************\n"
+            "Please wait while we try to close everything...\n"
+            "If this is taking too long, open another terminal and use: kill -SIGKILL %d\n"
+            "*************************************\n",
+            getpid ());
+    memory_debug_print_lost ();
+#endif
+
+    printf ("\nGoodbye!!\n");
+    logs_close ();
+
+    signal (SIGINT, original_sigint_handler);
+    raise (SIGINT);
 }
 
 char *
@@ -294,6 +314,7 @@ int
 main (int argc, char *argv[])
 {
     // Handle signals so when debugging we can show all the memory that was not freed
+    original_sigint_handler = signal (SIGINT, sigint_interrupt_handler);
     signal (SIGSEGV, sigsegv_interrupt_handler);
 
     settings_s settings = {

@@ -1,5 +1,6 @@
 #include "protocol.h"
 #include "data/hash_table.h"
+#include "memdbg/memory.h"
 #include "ssbs/deserializer.h"
 
 #include <stdlib.h>
@@ -259,18 +260,6 @@ s3_connection_accept_loop_async (s3_protocol_s *protocol)
     }
 
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, PROTOCOL_SERVER_SHUTDOWN);
-
-#ifdef DEBUG
-    if (sigint_action_flag == TRUE) {
-        printf ("\n\n*************************************\n"
-                "Please wait while we try to close everything...\n"
-                "If this is taking too long, open another terminal and use: kill -SIGKILL %d\n"
-                "*************************************\n",
-                getpid ());
-        memory_debug_print_unfreed ();
-    }
-#endif
-    printf ("\nGoodbye!!\n");
 }
 
 void
@@ -568,12 +557,20 @@ s3_connection_alloc (network_s *data)
 }
 
 void
+s3_free_not_null (char *address)
+{
+    if (address) {
+        m_free (address);
+    }
+}
+
+void
 s3_connection_free (network_s *network)
 {
     if (network->request != NULL) {
-        m_free2 (network->request->file_name.file_name.address);
-        m_free2 (network->request->file_name.temp_file_name.address);
-        m_free2 (network->request->file_name.real_file_name.address);
+        s3_free_not_null (network->request->file_name.file_name.address);
+        s3_free_not_null (network->request->file_name.temp_file_name.address);
+        s3_free_not_null (network->request->file_name.real_file_name.address);
 
         my_list_free (network->request->header_list);
         hash_table_free (network->request->header_table);

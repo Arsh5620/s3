@@ -3,65 +3,23 @@
 
 #include "data/hash_table.h"
 #include "data/linked_list.h"
-#include "ssbs/list.h"
 #include <stddef.h>
-
-#define MEMORY_FILE_LINE __BASE_FILE__, __LINE__
-
-#ifdef DEBUG
-
-#define MEMORY_TABLE_SIZE 2048
-
-typedef enum { MEMORY_ALLOC_MALLOC, MEMORY_ALLOC_CALLOC, MEMORY_ALLOC_REALLOC, MEMORY_ALLOC_FREE } malloc_enum;
-
-typedef struct memory_allocation_update {
-    char *file_name; // please use the compiler directive __FILE__
-    long size;
-    long line_no; // please use compiler directive __LINE__
-    malloc_enum type;
-} malloc_update_s;
-
-typedef struct memory_allocation_table {
-    char *address;
-    char *new_addr; /* only used with reallocations */
-    malloc_enum last_update;
-    linked_list_s updates;
-} malloc_node_s;
-
-typedef struct {
-    my_list_s list;
-    hash_table_s hash;
-    char is_init;
-} malloc_s;
-
-void
-memory_cleanup ();
-char *
-memory_log_gettype (malloc_enum i);
-void
-memory_log_handle (malloc_enum type, malloc_node_s *node, malloc_update_s *update);
-long
-memory_get_allocation_size (malloc_node_s *node);
-void
-memory_debug_print_unfreed ();
-#endif
 
 void
 __free (void *address, char *file_name, long line_no);
 void *
-__malloc (size_t size, char *file_name, long line_no);
+__malloc (long size, char *file_name, long line_no);
 void *
-__calloc (size_t size, char *file_name, long line_no);
+__calloc (long size, char *file_name, long line_no);
 void *
 __realloc (void *address, long size, char *file_name, long line_no);
 
-#define m_calloc(size) __calloc (size, MEMORY_FILE_LINE)
-#define m_malloc(size) __malloc (size, MEMORY_FILE_LINE)
-#define m_realloc(pointer, new_size) __realloc (pointer, new_size, MEMORY_FILE_LINE)
-#define m_free(pointer) __free (pointer, MEMORY_FILE_LINE)
-#define m_free2(pointer)                                                                                                         \
-    if (pointer) {                                                                                                               \
-        m_free (pointer);                                                                                                        \
-    }
+#define m_calloc(size) __calloc (size, __FILE__, __LINE__)
+#define m_malloc(size) __malloc (size, __FILE__, __LINE__)
+#define m_realloc(pointer, new_size) __realloc (pointer, new_size, __FILE__, __LINE__)
+#define m_free(pointer) __free (pointer, __FILE__, __LINE__)
+
+void
+memory_debug_print_lost ();
 
 #endif // SRC_MEMDBG_MEMORY_
