@@ -3,43 +3,6 @@
 
 #include <string.h>
 
-int
-s3_network_read_stream_async (s3_protocol_s *protocol, char *memory, int size)
-{
-    // network_init_async_read (&protocol->current.read_info, size);
-    // network_data_s data = network_read_stream (&protocol->connection, &protocol->current.read_info);
-
-    // if (data.error_code == NETWORK_ASYNC_WOULDBLOCK)
-    // {
-    //     protocol->current.read_status = STATUS_ASYNC_MORE;
-    //     return SUCCESS;
-    // }
-    // else if (data.error_code != SUCCESS)
-    // {
-    //     logs_put (MESSAGE_OUT_LOGS, LOGGER_LEVEL_ERROR, NETWORK_READ_ERROR);
-    //     return S3_RESPONSE_NETWORK_ERROR_READ;
-    // }
-
-    // if (memory != NULL)
-    // {
-    //     memcpy ((char *) memory, protocol->current.read_info.current_read_memory, size);
-    //     s3_network_data_free (protocol);
-    //     network_complete_async_read (&protocol->current.read_info);
-    // }
-    // protocol->current.read_status = STATUS_ASYNC_COMPLETED;
-    return SUCCESS;
-}
-
-void
-s3_network_data_free (s3_protocol_s *protocol)
-{
-    // if (protocol->current.read_info.current_read_memory)
-    // {
-    //     m_free (protocol->current.read_info.current_read_memory);
-    //     protocol->current.read_info.current_read_memory = NULL;
-    // }
-}
-
 s3_header_s
 s3_request_read_magic (size_t magic, boolean *valid)
 {
@@ -54,15 +17,6 @@ s3_request_read_magic (size_t magic, boolean *valid)
 
     return header_info;
 }
-
-// int
-// s3_request_read_headers (s3_protocol_s *protocol, s3_request_s *request)
-// {
-//     /**
-//      * headers is needed even after we have deserialized the binary information
-//      * because the deserializer will only create a struct with pointers to the original data
-//      */
-// }
 
 void
 s3_print_headers (my_list_s list)
