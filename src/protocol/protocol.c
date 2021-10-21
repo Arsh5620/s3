@@ -544,7 +544,7 @@ make_hash_table (my_list_s list)
             continue;
         }
 
-        hash_table_add (&table, pair.key, pair.key_length, pair.value_pointer, pair.value_long);
+        hash_table_add (&table, pair.key, pair.key_length, pair.value_pointer, pair.value_length);
     }
     return (table);
 }
