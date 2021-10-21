@@ -1,6 +1,6 @@
+#include "config.h"
 #include "files/path.h"
 #include "general/common.h"
-#include "protocol/build.h"
 #include "protocol/protocol.h"
 
 #include <argp.h>
@@ -50,7 +50,7 @@ generate_ssl_certs ();
 error_t
 argument_parser (int key, char *arg, struct argp_state *state);
 
-struct argp argp = {argument_options, argument_parser, APP_NAME " server v" __SERVER_VERSION__, NULL, NULL, NULL};
+struct argp argp = {argument_options, argument_parser, APP_NAME " server v" PACKAGE_VERSION, NULL, NULL, NULL};
 boolean connection_initialized = FALSE;
 void (*original_sigint_handler) (int) = NULL;
 
@@ -186,8 +186,8 @@ void
 print_banner ()
 {
     printf ("=====================================\n");
-    printf ("s3 server version %s\n", __SERVER_VERSION__);
-    printf ("%s\n", __SERVER_INFO__);
+    printf ("s3 server version %s\n", PACKAGE_VERSION);
+    printf ("%s\n", _COMPILED_ON_);
     printf ("=====================================\n");
 }
 

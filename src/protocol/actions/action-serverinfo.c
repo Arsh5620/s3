@@ -1,7 +1,7 @@
-#include "protocol/build.h"
+#include "config.h"
 #include "protocol/protocol.h"
 
-#define SERVER_INFO_CONST_RESPONSE STRING ("S3 server version " __SERVER_VERSION__ ", " __SERVER_INFO__)
+#define SERVER_INFO_CONST_RESPONSE STRING (PACKAGE_STRING " " _COMPILED_ON_)
 
 long
 s3_server_request_writer (network_s *network)
