@@ -2,12 +2,14 @@
 #include "general/common.h"
 #include "logging/logs.h"
 #include "protocol/protocol.h"
+#include <libnotify/notification.h>
 #include <libnotify/notify.h>
 #include <stdio.h>
+#include <string.h>
 
 // definition
 void
-dbus_notify (const char *notification);
+dbus_notify (const char *title, const char *message);
 enum urgency { LOW, NORMAL, CRITICAL };
 
 // implementation
@@ -37,12 +39,15 @@ s3_postprocess_notification (network_s *network)
     fread (memory, sizeof (char), memory_size, notification_file);
     logs_put (LOG_OUT_LOGS, LOG_LEVEL_INFO, NOTIFICATION_GENERAL, memory);
 
-    // Only send a max of 256 bytes (including \NULL) to d-bus
-    if (memory_size > 256) {
-        memory[256] = 0;
+    char *title = memory;
+    char *message = strchr (memory, '\n');
+
+    if (message != NULL) {
+        *message = '\0';
+        message = message + 1;
     }
 
-    dbus_notify (memory);
+    dbus_notify (title, message);
 
     fclose (notification_file);
     m_free (memory);
@@ -50,13 +55,14 @@ s3_postprocess_notification (network_s *network)
 }
 
 void
-dbus_notify (const char *notification)
+dbus_notify (const char *title, const char *message)
 {
     // https://wiki.archlinux.org/title/Desktop_notifications
     // https://specifications.freedesktop.org/notification-spec/notification-spec-latest.html
 
     notify_init ("Android Notification Handler");
-    NotifyNotification *notify = notify_notification_new ("New notification", notification, "dialog-information");
+    NotifyNotification *notify = notify_notification_new (title, message, "dialog-information");
+    notify_notification_set_timeout(notify, 15*1000);
     notify_notification_show (notify, NULL);
     g_object_unref (G_OBJECT (notify));
     notify_uninit ();
